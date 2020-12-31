@@ -2,11 +2,16 @@
 
 Run with python main.py and watch the magik happen!
 """
+
 import logging
 import sys
+print("python:", sys.version)
+
 import webbrowser
 
 from shlex import split
+
+import attr
 
 from collections import defaultdict
 from datetime import timedelta
@@ -24,8 +29,9 @@ from typing import Optional
 from uuid import UUID
 from uuid import uuid4
 
+from PyQt5 import QtCore
 from PyQt5 import QtGui
-from PyQt5 import QtWidgets as qt
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QDate
 from PyQt5.QtCore import QDateTime
 from PyQt5.QtCore import QModelIndex
@@ -64,13 +70,9 @@ import config
 
 from pathlib import Path
 
-p = Path(".")
-for x in p.glob("**/*"):
-    print(x)
-
 __version__ = (0, 0, 7)
 # pwd: QvUuI5F6XZ7GVcDj8eof
-print(sys.version)
+
 
 load = Decoder()
 
@@ -83,6 +85,7 @@ ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 S = Enum("STATE", "init main editing running final")
 
+# TODO: with attr?
 class Task(NamedTuple):
     id: int
     do: str
@@ -237,7 +240,13 @@ def write_session(task_id, start, stop, finished):
         logger.warning("SQL failed:\n" + statement)
         logger.warning(query.lastError().text())
 
-class MainWindow(qt.QMainWindow, main_window.Ui_MainWindow):
+
+def iter_over(query):
+    while query.next():
+        yield query
+
+
+class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -274,7 +283,7 @@ class MainWindow(qt.QMainWindow, main_window.Ui_MainWindow):
         def foo():
             """Add new Task."""
             if state() is S.editing:
-                mb = qt.QMessageBox()
+                mb = QtWidgets.QMessageBox()
                 mb.setText(
 "Es wird schon ein Task bearbeitet."
                 )
@@ -322,10 +331,10 @@ class MainWindow(qt.QMainWindow, main_window.Ui_MainWindow):
         @self.actionImport.triggered.connect
         def actionImport():
             state.flux_to(S.editing)
-            win = qt.QDialog()
-            options = qt.QFileDialog.Options()
-            # options |= qt.QFileDialog.DontUseNativeDialog
-            filename, _ = qt.QFileDialog.getOpenFileName(
+            win = QtWidgets.QDialog()
+            options = QtWidgets.QFileDialog.Options()
+            # options |= QtWidgets.QFileDialog.DontUseNativeDialog
+            filename, _ = QtWidgets.QFileDialog.getOpenFileName(
                 win,
                 "Bitte wähle eine .todo Datei zum Importieren",
                 "",
@@ -368,10 +377,10 @@ VALUES ('{d["do"]}',
             state.flux_to(S.main)
 
     def closeEvent(self, event):
-        reply = qt.QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?',
-                qt.QMessageBox.Yes | qt.QMessageBox.No, qt.QMessageBox.No)
+        reply = QtWidgets.QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?',
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
-        if reply == qt.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             print(config.count, bin(config.coin))
             config.write()
             state.flux_to(S.final)
@@ -380,7 +389,7 @@ VALUES ('{d["do"]}',
             event.ignore()
 
 
-class What_Now(qt.QDialog, what_now.Ui_Dialog):
+class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -450,8 +459,8 @@ class What_Now(qt.QDialog, what_now.Ui_Dialog):
 
         all_tasks = []
 
-        while query.next():
-            t = Task(*[query.value(index) 
+        for row in iter_over(query):
+            t = Task(*[row.value(index) 
                         for index in range(query.record().count())])
             #must be done in two loops because t.done reuses query
             all_tasks.append(t)
@@ -464,7 +473,7 @@ class What_Now(qt.QDialog, what_now.Ui_Dialog):
                 self.tasks.append(t)
 
         if not self.tasks:
-            mb = qt.QMessageBox()
+            mb = QtWidgets.QMessageBox()
             mb.setText(
                 "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte."
             )
@@ -490,7 +499,7 @@ class What_Now(qt.QDialog, what_now.Ui_Dialog):
         self.task_desc_priority.adjustSize()
 
         if old_task == self.priority_task:
-            mb = qt.QMessageBox()
+            mb = QtWidgets.QMessageBox()
             mb.setText(
                 "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!"
             )
@@ -518,15 +527,15 @@ class What_Now(qt.QDialog, what_now.Ui_Dialog):
             logger.warning(query.lastError().text())
 
         activity_time_spent = {}
-        while query.next():
-            activity_time_spent[query.value(0)] = query.value(1)
+        for row in iter_over(query):
+            activity_time_spent[row.value(0)] = query.value(1)
 
         self.balanced_task = balance(self.tasks, activity_time_spent)[0]
         self.task_desc_balanced.setText(self.balanced_task.do)
         self.task_desc_balanced.adjustSize()
 
 
-class Task_List(qt.QDialog, task_list.Ui_Dialog):
+class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -565,13 +574,13 @@ class Task_List(qt.QDialog, task_list.Ui_Dialog):
         def _():
                 x = choice(['Kopf', 'Zahl'])
                 if x == "Kopf":
-                    mb = qt.QMessageBox()
+                    mb = QtWidgets.QMessageBox()
                     mb.setText(f"Du hast Kopf geworfen!")
                     mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-heads.svg"))
                     mb.setWindowTitle("Hmm..")
                     mb.exec_()
                 else:
-                    mb = qt.QMessageBox()
+                    mb = QtWidgets.QMessageBox()
                     mb.setText(f"Du hast Zahl geworfen!")
                     mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
                     mb.setWindowTitle("Hmm..")
@@ -591,7 +600,7 @@ class Task_List(qt.QDialog, task_list.Ui_Dialog):
         @self.edit_selection.clicked.connect
         def _():
             if state() is S.editing:
-                mb = qt.QMessageBox()
+                mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein Task bearbeitet.")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
@@ -603,12 +612,12 @@ class Task_List(qt.QDialog, task_list.Ui_Dialog):
             win.show()
             state.flux_to(S.editing)
 
-class New_Task(qt.QWizard, task_new.Ui_Wizard):
+class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
     def __init__(self, task=None):
         super().__init__()
         self.activateWindow()
         self.setupUi(self)
-        self.setOption(qt.QWizard.HaveFinishButtonOnEarlyPages, True)
+        self.setOption(QtWidgets.QWizard.HaveFinishButtonOnEarlyPages, True)
         self.task = task
         state.flux_to(S.editing)
         self.page_basics.registerField(
@@ -639,7 +648,7 @@ class New_Task(qt.QWizard, task_new.Ui_Wizard):
             else:
                 self.deadline.setEnabled(False)
 
-        @self.button(qt.QWizard.FinishButton).clicked.connect
+        @self.button(QtWidgets.QWizard.FinishButton).clicked.connect
         def _():
             if self.deadline_active.isChecked():
                 deadline = self.deadline.dateTime().toSecsSinceEpoch()
@@ -679,7 +688,7 @@ WHERE id={self.task.id}
             state.flux_to(S.main)
 
 
-class Running(qt.QDialog, running_task.Ui_Dialog):
+class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -795,10 +804,11 @@ class Running(qt.QDialog, running_task.Ui_Dialog):
         self.running = True
 
 
-class Settings(qt.QDialog, settings.Ui_Dialog):
+class Settings(QtWidgets.QDialog, settings.Ui_Dialog):
     def __init__(self):
         super().__init__() 
         self.setupUi(self) 
+        print("settings", 1)
 
         self.spaces_model = QSqlTableModel()
         self.spaces_model.setTable("spaces")
@@ -812,7 +822,38 @@ class Settings(qt.QDialog, settings.Ui_Dialog):
         self.spaces_table.resizeColumnsToContents()
         self.spaces_table.setColumnHidden(0, True)
 
+        statement = f"""
+        SELECT activity_id, name FROM activities;
+        """
+        if not query.exec_(statement):
+            logger.warning("SQL failed:\n" + statement)
+            logger.warning(query.lastError().text())
+        
+        self.activities_table.horizontalHeader().setVisible(True)
+        
+        for i, row in enumerate(iter_over(query)):
+            self.activities_table.setRowCount(i+1)
+            item = QtWidgets.QTableWidgetItem()
+            self.activities_table.setItem(i, 0, item)
+            item.setText(row.value(1))
+            item.setTextAlignment(QtCore.Qt.AlignCenter)
 
+        @self.create_activity.clicked.connect
+        def _():
+            text, okPressed = QtWidgets.QInputDialog.getText(self, 
+                    "Neue Aktivität",
+                    "Name der neuen Aktivität", QtWidgets.QLineEdit.Normal, "")
+            if okPressed and text != '':
+                statement = f"""
+INSERT OR IGNORE INTO activities (name)
+VALUES ('{text}')
+"""
+                if query.exec_(statement):
+                    print("OK", statement)
+                else:
+                    logger.warning("SQL failed:" + statement)
+                    logger.warning(query.lastError().text())
+        
 def change_global_font(qobject, event):
     if event.type() == Qt.QEvent.Wheel:
         font = app.font()
@@ -825,7 +866,19 @@ def change_global_font(qobject, event):
         #     app.setFont(font)
 
 if __name__ == "__main__":
-    config = config.read("config.stay")
+    path = Path(sys.argv[0])
+    try:
+        # overwriting the module with the instance for convenience
+       config = config.read("config.stay")
+    except FileNotFoundError:
+        p1 = path.parents[0] / "default-config.stay"
+        p2 = path.parents[0] / "config.stay"
+
+        from shutil import copyfileobj
+        with open(p1, "r") as f1, open(p2, "w+") as f2:
+           copyfileobj(f1, f2)
+        config = config.read(p2)
+
     seed((config.coin^config.lucky_num) * config.count)
 
     db = QSqlDatabase.addDatabase("QSQLITE")
@@ -839,8 +892,9 @@ if __name__ == "__main__":
         import first_start
         first_start.run(db, query, config, logger)
         config.first_start = False
+        config.write()
 
-    app = qt.QApplication(sys.argv) 
+    app = QtWidgets.QApplication(sys.argv) 
     win_main = MainWindow() 
     win_list = Task_List() 
     win_what = None 
