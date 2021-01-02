@@ -1,3 +1,7 @@
+from collections import deque
+from datetime import datetime
+from math import isinf
+
 def prioritize(tasks:list) -> list:
     sorted_by_last_checked  = sorted(tasks, key=lambda t: t.last_checked)
     sorted_by_level = sorted(sorted_by_last_checked, reverse=True, key=lambda t: t.level_id)
@@ -11,16 +15,26 @@ def prioritize(tasks:list) -> list:
         if t.priority < considered_priority:
             break
         L.append(t)
-    return L
+    return deque(L)
 
-def balance(tasks:list, activity_time_spent) -> list:
-    sorted_activity = sorted(activity_time_spent.items(), key=lambda i:i[1])
-    neglected = sorted_activity[0]
-    filtered_by_activity = filter(lambda t: t.activity_id == neglected[1], tasks)
-    sorted_by_last_checked  = sorted(filtered_by_activity, key=lambda t: t.last_checked)
-    return sorted_by_last_checked
+def balance(tasks:list, activity_time_spent: dict) -> list:
+    sorted_tasks = sorted(tasks, 
+                key=lambda t: (-activity_time_spent[t.activity_id], 
+                               -t.last_checked))
+    return deque(sorted_tasks)
 
 def schedule(tasks:list) -> list:
-    sorted_by_last_checked  = sorted(tasks, key=lambda t: t.last_checked)
+    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)), tasks)
+    sorted_by_last_checked  = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
     sorted_by_deadline  = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
-    return sorted_by_deadline
+    return deque(sorted_by_deadline)
+
+    
+def check_task_conditions(*, cond:str, done:bool, active:bool, last_finished:int, now: datetime):
+    if cond == "daily":
+        if (today := now.date()) > (then := datetime.fromtimestamp(last_finished).date()):
+            done = False
+            print(today, then, "daily not done, resetting")
+        else:
+            pass
+    return done, active

@@ -30,6 +30,7 @@ class Config:
     coin: int = 0b1
     lucky_num: int = 1
     count: int = 1
+    time_program_quit_last: int = 0
 
     def write(self):
         with open("config.stay", "w") as f:

@@ -1,5 +1,6 @@
 first_start: False
 database: watnu.sqlite
-coin: 1
-lucky_num: 1
-count: 3
+coin: 9
+lucky_num: 8
+count: 157
+time_program_quit_last: 0

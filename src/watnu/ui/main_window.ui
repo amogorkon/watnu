@@ -394,7 +394,6 @@
     <property name="title">
      <string>Hilfe</string>
     </property>
-    <addaction name="actionAbout_Watnu"/>
     <addaction name="actionIssue_Tracker"/>
     <addaction name="actionContact"/>
     <addaction name="action_ber_Watnu"/>

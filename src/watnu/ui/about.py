@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_ScrollArea(object):
     def setupUi(self, ScrollArea):
         ScrollArea.setObjectName("ScrollArea")
-        ScrollArea.resize(400, 300)
+        ScrollArea.resize(529, 416)
         ScrollArea.setStyleSheet("font: 12pt \"Sans Forgetica\";")
 
         self.retranslateUi(ScrollArea)

@@ -213,7 +213,6 @@ class Ui_MainWindow(object):
         self.actionBeenden = QtWidgets.QAction(MainWindow)
         self.actionBeenden.setShortcutVisibleInContextMenu(False)
         self.actionBeenden.setObjectName("actionBeenden")
-        self.menuNeu.addAction(self.actionAbout_Watnu)
         self.menuNeu.addAction(self.actionIssue_Tracker)
         self.menuNeu.addAction(self.actionContact)
         self.menuNeu.addAction(self.action_ber_Watnu)
