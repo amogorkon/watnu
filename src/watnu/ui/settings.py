@@ -178,10 +178,16 @@ class Ui_Dialog(object):
         self.user_settings.setObjectName("user_settings")
         self.horizontalLayout.addWidget(self.user_settings)
         self.toolbar.addTab(self.toolbarPage2, "")
+        self.tab_4 = QtWidgets.QWidget()
+        self.tab_4.setObjectName("tab_4")
+        self.clear_all_deleted = QtWidgets.QPushButton(self.tab_4)
+        self.clear_all_deleted.setGeometry(QtCore.QRect(20, 10, 121, 21))
+        self.clear_all_deleted.setObjectName("clear_all_deleted")
+        self.toolbar.addTab(self.tab_4, "")
         self.gridLayout.addWidget(self.toolbar, 0, 0, 1, 1)
 
         self.retranslateUi(Dialog)
-        self.toolbar.setCurrentIndex(0)
+        self.toolbar.setCurrentIndex(2)
         self.activities.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -218,3 +224,5 @@ class Ui_Dialog(object):
         self.default_settings.setTitle(_translate("Dialog", "default"))
         self.user_settings.setTitle(_translate("Dialog", "user-defined"))
         self.toolbar.setTabText(self.toolbar.indexOf(self.toolbarPage2), _translate("Dialog", "Config"))
+        self.clear_all_deleted.setText(_translate("Dialog", "clear all deleted Tasks"))
+        self.toolbar.setTabText(self.toolbar.indexOf(self.tab_4), _translate("Dialog", "Misc"))

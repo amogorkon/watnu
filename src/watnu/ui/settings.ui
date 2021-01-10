@@ -17,9 +17,9 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="toolbar">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
-     <widget class="QWidget" name="toolbarPage1" native="true">
+     <widget class="QWidget" name="toolbarPage1">
       <attribute name="title">
        <string>Categories</string>
       </attribute>
@@ -344,7 +344,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="toolbarPage2" native="true">
+     <widget class="QWidget" name="toolbarPage2">
       <attribute name="title">
        <string>Config</string>
       </attribute>
@@ -364,6 +364,24 @@
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QWidget" name="tab_4">
+      <attribute name="title">
+       <string>Misc</string>
+      </attribute>
+      <widget class="QPushButton" name="clear_all_deleted">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>10</y>
+         <width>121</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>clear all deleted Tasks</string>
+       </property>
+      </widget>
      </widget>
     </widget>
    </item>

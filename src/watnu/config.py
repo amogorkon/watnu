@@ -31,6 +31,9 @@ class Config:
     lucky_num: int = 1
     count: int = 1
     time_program_quit_last: int = 0
+    telegram_user: int = None
+    telegram_token: str = None
+    tictoc_volume: int = 50
 
     def write(self):
         with open("config.stay", "w") as f:

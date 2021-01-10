@@ -2,6 +2,9 @@
 print("FIRST START")
 
 def run(db, query, config, logger):
+
+    ### CREATE SQL TABLES ###
+
     statement = f"""
     CREATE TABLE IF NOT EXISTS spaces(
     space_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
@@ -60,7 +63,7 @@ CREATE TABLE "tasks" (
     "space_id"  INTEGER,
     "done"  INTEGER NOT NULL DEFAULT 0,
     "draft" INTEGER NOT NULL DEFAULT 0,
-    "active"    INTEGER NOT NULL DEFAULT 1,
+    "inactive"    INTEGER NOT NULL DEFAULT 0,
     "deleted"   INTEGER NOT NULL DEFAULT 0,
     "priority"  REAL NOT NULL DEFAULT 0,
     "level_id"  INTEGER NOT NULL DEFAULT 0,
@@ -71,9 +74,9 @@ CREATE TABLE "tasks" (
     "fear"  REAL DEFAULT 5,
     "embarassment"  REAL DEFAULT 5,
     "last_checked"  INTEGER DEFAULT 0,
-    "requires"  TEXT,
     "time_spent"    INTEGER DEFAULT 0,
     "conditions"    TEXT,
+    "adjust_time_spent" INTEGER DEFAULT 0,
     PRIMARY KEY("id" AUTOINCREMENT),
     FOREIGN KEY("level_id") REFERENCES "spaces"("level_id") ON DELETE SET NULL,
     FOREIGN KEY("activity_id") REFERENCES "activities"("activity_id") ON DELETE SET NULL,
@@ -82,6 +85,15 @@ CREATE TABLE "tasks" (
     """
     if not query.exec_(statement):
         logger.warning("SQL failed:\n" + statement)
+
+CREATE TABLE "task_requires_task" (
+      "task_of_concern"  INTEGER NOT NULL,
+       "required_task"  INTEGER NOT NULL CHECK (task_of_concern <> required_task),
+      FOREIGN KEY("task_of_concern") REFERENCES "tasks" ("id") ON DELETE CASCADE,
+      FOREIGN KEY("required_task") REFERENCES "tasks" ("id") ON DELETE CASCADE
+);
+
+    ### Default Entries ###
 
     for name, level_id in zip(
         ["MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"],

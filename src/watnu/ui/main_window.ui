@@ -396,7 +396,7 @@
     </property>
     <addaction name="actionIssue_Tracker"/>
     <addaction name="actionContact"/>
-    <addaction name="action_ber_Watnu"/>
+    <addaction name="about"/>
    </widget>
    <widget class="QMenu" name="menuDatei">
     <property name="title">
@@ -468,7 +468,7 @@
     <string>Kontaktiere den Entwickler...</string>
    </property>
   </action>
-  <action name="action_ber_Watnu">
+  <action name="about">
    <property name="text">
     <string>Über Watnu</string>
    </property>
