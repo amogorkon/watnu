@@ -6,9 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>524</width>
-    <height>328</height>
+    <width>518</width>
+    <height>320</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>518</width>
+    <height>320</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>518</width>
+    <height>320</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>watnu</string>
@@ -25,7 +37,7 @@
     <item row="0" column="0" rowspan="2" colspan="2">
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="2">
-       <widget class="QPushButton" name="pushButton_23">
+       <widget class="QPushButton" name="button6">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -69,7 +81,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QPushButton" name="pushButton_21">
+       <widget class="QPushButton" name="button4">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -101,7 +113,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QPushButton" name="pushButton_22">
+       <widget class="QPushButton" name="button5">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -151,7 +163,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QPushButton" name="pushButton_12">
+       <widget class="QPushButton" name="button8">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -166,6 +178,10 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../extra/feathericons/companions2.svg</normaloff>../extra/feathericons/companions2.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -185,7 +201,7 @@
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QPushButton" name="pushButton_11">
+       <widget class="QPushButton" name="button7">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -219,7 +235,7 @@
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QPushButton" name="pushButton_13">
+       <widget class="QPushButton" name="button9">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -269,7 +285,7 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QPushButton" name="pushButton_32">
+       <widget class="QPushButton" name="button2">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -284,6 +300,10 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../extra/feathericons/superhero - attribute to Freepik.svg</normaloff>../extra/feathericons/superhero - attribute to Freepik.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -303,7 +323,7 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QPushButton" name="pushButton_33">
+       <widget class="QPushButton" name="button3">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -337,9 +357,9 @@
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QPushButton" name="pushButton_31">
+       <widget class="QPushButton" name="button1">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -355,6 +375,10 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../extra/feathericons/trending-up.svg</normaloff>../extra/feathericons/trending-up.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -386,7 +410,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>524</width>
+     <width>518</width>
      <height>21</height>
     </rect>
    </property>
@@ -396,6 +420,7 @@
     </property>
     <addaction name="actionIssue_Tracker"/>
     <addaction name="actionContact"/>
+    <addaction name="actionSupportMe"/>
     <addaction name="about"/>
    </widget>
    <widget class="QMenu" name="menuDatei">
@@ -459,11 +484,19 @@
    </property>
   </action>
   <action name="actionIssue_Tracker">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/github.svg</normaloff>../extra/feathericons/github.svg</iconset>
+   </property>
    <property name="text">
     <string>Probleme/Anregungen melden...</string>
    </property>
   </action>
   <action name="actionContact">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/twitter.svg</normaloff>../extra/feathericons/twitter.svg</iconset>
+   </property>
    <property name="text">
     <string>Kontaktiere den Entwickler...</string>
    </property>
@@ -499,11 +532,20 @@
     <bool>false</bool>
    </property>
   </action>
+  <action name="actionSupportMe">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/gift.svg</normaloff>../extra/feathericons/gift.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Unterstütze den Entwickler...</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
-  <tabstop>pushButton_22</tabstop>
-  <tabstop>pushButton_21</tabstop>
-  <tabstop>pushButton_31</tabstop>
+  <tabstop>button5</tabstop>
+  <tabstop>button4</tabstop>
+  <tabstop>button1</tabstop>
  </tabstops>
  <resources>
   <include location="../icons.qrc"/>

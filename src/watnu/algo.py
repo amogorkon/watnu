@@ -4,14 +4,13 @@ from math import isinf
 
 def prioritize(tasks:list) -> list:
     sorted_tasks = sorted(tasks, reverse=True, key=lambda t: (
-                t.level_id, t.space_priority + t.priority, -t.last_checked)
+                t.level_id, t.space_priority + t.priority, t.last_checked)
                         )
     return deque(sorted_tasks)
 
 def balance(tasks:list, activity_time_spent: dict) -> list:
     sorted_tasks = sorted(tasks, 
-                key=lambda t: (-activity_time_spent[t.activity_id], 
-                               -t.last_checked))
+        key=lambda t: (activity_time_spent[t.activity_id], t.last_checked))
     return deque(sorted_tasks)
 
 def schedule(tasks:list) -> list:

@@ -34,6 +34,9 @@ class Config:
     telegram_user: int = None
     telegram_token: str = None
     tictoc_volume: int = 50
+    activity_color_body: str = "darkred"
+    activity_color_mind: str = "darkblue"
+    activity_color_spirit: str = "indigo"
 
     def write(self):
         with open("config.stay", "w") as f:

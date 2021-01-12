@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="toolbar">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="toolbarPage1">
       <attribute name="title">
@@ -25,9 +25,9 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0" colspan="2">
-        <widget class="QTabWidget" name="activities">
+        <widget class="QTabWidget" name="skills">
          <property name="currentIndex">
-          <number>2</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_2">
           <attribute name="title">
@@ -58,11 +58,11 @@
          </widget>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
-           <string>Activities</string>
+           <string>Skills</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QTableWidget" name="activities_table">
+            <widget class="QTableWidget" name="skills_table">
              <property name="font">
               <font>
                <weight>50</weight>
@@ -167,14 +167,14 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
-              <widget class="QPushButton" name="create_activity">
+              <widget class="QPushButton" name="create_skill">
                <property name="text">
                 <string>erstelle neu</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="rename_activity">
+              <widget class="QPushButton" name="rename_skill">
                <property name="text">
                 <string>benenne um</string>
                </property>
@@ -184,7 +184,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="delete_activity">
+              <widget class="QPushButton" name="delete_skill">
                <property name="text">
                 <string>lösche</string>
                </property>

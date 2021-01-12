@@ -2,8 +2,11 @@ first_start: False
 database: watnu.sqlite
 coin: 5260874487877799986
 lucky_num: 8
-count: 692
+count: 832
 time_program_quit_last: 0
 telegram_user: 1188542634
 telegram_token: 1355131977:AAGfXqn7EI1ORe7Qrr6_IPqPFxHHo08BJnI
 tictoc_volume: 50
+activity_color_body: darkred
+activity_color_mind: darkblue
+activity_color_spirit: indigo

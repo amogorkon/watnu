@@ -17,6 +17,17 @@ def run(db, query, config, logger):
         logger.warning("SQL failed:\n" + statement, query.lastError())
 
     statement = f"""
+CREATE TABLE "skills" (
+    "skill_id"   INTEGER NOT NULL UNIQUE,
+    "name"  VARCHAR(255) NOT NULL UNIQUE,
+    PRIMARY KEY("skill_id" AUTOINCREMENT)
+);
+    """
+    if not query.exec_(statement):
+        logger.warning("SQL failed:\n" + statement, query.lastError())
+
+
+    statement = f"""
 CREATE TABLE "activities" (
     "activity_id"   INTEGER NOT NULL UNIQUE,
     "name"  VARCHAR(255) NOT NULL UNIQUE,
@@ -70,6 +81,7 @@ CREATE TABLE "tasks" (
     "deadline"  REAL NOT NULL DEFAULT Infinity,
     "workload"  INTEGER,
     "activity_id"   INTEGER,
+    "secondary_activity_id"   INTEGER,
     "difficulty"    REAL DEFAULT 5,
     "fear"  REAL DEFAULT 5,
     "embarassment"  REAL DEFAULT 5,

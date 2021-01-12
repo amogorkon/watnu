@@ -61,6 +61,7 @@ from PyQt5.QtWinExtras import QWinTaskbarProgress
 from ui import main_window
 from ui import running_task
 from ui import settings
+from ui import statistics
 from ui import task_finished
 from ui import task_list
 from ui import task_new
@@ -105,7 +106,6 @@ class Task(NamedTuple):
     draft: bool=False
     inactive: bool=False
     deleted: bool=False
-
     #priority: float = 0
 
     # deadline: float="inf"
@@ -117,6 +117,7 @@ class Task(NamedTuple):
     embarassment: float=5
 
     conditions: str=""
+    secondary_activity_id: int=None
 
     @property
     def deadline(self):
@@ -217,6 +218,20 @@ class Task(NamedTuple):
             logger.warning("SQL failed", statement)
             logger.warning(query.lastError().text())
             res = ""
+        if query.next():
+            res = query.value(0)
+        else:
+            res = ""
+        return res
+
+    @property
+    def secondary_activity(self):
+        statement = f"""
+        SELECT name FROM activities WHERE activity_id={self.secondary_activity_id};
+        """
+        if not query.exec_(statement):
+            logger.warning("SQL failed", statement)
+            logger.warning(query.lastError().text())
         if query.next():
             res = query.value(0)
         else:
@@ -383,7 +398,7 @@ def construct_task_by_id(task_id):
     statement = f"""
     SELECT id, do, notes, url, attachments, space_id, draft, inactive, deleted, 
     workload, activity_id, difficulty,
-    fear, embarassment, conditions
+    fear, embarassment, conditions, secondary_activity_id
     FROM tasks WHERE id={task_id};
     """
     if not query.exec_(statement):
@@ -417,32 +432,32 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         def _():
             webbrowser.open("https://github.com/amogorkon/watnu/blob/main/README.md")
 
-        @self.pushButton_11.clicked.connect
+        @self.button7.clicked.connect
         def _():
             pass
 
-        @self.pushButton_12.clicked.connect
+        @self.button8.clicked.connect
         def _():
             pass
 
-        @self.pushButton_13.clicked.connect
+        @self.button9.clicked.connect
         def _():
             """Community."""
             webbrowser.open("https://watnu.slack.com/archives/C01HKH7R4AC")
 
-        @self.pushButton_21.clicked.connect
+        @self.button4.clicked.connect
         def _():
             """Task List."""
             win_list.show()
             win_list.exec_()
 
-        @self.pushButton_22.clicked.connect
+        @self.button5.clicked.connect
         def _():
             """Watnu?!"""
             if win_what.lets_check_whats_next():
                 win_what.show()
 
-        @self.pushButton_23.clicked.connect
+        @self.button6.clicked.connect
         def foo():
             """Add new Task."""
             if state() is S.editing:
@@ -458,17 +473,21 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             win.activateWindow()
             win.show()
      
-        @self.pushButton_31.clicked.connect
+        @self.button1.clicked.connect
+        def _():
+            Statistics()
+
+        @self.button2.clicked.connect
         def _():
             pass
 
-        @self.pushButton_32.clicked.connect
+        @self.button3.clicked.connect
         def _():
             pass
 
-        @self.pushButton_33.clicked.connect
+        @self.actionSupportMe.triggered.connect
         def _():
-            pass
+            webbrowser.open("paypal.me/amogorkon")
 
         @self.actionIssue_Tracker.triggered.connect
         def _():
@@ -773,6 +792,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         for row in iter_over(query):
             activity_time_spent[row(0)] += row(1)
 
+        print(activity_time_spent.items())
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
         
         self.balanced_task = self.balanced_tasks[0]
@@ -1250,6 +1270,7 @@ class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
 
         for i, row in enumerate(iter_over(query)):
             self.activity.addItem(row(1), QVariant(row(0)))
+            self.secondary_activity.addItem(row(1), QVariant(row(0)))
 
         model = QSqlTableModel()
         model.setTable("spaces")
@@ -1297,6 +1318,8 @@ class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
             self.space.setCurrentIndex(self.space.findText(self.task.space))
             self.level.setCurrentIndex(self.level.findText(self.task.level))
             self.activity.setCurrentIndex(self.activity.findText(self.task.activity))
+            print(self.task.secondary_activity, self.task.secondary_activity_id, type(self.task.secondary_activity_id))
+            self.secondary_activity.setCurrentIndex(self.secondary_activity.findText(self.task.secondary_activity))
             self.is_depending_on.click()
             if not isinf(self.task.deadline):
                 self.deadline.setEnabled(True)
@@ -1357,6 +1380,7 @@ class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
         priority = self.priority.value()
         space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
         activity_id = x if (x:=self.activity.currentData()) is not None else 'NULL'
+        secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
         url = self.url.text()
 
@@ -1368,6 +1392,7 @@ INSERT INTO tasks
 space_id, 
 deadline, 
 activity_id,
+secondary_activity_id,
 url
 )
 
@@ -1376,6 +1401,7 @@ VALUES
 {space_id},
 '{deadline}',
 {activity_id},
+{secondary_activity_id},
 '{url}'
 );
 """
@@ -1443,6 +1469,7 @@ SET do = '{do}',
     level_id = {level_id},
     deadline = '{deadline}',
     activity_id = {activity_id},
+    secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
     url = '{url}'
 WHERE id={self.task.id}
@@ -1532,17 +1559,33 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
             self.visit_url.setEnabled(True)
             self.visit_url.setText(str(self.task.url))   
 
-        self.show()
-        self.start_task()
-
         url = QUrl.fromLocalFile(r"./extra/kuckuck (1).wav")
         self.player.setMedia(QMediaContent(url))
         self.player.setVolume(config.tictoc_volume)
         self.player.play()
 
         self.task_space.setText(task.space)
-        
+
+        activity_color = {0: config.activity_color_body,
+                        1: config.activity_color_mind,
+                        2: config.activity_color_spirit,
+                        }
+
+        self.frame.setStyleSheet(f"""
+* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+        stop:0 black, 
+        stop:1 white);
+background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+        stop:0 {activity_color.get(self.task.activity_id, "black")},
+        stop:0.5 {activity_color.get(self.task.secondary_activity_id, 
+                  activity_color.get(self.task.activity_id, "black"))},
+        stop:1 white);
+}}
+""")
+        self.show()
+        self.start_task()
         self.timer.start(1000)
+
 
 
         @self.visit_url.clicked.connect
@@ -1595,6 +1638,10 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
                 self.player.play()
                 progress.setValue(0)
                 self.pause = True
+                self.pomodoro_bar.reset()
+
+            if 0 < self.pomodoro <= 5 * 60:
+                pass
 
             if self.pomodoro > 5 * 60:
                 self.pomodoro = - 35 * 60
@@ -1821,12 +1868,12 @@ class Settings(QtWidgets.QDialog, settings.Ui_Dialog):
         
         self.build_spaces_table()
         
-        self.activities_table.horizontalHeader().setVisible(True)
-        self.activities_table.setColumnHidden(0, True)
-        self.activities_table.sortByColumn(1, Qt.AscendingOrder)
-        self.build_activity_table()
+        self.skills_table.horizontalHeader().setVisible(True)
+        self.skills_table.setColumnHidden(0, True)
+        self.skills_table.sortByColumn(1, Qt.AscendingOrder)
+        self.build_skill_table()
 
-        @self.create_activity.clicked.connect
+        @self.create_skill.clicked.connect
         def _():
             text, okPressed = QtWidgets.QInputDialog.getText(self, 
                     "Neue Aktivität",
@@ -1838,19 +1885,19 @@ VALUES ('{text}')
 """
                 if query.exec_(statement):
                     print("OK", statement)
-                    self.build_activity_table()
+                    self.build_skill_table()
                 else:
                     logger.warning("SQL failed:" + statement)
                     logger.warning(query.lastError().text())
 
-        @self.rename_activity.clicked.connect
+        @self.rename_skill.clicked.connect
         def _():
             try:
                 x = self.activities_table.selectedItems()[0].row()
             except IndexError:
                 return
             
-            activity_id = self.activities_table.item(x, 1).data(Qt.UserRole)
+            skill_id = self.activities_table.item(x, 1).data(Qt.UserRole)
             name = self.activities_table.item(x, 1).text()
 
             text, okPressed = QtWidgets.QInputDialog.getText(self, 
@@ -1862,11 +1909,11 @@ VALUES ('{text}')
                 statement = f"""
 UPDATE activities 
 SET name = '{text}'
-WHERE activity_id == {activity_id};
+WHERE skill_id == {skill_id};
 """
                 if query.exec_(statement):
                     print("OK", statement)
-                    self.build_activity_table()
+                    self.build_skill_table()
                 else:
                     logger.warning("SQL failed:" + statement)
                     logger.warning(query.lastError().text())
@@ -1882,14 +1929,14 @@ DELETE FROM tasks WHERE deleted == TRUE;
                 logger.warning("SQL failed:" + statement)
                 logger.warning(query.lastError().text())
 
-        @self.delete_activity.clicked.connect
+        @self.delete_skill.clicked.connect
         def _():
             try:
                 x = self.activities_table.selectedItems()[0].row()
             except IndexError:
                 return
 
-            activity_id = self.activities_table.item(x, 1).data(Qt.UserRole)
+            skill_id = self.activities_table.item(x, 1).data(Qt.UserRole)
             name = self.activities_table.item(x, 1).text()
 
             mb = QMessageBox()
@@ -1900,7 +1947,7 @@ DELETE FROM tasks WHERE deleted == TRUE;
 
             if mb.exec_() == QMessageBox.Yes:
                 statement = f"""
-DELETE FROM activities WHERE activity_id == {activity_id};
+DELETE FROM activities WHERE skill_id == {skill_id};
 """
                 if query.exec_(statement):
                     print("OK", statement)
@@ -1984,26 +2031,26 @@ DELETE FROM spaces WHERE space_id == {space_id};
                 self.update()
 
 
-    def build_activity_table(self):
+    def build_skill_table(self):
         statement = f"""
-        SELECT activity_id, name FROM activities;
+        SELECT skill_id, name FROM skills;
         """
         if not query.exec_(statement):
             logger.warning("SQL failed:\n" + statement)
             logger.warning(query.lastError().text())
             return
 
-        self.activities_table.setSortingEnabled(False)
+        self.skills_table.setSortingEnabled(False)
 
         for i, row in enumerate(iter_over(query)):
             self.activities_table.setRowCount(i+1)
             item = QtWidgets.QTableWidgetItem()
-            self.activities_table.setItem(i, 1, item)
+            self.skills_table.setItem(i, 1, item)
             item.setText(row(1))
-            # activity_id
+            # skill_id
             item.setData(Qt.UserRole, row(0))
             item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.activities_table.setSortingEnabled(True)
+        self.skills_table.setSortingEnabled(True)
         self.update()
 
 
@@ -2041,8 +2088,44 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {space_id};
             self.spaces_table.setItem(i, 2, item)
 
 
-        self.activities_table.setSortingEnabled(True)
+        self.spaces_table.setSortingEnabled(True)
         self.update()
+
+
+class Statistics(QtWidgets.QDialog, statistics.Ui_Dialog):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        statement = f"""
+SELECT
+    activity_id,
+    SUM(time_spent)
+FROM
+    tasks
+GROUP BY
+    activity_id;
+"""
+        if not query.exec_(statement):
+            logger.warning("SQL failed:\n" + statement)
+            logger.warning(query.lastError().text())
+
+        activities = {row(0): row(1) for row in iter_over(query)}
+        print(activities.items())
+
+        statement = f"""
+SELECT
+    activity_id, name, adjust_time_spent
+FROM
+    activities
+"""
+        if not query.exec_(statement):
+            logger.warning("SQL failed:\n" + statement)
+            logger.warning(query.lastError().text())
+
+        for row in iter_over(query):
+            activities[row(0)] += row(2)
+            print(row(1), activities[row(0)])
 
 
 def change_global_font(qobject, event):
