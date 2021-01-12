@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>667</width>
-    <height>800</height>
+    <height>833</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,6 +90,36 @@
           <string>Beschreibung der Aufgabe</string>
          </property>
         </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="topMargin">
+          <number>9</number>
+         </property>
+         <item>
+          <widget class="QRadioButton" name="is_task">
+           <property name="text">
+            <string>Aufgabe</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">task_or_habit</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="is_habit">
+           <property name="text">
+            <string>Gewohnheit</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">task_or_habit</string>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <spacer name="verticalSpacer_2">
@@ -596,5 +626,6 @@
  <connections/>
  <buttongroups>
   <buttongroup name="task_dependency"/>
+  <buttongroup name="task_or_habit"/>
  </buttongroups>
 </ui>

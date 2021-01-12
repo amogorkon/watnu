@@ -118,6 +118,7 @@ class Task(NamedTuple):
 
     conditions: str=""
     secondary_activity_id: int=None
+    habit : int = 0
 
     @property
     def deadline(self):
@@ -398,7 +399,7 @@ def construct_task_by_id(task_id):
     statement = f"""
     SELECT id, do, notes, url, attachments, space_id, draft, inactive, deleted, 
     workload, activity_id, difficulty,
-    fear, embarassment, conditions, secondary_activity_id
+    fear, embarassment, conditions, secondary_activity_id, habit
     FROM tasks WHERE id={task_id};
     """
     if not query.exec_(statement):
@@ -576,9 +577,9 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.priority_task = None
-        self.timing_task = None
-        self.balanced_task = None
+        self.task_priority = None
+        self.task_timing = None
+        self.task_balanced = None
         self.taskfont = self.task_desc_priority.property("font")
         self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint |Qt.CustomizeWindowHint )
         self.timer = QTimer()
@@ -592,10 +593,10 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
 
         @self.timer.timeout.connect
         def _():
-            if not self.timing_task:
+            if not self.task_timing:
                 return
 
-            diff = self.timing_task.deadline - time()
+            diff = self.task_timing.deadline - time()
             rst, weeks = modf(diff / (7*24*60*60))
             rst, days = modf(rst*7)
             rst, hours = modf(rst*24)
@@ -611,23 +612,32 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         @self.go_priority.clicked.connect
         def _():
             self.hide()
-            win_running = Running(self.priority_task)
+            win_running = Running(self.task_priority)
             win_running.exec_()
             self.show()
 
         @self.skip_priority.clicked.connect
         def _():
-            old_task = self.priority_task
+            old_task = self.task_priority
             self.priority_tasks.rotate(-1)
-            self.priority_task.last_checked = time()
-            self.priority_task = self.priority_tasks[0]
-            self.task_desc_priority.setText(self.priority_task.do)
+            self.task_priority.last_checked = time()
+            self.task_priority = self.priority_tasks[0]
+            self.task_desc_priority.setText(self.task_priority.do)
             self.task_desc_priority.adjustSize()
-            self.task_space_priority.setText(self.priority_task.space)
-            self.activity_priority.setText(self.priority_task.activity)
+            self.task_space_priority.setText(self.task_priority.space)
+            self.frame_priority.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_priority.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_priority.secondary_activity_id, 
+                      activity_color.get(self.task_priority.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
 
-
-            if old_task == self.priority_task:
+            if old_task == self.task_priority:
                 mb = QtWidgets.QMessageBox()
                 mb.setText(
                     "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!"
@@ -639,36 +649,54 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         @self.go_balanced.clicked.connect
         def _():
             self.hide()
-            win_running = Running(self.balanced_task)
-
+            win_running = Running(self.task_balanced)
 
         @self.skip_balanced.clicked.connect
         def _():
             now = time()
-            self.balanced_task.last_checked = now
+            self.task_balanced.last_checked = now
             self.balanced_tasks.rotate(-1)
-            self.balanced_task = self.balanced_tasks[0]
-            self.task_desc_balanced.setText(self.balanced_task.do)
+            self.task_balanced = self.balanced_tasks[0]
+            self.task_desc_balanced.setText(self.task_balanced.do)
             self.task_desc_balanced.adjustSize()
-            self.task_space_balanced.setText(self.balanced_task.space)
-            self.activity_balanced.setText(self.balanced_task.activity)
+            self.task_space_balanced.setText(self.task_balanced.space)
+            self.frame_balanced.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_balanced.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_balanced.secondary_activity_id, 
+                      activity_color.get(self.task_balanced.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
 
 
         @self.go_timing.clicked.connect
         def _():
             self.hide()
-            win_running = Running(self.timing_task)
+            win_running = Running(self.task_timing)
  
 
         @self.skip_timing.clicked.connect
         def _():
             self.timing_tasks.rotate(-1)
-            self.timing_task.last_checked = time()
-            self.timing_task = self.timing_tasks[0]
-            self.task_desc_timing.setText(self.timing_task.do)
-            self.task_space_timing.setText(self.timing_task.space)
-            self.activity_timing.setText(self.timing_task.activity)
-
+            self.task_timing.last_checked = time()
+            self.task_timing = self.timing_tasks[0]
+            self.task_desc_timing.setText(self.task_timing.do)
+            self.task_space_timing.setText(self.task_timing.space)
+            self.frame_timing.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_timing.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_timing.secondary_activity_id, 
+                      activity_color.get(self.task_timing.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
 
         @self.cancel.clicked.connect
         def _():
@@ -676,15 +704,15 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
 
         @self.done_priority.clicked.connect
         def _():
-            Task_Finished(self.priority_task)
+            Task_Finished(self.task_priority)
 
         @self.done_balanced.clicked.connect
         def _():
-            Task_Finished(self.balanced_task)
+            Task_Finished(self.task_balanced)
 
         @self.done_timing.clicked.connect
         def _():
-            Task_Finished(self.timing_task)
+            Task_Finished(self.task_timing)
 
     def lets_check_whats_next(self):
         global config, last_check
@@ -726,32 +754,53 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
             self.hide()
             return False
 
-        self.set_priority_task()
-        self.set_balanced_task()
+        self.set_task_priority()
+        self.set_task_balanced()
         self.set_timing_task()
         return True
 
-    def set_priority_task(self):
+    def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
-        self.priority_task = self.priority_tasks[0]
-        self.task_desc_priority.setText(self.priority_task.do)
+        self.task_priority = self.priority_tasks[0]
+        self.task_desc_priority.setText(self.task_priority.do)
         self.task_desc_priority.adjustSize()
-        self.task_space_priority.setText(self.priority_task.space)
-        self.activity_priority.setText(self.priority_task.activity)
+        self.task_space_priority.setText(self.task_priority.space)
+        self.frame_priority.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_priority.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_priority.secondary_activity_id, 
+                      activity_color.get(self.task_priority.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
 
     def set_timing_task(self):
         try:
             self.timing_tasks = schedule(self.tasks)
-            self.timing_task = self.timing_tasks[0]
-            self.task_desc_timing.setText(self.timing_task.do)
-            self.task_space_timing.setText(self.timing_task.space)
-            self.activity_timing.setText(self.timing_task.activity)
+            self.task_timing = self.timing_tasks[0]
+            self.task_desc_timing.setText(self.task_timing.do)
+            self.task_space_timing.setText(self.task_timing.space)
+            self.frame_timing.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_timing.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_timing.secondary_activity_id, 
+                      activity_color.get(self.task_timing.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
+
         except IndexError:
             self.task_desc_timing.setText("nix was präsiert")
             self.taskfont.setItalic(True)
             self.task_desc_timing.setFont(self.taskfont)
             self.timing.setEnabled(False)
-            self.timing_task = None
+            self.task_timing = None
             self.deadline = None
         else:
             self.taskfont.setItalic(False)
@@ -760,7 +809,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
 
         self.task_desc_timing.adjustSize()
 
-    def set_balanced_task(self):
+    def set_task_balanced(self):
         activity_time_spent = defaultdict(lambda: 0)
         statement = f"""
         SELECT
@@ -792,15 +841,23 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         for row in iter_over(query):
             activity_time_spent[row(0)] += row(1)
 
-        print(activity_time_spent.items())
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
         
-        self.balanced_task = self.balanced_tasks[0]
-        self.task_desc_balanced.setText(self.balanced_task.do)
+        self.task_balanced = self.balanced_tasks[0]
+        self.task_desc_balanced.setText(self.task_balanced.do)
         self.task_desc_balanced.adjustSize()
-        self.task_space_balanced.setText(self.balanced_task.space)
-        self.activity_balanced.setText(self.balanced_task.activity)
-        print(self.balanced_task.activity)
+        self.task_space_balanced.setText(self.task_balanced.space)
+        self.frame_balanced.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_balanced.activity_id, "black")},
+            stop:0.5 {activity_color.get(self.task_balanced.secondary_activity_id, 
+                      activity_color.get(self.task_balanced.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
 
 class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
     def __init__(self):
@@ -1219,7 +1276,8 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                     if not isinf(t.deadline) else
                 "---")
             self.task_list.setItem(i, 7, item)
-            item = QtWidgets.QTableWidgetItem(str(t.conditions))
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if t.habit else nok)
             self.task_list.setItem(i, 8, item)
         
         if not tasks:
@@ -1314,6 +1372,8 @@ class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
         else:
             self.desc.document().setPlainText(task.do)
             self.url.setText(self.task.url)
+            if task.habit:
+                self.is_habit.setChecked()
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
             self.level.setCurrentIndex(self.level.findText(self.task.level))
@@ -1383,6 +1443,7 @@ class New_Task(QtWidgets.QWizard, task_new.Ui_Wizard):
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
         url = self.url.text()
+        habit = self.is_habit.isChecked()
 
         # it really is a new task
         if not self.task or self.cloning:
@@ -1393,7 +1454,8 @@ space_id,
 deadline, 
 activity_id,
 secondary_activity_id,
-url
+url,
+habit
 )
 
 VALUES 
@@ -1402,7 +1464,8 @@ VALUES
 '{deadline}',
 {activity_id},
 {secondary_activity_id},
-'{url}'
+'{url}',
+{habit}
 );
 """
             if query.exec_(statement):
@@ -1471,7 +1534,8 @@ SET do = '{do}',
     activity_id = {activity_id},
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
-    url = '{url}'
+    url = '{url}',
+    habit = {habit}
 WHERE id={self.task.id}
 """
             if query.exec_(statement):
@@ -1566,11 +1630,6 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
 
         self.task_space.setText(task.space)
 
-        activity_color = {0: config.activity_color_body,
-                        1: config.activity_color_mind,
-                        2: config.activity_color_spirit,
-                        }
-
         self.frame.setStyleSheet(f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
         stop:0 black, 
@@ -1585,8 +1644,6 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         self.show()
         self.start_task()
         self.timer.start(1000)
-
-
 
         @self.visit_url.clicked.connect
         def _():
@@ -1612,9 +1669,12 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.ticks += 1
             self.pomodoro += 1
 
-            total = (x if 
-                (x:=(self.time_spent + self.adjust_time_spent + self.ticks)) > 0
-                    else 0)
+            if not self.task.habit:
+                total = (x if 
+                    (x:=(self.time_spent + self.adjust_time_spent + self.ticks)) > 0
+                        else 0)
+            else:
+                total = self.ticks
             
             rst, days = modf(total / (24*60*60))
             rst, hours = modf(rst*24)
@@ -1827,7 +1887,10 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
         self.start = time() if not start else start
 
         self.task_desc.setText(task.do)
-        total = task.time_spent + task.adjust_time_spent + ticks
+        if not task.habit:
+            total = task.time_spent + task.adjust_time_spent + ticks
+        else:
+            total = ticks
         rst, hours = modf(total/(60*60))
         rst, minutes = modf(rst*60)
         self.hours.setValue(int(hours))
@@ -1836,7 +1899,12 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
 
     def accept(self):
         super().accept()
-        total = self.hours.value() * 60*60 + self.minutes.value() * 60
+        if not self.task.habit:
+            total = self.hours.value() * 60*60 + self.minutes.value() * 60
+
+        else:
+            total = (task.time_spent + task.adjust_time_spent + 
+                self.hours.value() * 60*60 + self.minutes.value() * 60)
 
         statement = f"""
     UPDATE tasks 
@@ -2125,8 +2193,6 @@ FROM
 
         for row in iter_over(query):
             activities[row(0)] += row(2)
-            print(row(1), activities[row(0)])
-
 
 def change_global_font(qobject, event):
     if event.type() == Qt.QEvent.Wheel:
@@ -2168,6 +2234,11 @@ if __name__ == "__main__":
         first_start.run(db, query, config, logger)
         config.first_start = False
         config.write()
+
+    activity_color = {0: config.activity_color_body,
+                    1: config.activity_color_mind,
+                    2: config.activity_color_spirit,
+                    }
 
     app = QtWidgets.QApplication(sys.argv) 
     win_main = MainWindow()

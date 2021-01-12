@@ -278,7 +278,7 @@
         </column>
         <column>
          <property name="text">
-          <string>conditions</string>
+          <string>habit</string>
          </property>
          <property name="font">
           <font>

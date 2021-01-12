@@ -267,7 +267,7 @@ class Ui_Dialog(object):
         item = self.task_list.horizontalHeaderItem(7)
         item.setText(_translate("Dialog", "deadline"))
         item = self.task_list.horizontalHeaderItem(8)
-        item.setText(_translate("Dialog", "conditions"))
+        item.setText(_translate("Dialog", "habit"))
         self.create_task.setText(_translate("Dialog", "erstelle neue Aufgabe"))
         self.create_task.setShortcut(_translate("Dialog", "6"))
         self.edit_task.setText(_translate("Dialog", "bearbeite Aufgabe"))

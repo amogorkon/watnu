@@ -76,6 +76,7 @@ CREATE TABLE "tasks" (
     "draft" INTEGER NOT NULL DEFAULT 0,
     "inactive"    INTEGER NOT NULL DEFAULT 0,
     "deleted"   INTEGER NOT NULL DEFAULT 0,
+    "habit"     INTEGER NOT NULL DEFAULT 0,
     "priority"  REAL NOT NULL DEFAULT 0,
     "level_id"  INTEGER NOT NULL DEFAULT 0,
     "deadline"  REAL NOT NULL DEFAULT Infinity,
