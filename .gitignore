@@ -11,6 +11,7 @@ src/CODE*
 src/log
 box
 *sqlite
+config.stay
 
 
 =======
