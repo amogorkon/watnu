@@ -6,6 +6,19 @@ def run(db, query, config, logger):
     ### CREATE SQL TABLES ###
 
     statement = f"""
+CREATE TABLE "mantras" (
+    "mantra_id" INTEGER NOT NULL UNIQUE,
+    "text"  TEXT NOT NULL UNIQUE,
+    "last_time" INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY("mantra_id" AUTOINCREMENT)
+);
+    """
+
+    if not query.exec_(statement):
+        logger.warning("SQL failed:\n" + statement, query.lastError())
+
+
+    statement = f"""
     CREATE TABLE IF NOT EXISTS spaces(
     space_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL UNIQUE,

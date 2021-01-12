@@ -1864,15 +1864,46 @@ Checkliste für optimale Produktivität:
             mb.setWindowTitle("Hmm..")
             mb.exec_()
 
+        statement = f"""
+        SELECT text, mantra_id
+        FROM mantras
+        ORDER BY last_time ASC;
+        """
+        
+        if not query.exec_(statement):
+            logger.warning("SQL failed:\n" + statement)
+            logger.warning(query.lastError().text())
+
+        if not query.next():
+            mantra = None
+        else:
+            mantra, mantra_id = query.value(0), query.value(1)
+
         td = now - then
 
         if td.days == 0 and (60*25 <= td.seconds <= 60*120) or True:
             mb = QtWidgets.QMessageBox()
-            mb.setText("""
+            mb.setText(f"""
 Gesundheitshinweis:
-Alle ~25 Minuten kurz Stoßlüften & einen Schluck Wasser trinken :)
+Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
+Und denk dran: 
+{"Always look on the bright side of life!" if not mantra else mantra}
 """
-)
+)  
+
+        if mantra:
+            statement = f"""
+    UPDATE mantras
+    SET last_time = {int(time())}
+    WHERE mantra_id = {mantra_id}
+    """
+            if query.exec_(statement):
+                print("OK", statement)
+            else:
+                logger.warning("SQL failed:" + statement)
+                logger.warning(query.lastError().text())
+
+
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
             mb.exec_()
@@ -1903,7 +1934,7 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
             total = self.hours.value() * 60*60 + self.minutes.value() * 60
 
         else:
-            total = (task.time_spent + task.adjust_time_spent + 
+            total = (self.task.time_spent + self.task.adjust_time_spent + 
                 self.hours.value() * 60*60 + self.minutes.value() * 60)
 
         statement = f"""

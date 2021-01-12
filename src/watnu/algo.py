@@ -11,8 +11,9 @@ def prioritize(tasks:list) -> list:
     return deque(sorted_tasks)
 
 def balance(tasks:list, activity_time_spent: dict) -> list:
+    # first prefer neglected activity; second prefer neglected tasks/habits
     sorted_tasks = sorted(tasks, 
-        key=lambda t: (activity_time_spent[t.activity_id], habit_weight(t.time_spent)))
+        key=lambda t: (activity_time_spent[t.activity_id], habit_weight(t.time_spent / (60*60))))
     return deque(sorted_tasks)
 
 def schedule(tasks:list) -> list:
