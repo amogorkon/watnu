@@ -28,7 +28,11 @@ In a fuzzy set with one and only one m == 1, this element is called 'prototype'.
 """
 
 
-from math import exp, log, sqrt, isinf, isnan
+from math import exp
+from math import isinf
+from math import isnan
+from math import log
+from math import sqrt
 
 #####################
 # SPECIAL FUNCTIONS #
@@ -351,7 +355,6 @@ def sigmoid(L, k, x0):
             except OverflowError:
                 o = float("inf")
         return L / (1 + o)
-
     return f
 
 

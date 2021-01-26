@@ -12,18 +12,23 @@ CREATE TABLE "mantras" (
     "last_time" INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY("mantra_id" AUTOINCREMENT)
 );
-    """
+    """ 
 
     if not query.exec_(statement):
         logger.warning("SQL failed:\n" + statement, query.lastError())
 
 
     statement = f"""
-    CREATE TABLE IF NOT EXISTS spaces(
-    space_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    priority REAL DEFAULT 0
-    )
+CREATE TABLE "spaces" (
+    "space_id"  INTEGER NOT NULL UNIQUE,
+    "name"  VARCHAR(255) NOT NULL UNIQUE,
+    "priority"  REAL DEFAULT 0,
+    "primary_activity_id"   INTEGER,
+    "secondary_activity_id" INTEGER,
+    FOREIGN KEY("secondary_activity_id") REFERENCES "activities"("activity_id"),
+    FOREIGN KEY("primary_activity_id") REFERENCES "activities"("activity_id"),
+    PRIMARY KEY("space_id" AUTOINCREMENT)
+)
     """
 
     if not query.exec_(statement):
@@ -66,6 +71,7 @@ CREATE TABLE "activities" (
     task_id INTEGER NOT NULL,
     start INTEGER NOT NULL,
     stop INTEGER NOT NULL,
+    pause_time INTEGER NOT NULL DEFAULT 0,
     finished INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (task_id)
@@ -101,7 +107,6 @@ CREATE TABLE "tasks" (
     "embarassment"  REAL DEFAULT 5,
     "last_checked"  INTEGER DEFAULT 0,
     "time_spent"    INTEGER DEFAULT 0,
-    "conditions"    TEXT,
     "adjust_time_spent" INTEGER DEFAULT 0,
     PRIMARY KEY("id" AUTOINCREMENT),
     FOREIGN KEY("level_id") REFERENCES "spaces"("level_id") ON DELETE SET NULL,
@@ -112,12 +117,17 @@ CREATE TABLE "tasks" (
     if not query.exec_(statement):
         logger.warning("SQL failed:\n" + statement)
 
-CREATE TABLE "task_requires_task" (
-      "task_of_concern"  INTEGER NOT NULL,
-       "required_task"  INTEGER NOT NULL CHECK (task_of_concern <> required_task),
-      FOREIGN KEY("task_of_concern") REFERENCES "tasks" ("id") ON DELETE CASCADE,
-      FOREIGN KEY("required_task") REFERENCES "tasks" ("id") ON DELETE CASCADE
-);
+    statement = f"""
+CREATE TABLE "task_trains_skill" (
+    "task_id"   INTEGER,
+    "skill_id"  INTEGER,
+    FOREIGN KEY("skill_id") REFERENCES "skills" ON DELETE CASCADE,
+    FOREIGN KEY("task_id") REFERENCES "tasks" ON DELETE CASCADE
+)
+    """
+    if not query.exec_(statement):
+        logger.warning("SQL failed:\n" + statement, query.lastError())
+
 
     ### Default Entries ###
 

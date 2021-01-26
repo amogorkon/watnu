@@ -122,10 +122,10 @@
          <enum>Qt::ScrollBarAlwaysOn</enum>
         </property>
         <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
         </property>
         <property name="autoScroll">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="editTriggers">
          <set>QAbstractItemView::DoubleClicked</set>
@@ -153,6 +153,9 @@
         </property>
         <property name="horizontalScrollMode">
          <enum>QAbstractItemView::ScrollPerPixel</enum>
+        </property>
+        <property name="showGrid">
+         <bool>true</bool>
         </property>
         <property name="sortingEnabled">
          <bool>true</bool>
@@ -190,17 +193,6 @@
         <column>
          <property name="text">
           <string>do</string>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>url</string>
          </property>
          <property name="font">
           <font>

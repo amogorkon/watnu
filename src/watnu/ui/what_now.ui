@@ -313,7 +313,7 @@
               </sizepolicy>
              </property>
              <property name="digitCount">
-              <number>3</number>
+              <number>5</number>
              </property>
              <property name="segmentStyle">
               <enum>QLCDNumber::Filled</enum>
@@ -329,7 +329,7 @@
               </sizepolicy>
              </property>
              <property name="digitCount">
-              <number>1</number>
+              <number>2</number>
              </property>
              <property name="segmentStyle">
               <enum>QLCDNumber::Filled</enum>
@@ -345,7 +345,7 @@
               </sizepolicy>
              </property>
              <property name="digitCount">
-              <number>2</number>
+              <number>3</number>
              </property>
              <property name="segmentStyle">
               <enum>QLCDNumber::Filled</enum>
@@ -361,7 +361,7 @@
               </sizepolicy>
              </property>
              <property name="digitCount">
-              <number>2</number>
+              <number>3</number>
              </property>
              <property name="segmentStyle">
               <enum>QLCDNumber::Filled</enum>
@@ -377,7 +377,7 @@
               </sizepolicy>
              </property>
              <property name="digitCount">
-              <number>2</number>
+              <number>3</number>
              </property>
              <property name="segmentStyle">
               <enum>QLCDNumber::Filled</enum>

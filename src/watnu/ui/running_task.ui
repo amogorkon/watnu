@@ -332,7 +332,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="visit_url">
+        <widget class="QPushButton" name="open_resources">
          <property name="enabled">
           <bool>false</bool>
          </property>

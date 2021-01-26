@@ -165,7 +165,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="button8">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -287,7 +287,7 @@
       <item row="2" column="1">
        <widget class="QPushButton" name="button2">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -325,7 +325,7 @@
       <item row="2" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -338,6 +338,10 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../extra/feathericons/inventory.svg</normaloff>../extra/feathericons/inventory.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -422,6 +426,7 @@
     <addaction name="actionContact"/>
     <addaction name="actionSupportMe"/>
     <addaction name="about"/>
+    <addaction name="attributions"/>
    </widget>
    <widget class="QMenu" name="menuDatei">
     <property name="title">
@@ -502,6 +507,10 @@
    </property>
   </action>
   <action name="about">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/aperture.svg</normaloff>../extra/feathericons/aperture.svg</iconset>
+   </property>
    <property name="text">
     <string>Über Watnu</string>
    </property>
@@ -539,6 +548,15 @@
    </property>
    <property name="text">
     <string>Unterstütze den Entwickler...</string>
+   </property>
+  </action>
+  <action name="attributions">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/feather.svg</normaloff>../extra/feathericons/feather.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Thanks and Licenses</string>
    </property>
   </action>
  </widget>
