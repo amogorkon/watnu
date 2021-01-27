@@ -6,6 +6,8 @@ from math import isinf
 from math import sqrt
 from time import time
 
+import numpy as np
+
 WEEKTIME = {
     name: i
     for i, name in enumerate(
@@ -24,7 +26,9 @@ habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
 neglection_weight = bounded_sigmoid(0, 5380, inverse=True)
 
 
-def weight(primary_activity_time, secondary_activity_time, time_spent, last_checked, now):
+def weight(
+    primary_activity_time, secondary_activity_time, time_spent, last_checked, now
+):
     return min(
         habit_weight(time_spent / (60 * 60)),
         neglection_weight((now - last_checked) / (60 * 60)),
@@ -64,7 +68,9 @@ def schedule(tasks: list) -> list:
 
 def check_task_conditions(task, now: datetime):
     if task.habit:
-        if (today := now.date()) > (then := datetime.fromtimestamp(task.last_finished).date()):
+        if (today := now.date()) > (
+            then := datetime.fromtimestamp(task.last_finished).date()
+        ):
             task.done = False
 
 
@@ -105,5 +111,5 @@ def skill_level(seconds):
     return 2 * (sqrt(x + 5625) - 75)
 
 
-def check_weektime(bitfield):
-    print(bitfield)
+def check_constraints(bitfield: np.array, now: int):
+    pass

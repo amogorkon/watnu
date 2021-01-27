@@ -9,8 +9,6 @@ print("python:", sys.version)
 
 import webbrowser
 
-from shlex import split
-from urllib.parse import urlparse
 
 from collections import Counter
 from collections import defaultdict
@@ -128,9 +126,6 @@ WHERE resource_id = {row(0)}
 """)
     print(i+1 if i is not None else "Nothing found, so no", "unused resources deleted.")
 
-def time_num_as_bitfield(num):
-    return np.asarray([n >> i & 1 for i in range(n.bit_length() - 1,-1,-1)], np.bool)
-
 def write_session(task_id, start, stop, finished=False, pause_time=0):
     query = submit_sql(f"""
         INSERT INTO sessions (task_id, start, stop, pause_time, finished)
@@ -193,7 +188,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
                 return
-            win = Edit()
+            win = TaskEditor()
             win.activateWindow()
             win.show()
      
@@ -208,24 +203,24 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             win_character.exec_()
 
         @self.button3.clicked.connect
-        def _():
+        def button3_clicked():
             Inventory()
 
         @self.actionSupportMe.triggered.connect
-        def _():
+        def actionSupportMe_triggered():
             webbrowser.open("paypal.me/amogorkon")
 
         @self.actionIssue_Tracker.triggered.connect
-        def _():
+        def actionIssueTracker():
             webbrowser.open("https://github.com/users/amogorkon/projects/1")
 
         @self.actionContact.triggered.connect
-        def _():
+        def actionContact():
             webbrowser.open("https://twitter.com/amogorkon")
 
 
         @self.actionSettings.triggered.connect
-        def _():
+        def actionSettings():
             win_settings.show()
             win_settings.exec_()
 
@@ -307,7 +302,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         self.timing_tasks = None
 
         @self.timer.timeout.connect
-        def _():
+        def timer_timeout():
             if not self.task_timing:
                 return
 
@@ -344,9 +339,10 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         stop:0 black, 
         stop:1 white);
 background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {activity_color.get(self.task_timing.activity_id, "black")},
+        stop:0 {activity_color.get(self.task_timing.activity_id, "black")}, 
         stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_timing.secondary_activity_id, 
-                  activity_color.get(self.task_timing.activity_id, "black"))},
+            activity_color.get(
+        self.task_timing.activity_id, "black"))},
         stop:1 white);
 }}
 """)
@@ -365,14 +361,14 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 """)
 
         @self.go_priority.clicked.connect
-        def _():
+        def go_priority_clicked():
             self.hide()
             win_running = Running(self.task_priority)
             win_running.exec_()
             self.show()
 
         @self.skip_priority.clicked.connect
-        def _():
+        def skip_priority_clicked():
             old_task = self.task_priority
             self.priority_tasks.rotate(-1)
             self.task_priority.last_checked = time()
@@ -383,20 +379,18 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
             if old_task == self.task_priority:
                 mb = QtWidgets.QMessageBox()
-                mb.setText(
-                    "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!"
-                )
+                mb.setText("Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/fast-forward.svg"))
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
 
         @self.go_balanced.clicked.connect
-        def _():
+        def go_balanced_clicked():
             self.hide()
             win_running = Running(self.task_balanced)
 
         @self.skip_balanced.clicked.connect
-        def _():
+        def skip_balanced_clicked():
             now = time()
             self.task_balanced.last_checked = now
             self.balanced_tasks.rotate(-1)
@@ -407,13 +401,13 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
 
         @self.go_timing.clicked.connect
-        def _():
+        def go_timing_clicked():
             self.hide()
             win_running = Running(self.task_timing)
  
 
         @self.skip_timing.clicked.connect
-        def _():
+        def skip_timing_clicked():
             self.timing_tasks.rotate(-1)
             self.task_timing.last_checked = time()
             self.task_timing = self.timing_tasks[0]
@@ -421,20 +415,20 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.task_space_timing.setText(self.task_timing.space)
 
         @self.cancel.clicked.connect
-        def _():
+        def cancel_clicked_():
             self.hide()
             win_main.show()
 
         @self.done_priority.clicked.connect
-        def _():
+        def done_priority_clicked():
             Task_Finished(self.task_priority)
 
         @self.done_balanced.clicked.connect
-        def _():
+        def _done_balanced_clicked():
             Task_Finished(self.task_balanced)
 
         @self.done_timing.clicked.connect
-        def _():
+        def done_timing_clicked():
             Task_Finished(self.task_timing)
 
     def lets_check_whats_next(self):
@@ -560,6 +554,8 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
         @self.toss_coin.clicked.connect
         def _():
             # vonNeumann!
+            i = 0
+            first = 0
             for i in count():
                 # least significant bit of high-res time *should* give enough entropy
                 first = (time_ns()// 100) & 1
@@ -617,7 +613,7 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.exec_()
                 return
             
-            win = Edit()
+            win = TaskEditor()
             win.show()
 
         @self.edit_task.clicked.connect
@@ -636,7 +632,7 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 return
             
             task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-            win = Edit(task)
+            win = TaskEditor(task)
             win.show()
 
         @self.status.buttonClicked.connect
@@ -788,7 +784,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = Edit(task, cloning=True, as_sup=0)
+        win = TaskEditor(task, cloning=True, as_sup=0)
         win.show()
 
     def clone_as_sub(self):
@@ -806,7 +802,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = Edit(task, cloning=True, as_sup=-1)
+        win = TaskEditor(task, cloning=True, as_sup=-1)
         win.show()
 
 
@@ -825,7 +821,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = Edit(task, cloning=True, as_sup=1)
+        win = TaskEditor(task, cloning=True, as_sup=1)
         win.show()
 
     def build_task_list(self):
@@ -905,7 +901,8 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
         self.task_list.resizeColumnsToContents()
 
 
-class Edit(QtWidgets.QWizard, task_new.Ui_Wizard):
+class TaskEditor(QtWidgets.QWizard, task_new.Ui_Wizard):
+    """Editor for new or existing tasks."""
     def __init__(self, task=None, cloning=False, as_sup=0):
         super().__init__()
         self.activateWindow()
@@ -915,11 +912,11 @@ class Edit(QtWidgets.QWizard, task_new.Ui_Wizard):
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
         
         self.setOption(QtWidgets.QWizard.HaveFinishButtonOnEarlyPages, True)
-        self.task = task
+        self.task:Task = task
         self.cloning = cloning
-        self.subtasks = []
-        self.supertasks = []
-        self.skill_ids = []
+        self.subtasks: list[int] = []
+        self.supertasks: list[int] = []
+        self.skill_ids: list[int] = []
 
         # clone as subtask of the given task
         if as_sup == -1:
@@ -947,6 +944,7 @@ class Edit(QtWidgets.QWizard, task_new.Ui_Wizard):
         model.select()
         self.space.setModel(model)
         self.space.setModelColumn(1)
+        self.constraints:str = None
 
         query = submit_sql(f"""
         SELECT activity_id, name FROM activities;
@@ -1067,14 +1065,15 @@ WHERE space_id = {space_id}
         else:
             deadline = "Infinity"
 
-        priority = self.priority.value()
-        space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
+        priority:float = self.priority.value()
+        space_id:int = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
         global editing_space_id
         editing_space_id = space_id
         activity_id = x if (x:=self.activity.currentData()) is not None else 'NULL'
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
-        level_id = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
-        habit = self.is_habit.isChecked()
+        level_id:int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
+        habit:bool = self.is_habit.isChecked()
+        task_id: int
 
         # it really is a new task
         if not self.task or (self.task and self.cloning):
@@ -1148,8 +1147,13 @@ DELETE FROM task_requires_task WHERE required_task == {task_id}
             submit_sql(f"""
     DELETE FROM task_uses_resources WHERE task_id = {task_id}
     """)
+            # need to clean up first - constraints
+            submit_sql(f"""
+DELETE FROM constraints WHERE task_id = {task_id}
+            """)
 
         # enter fresh, no matter whether new or old
+        
         for required_task in self.subtasks:
             submit_sql(f"""
 INSERT OR IGNORE INTO task_requires_task
@@ -1183,6 +1187,13 @@ INSERT INTO task_uses_resource
 (task_id, resource_id)
 VALUES ({task_id}, {self.resources.itemData(i)});
 """)
+
+        # enter constraints
+        submit_sql(f"""
+INSERT INTO constraints
+(task_id, flags)
+VALUES ({task_id}, {self.constraints})
+        """)
 
         win_list.build_task_list()
         state.flux_to(S.main)
@@ -1227,7 +1238,7 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         state.flux_to(S.running)
         self.pomodoro = -35 *60
         doc = QtGui.QTextDocument(task.notes)
-        self.notes.setDocument(doc)
+        self.notes.setDocument(doc) 
 
         doc = QtGui.QTextDocument(task.do)
         self.desc.setDocument(doc)
@@ -1484,6 +1495,8 @@ Checkliste für optimale Produktivität:
         ORDER BY last_time ASC;
         """)
 
+        mantra_id = None
+        
         if not query.next():
             mantra = None
         else:
@@ -1515,11 +1528,26 @@ class Constraints(QtWidgets.QDialog, chooser.Ui_Dialog):
     def __init__(self, task_editor, task=None):
         super().__init__()
         self.setupUi(self)
+        self.table.horizontalHeader().setHighlightSections(False)
         for i, (hour, part) in enumerate((hour, part) for hour in range(24) 
                                                     for part in range(0,6)):
-            print(i, hour, part)
-            for day in range(0,7):
-                self.table.setItem(i)
+            item = QtWidgets.QTableWidgetItem(f"{hour}: {part}0-{part}9")
+            if i % 6 == 0:
+                font = QtGui.QFont()
+                font.setItalic(True) 
+                font.setWeight(90)
+                item.setFont(font)
+            self.table.setVerticalHeaderItem(i, item)
+
+        @self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect
+        def reset():
+            self.table.clearSelection()
+
+    def accept(self):
+        super().accept()
+        A = np.zeros(1007)
+        A[[idx.column() *  144 + idx.row() for idx in  self.table.selectedIndexes()]] = 1
+        self.task_editor.constraints = ' '.join(str(x) for x in A)
 
 class Chooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
     def __init__(self, task_editor, task=None, things="skills"):
