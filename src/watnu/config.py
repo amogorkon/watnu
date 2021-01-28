@@ -1,11 +1,9 @@
-import attr
-
+import logging
 from ast import literal_eval
 
-from lib.stay import Decoder
-from lib.stay import Encoder
+import attr
 
-import logging
+from lib.stay import Decoder, Encoder
 
 print("attrs:", attr.__version__)
 
@@ -14,15 +12,20 @@ dump = Encoder()
 
 
 def read(file):
+    D = {}
     with open(file) as f:
         for D in load(f):
             pass
         return Config(**D)
 
 
-@attr.s(auto_attribs=True, 
-        on_setattr=attr.setters.convert, 
-        field_transformer=lambda cls, fields: [field.evolve(converter=field.type) for field in fields])
+@attr.s(
+    auto_attribs=True,
+    on_setattr=attr.setters.convert,
+    field_transformer=lambda cls, fields: [
+        field.evolve(converter=field.type) for field in fields
+    ],
+)
 class Config:
     # "False" is a non-empty string -> True :|
     first_start: literal_eval = True

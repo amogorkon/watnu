@@ -1,12 +1,11 @@
 from collections import deque
 from datetime import datetime
-from lib.functions import bounded_sigmoid
-from lib.functions import sigmoid
-from math import isinf
-from math import sqrt
+from math import isinf, sqrt
 from time import time
 
 import numpy as np
+
+from lib.functions import bounded_sigmoid, sigmoid
 
 WEEKTIME = {
     name: i
@@ -111,5 +110,11 @@ def skill_level(seconds):
     return 2 * (sqrt(x + 5625) - 75)
 
 
-def check_constraints(bitfield: np.array, now: int):
-    pass
+def time_constraints_met(constraints: list[np.array], now: datetime):
+    weekday = now.weekday()
+    hour, minute = now.time().hour, now.time().minute
+    idx = weekday * 144 + hour * 6 + minute // 10
+    if not constraints:
+        return True
+    else:
+        return all(C[idx] for C in constraints)

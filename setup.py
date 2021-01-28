@@ -1,11 +1,14 @@
+import os
+import sys
 
-import os, sys
-here = (os.path.abspath(os.path.dirname(__file__)))
+here = os.path.abspath(os.path.dirname(__file__))
 src = os.path.join(here, "src")
 sys.path.append(src)
 
+from setuptools import find_packages, setup
 from stay import load
-from setuptools import setup, find_packages
+
+meta = {}
 
 with open("META.stay") as f:
     for meta in load(f):
@@ -13,7 +16,7 @@ with open("META.stay") as f:
 
 with open("README.md") as f:
     LONG_DESCRIPTION = f.read()
-  
+
 setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},

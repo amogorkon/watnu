@@ -10,22 +10,14 @@
 
 
 import logging
-
 from collections import deque
 from collections.abc import Iterable
-from dataclasses import asdict
-from dataclasses import dataclass
-from dataclasses import is_dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from enum import Enum
 from functools import partial
 from io import TextIOBase
 from shlex import split
-from typing import Dict
-from typing import Iterator
-from typing import List
-from typing import Sequence
-from typing import Union
-
+from typing import Dict, Iterator, List, Sequence, Union
 
 logger = logging.getLogger()
 
@@ -56,7 +48,9 @@ class State:
         self.value = []  # Current value in the doc
         self.key = None  # Current key in the doc
 
-        self.context = {}  # can be used by directives to manipulate and change content ad hoc
+        self.context = (
+            {}
+        )  # can be used by directives to manipulate and change content ad hoc
         # all directives to be executed at certain points, in the order as activated
         self.directives = {D.line: {}, D.key: {}, D.value: {}, D.struct: {}, D.meta: {}}
 
@@ -188,17 +182,27 @@ class Decoder:
             if line.startswith("@"):
                 parts = [p.strip() for p in line[1:].split("@")]
                 if not parts[-1]:
-                    raise ParsingError("@ denotes the start of a new command, alas none given.")
+                    raise ParsingError(
+                        "@ denotes the start of a new command, alas none given."
+                    )
 
                 result = None
                 for p in parts:
                     cmd, *args = split(p)
                     try:
                         result = self.commands[cmd](
-                            result, *args, lines=lines, n=n, decoder=self, state=st, cases=cases
+                            result,
+                            *args,
+                            lines=lines,
+                            n=n,
+                            decoder=self,
+                            state=st,
+                            cases=cases,
                         )
                     except KeyError as e:
-                        logging.warning("command %s not defined for this Decoder" % (cmd))
+                        logging.warning(
+                            "command %s not defined for this Decoder" % (cmd)
+                        )
 
                 logger.info(line)
                 continue
@@ -230,7 +234,9 @@ class Decoder:
                     logger.info(name, "not specified as any viable directive.")
                 else:
                     st.key = [
-                        (DD, name, F[name], args) for DD, F in self.directives.items() if name in F
+                        (DD, name, F[name], args)
+                        for DD, F in self.directives.items()
+                        if name in F
                     ]
                 if end:
                     try:
@@ -238,7 +244,8 @@ class Decoder:
                             st.directives[DD][name] = f(*args)
                     except TypeError as e:
                         logger.error(
-                            "Sure the directives are correctly specified in the Decoder?", e
+                            "Sure the directives are correctly specified in the Decoder?",
+                            e,
                         )
                 else:
                     st.tokens.append(T.directive)
@@ -374,11 +381,14 @@ class Encoder:
         it = [it] if isinstance(it, dict) else it
         it = [asdict(it)] if is_dataclass(it) else it
 
-        output = "===\n".join(self.__process(asdict(D) if is_dataclass(D) else D) for D in it)
+        output = "===\n".join(
+            self.__process(asdict(D) if is_dataclass(D) else D) for D in it
+        )
         return output
 
     def __process(self, D: dict, level=0, spaces_per_indent=4):
         def do(k, v):
+
             if not isinstance(v, Iterable) or (isinstance(v, str) and "\n" not in v):
                 line = f"{' ' * level * spaces_per_indent}{k}: {v}\n"
 
@@ -391,7 +401,9 @@ class Encoder:
             elif isinstance(v, dict):
                 line = f"{' ' * level * spaces_per_indent}{k}:\n"
                 for k, v in v.items():
-                    line += "\n".join(str(x) for x in __process(k, v, level=level + 1))
+                    line += "\n".join(
+                        str(x) for x in self.__process(k, v, level=level + 1)
+                    )
             else:
                 raise UserWarning
             return line

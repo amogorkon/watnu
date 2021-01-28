@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>667</width>
-    <height>835</height>
+    <height>846</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
    <enum>QWizard::ModernStyle</enum>
   </property>
   <property name="options">
-   <set>QWizard::CancelButtonOnLeft|QWizard::HaveFinishButtonOnEarlyPages|QWizard::HaveNextButtonOnLastPage</set>
+   <set>QWizard::CancelButtonOnLeft|QWizard::HaveFinishButtonOnEarlyPages|QWizard::IgnoreSubTitles|QWizard::NoBackButtonOnStartPage</set>
   </property>
   <widget class="QWizardPage" name="page_basics">
    <property name="title">
@@ -92,7 +92,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_3">
+        <widget class="QGroupBox" name="task_type">
          <property name="title">
           <string>Art</string>
          </property>
@@ -222,7 +222,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Bereich</string>
+            <string>Raum</string>
            </property>
            <property name="buddy">
             <cstring>space</cstring>
@@ -367,101 +367,6 @@
            </item>
           </layout>
          </item>
-         <item row="7" column="0">
-          <widget class="QCheckBox" name="deadline_active">
-           <property name="text">
-            <string>Deadline</string>
-           </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QDateTimeEdit" name="deadline">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>1</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="date">
-            <date>
-             <year>2021</year>
-             <month>1</month>
-             <day>1</day>
-            </date>
-           </property>
-           <property name="time">
-            <time>
-             <hour>0</hour>
-             <minute>0</minute>
-             <second>0</second>
-            </time>
-           </property>
-           <property name="maximumDateTime">
-            <datetime>
-             <hour>23</hour>
-             <minute>59</minute>
-             <second>59</second>
-             <year>9999</year>
-             <month>12</month>
-             <day>31</day>
-            </datetime>
-           </property>
-           <property name="currentSection">
-            <enum>QDateTimeEdit::YearSection</enum>
-           </property>
-           <property name="calendarPopup">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>Angst</string>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QSlider" name="fear">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLabel" name="label_12">
-           <property name="text">
-            <string>Schwierigkeit</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <widget class="QSlider" name="difficulty">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="0">
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>Peinlichkeit bei nicht-Erledigung</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QSlider" name="embarassment">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -475,45 +380,49 @@
          <property name="title">
           <string/>
          </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
          <layout class="QFormLayout" name="formLayout_2">
-          <item row="0" column="1">
-           <widget class="QPushButton" name="subtasks_button">
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_11">
             <property name="text">
-             <string>ist Teil von</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="supertasks_button">
-            <property name="text">
-             <string>besteht aus</string>
+             <string>Angst</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QPushButton" name="groups_button">
-            <property name="text">
-             <string>hängt ab von</string>
+           <widget class="QSlider" name="fear">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QPushButton" name="skills_button">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_12">
             <property name="text">
-             <string>trainiert Fähigkeiten</string>
+             <string>Schwierigkeit</string>
             </property>
            </widget>
           </item>
           <item row="6" column="1">
-           <widget class="QPushButton" name="time_constraints_button">
+           <widget class="QSlider" name="difficulty">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="label_13">
             <property name="text">
-             <string>kann nur erledigt werden zu diesen Zeiten</string>
+             <string>Peinlichkeit bei nicht-Erledigung</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="QSlider" name="embarassment">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
@@ -522,6 +431,124 @@
        </item>
       </layout>
      </widget>
+    </item>
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="button7">
+        <property name="text">
+         <string>ist Teil von...</string>
+        </property>
+        <property name="shortcut">
+         <string>7</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="button2">
+        <property name="text">
+         <string>kann nur erledigt werden wenn...</string>
+        </property>
+        <property name="shortcut">
+         <string>2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="button9">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>trainiert...</string>
+        </property>
+        <property name="shortcut">
+         <string>9</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="button6">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="shortcut">
+         <string>6</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="button3">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="shortcut">
+         <string>3</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="button4">
+        <property name="text">
+         <string>manage Tags/Gruppen...</string>
+        </property>
+        <property name="shortcut">
+         <string>4</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="button1">
+        <property name="text">
+         <string>besteht aus...</string>
+        </property>
+        <property name="shortcut">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="button5">
+        <property name="text">
+         <string>hat Deadline mit Dringlichkeit...</string>
+        </property>
+        <property name="shortcut">
+         <string>5</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="button8">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="shortcut">
+         <string>8</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

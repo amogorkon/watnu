@@ -1,12 +1,10 @@
-from PyQt5.QtSql import QSqlQuery
-from inspect import currentframe
-from inspect import getframeinfo
+from inspect import currentframe, getframeinfo
 from pathlib import Path
+from shlex import split
 from typing import NamedTuple
 
-from shlex import split
-
 import numpy as np
+from PyQt5.QtSql import QSqlQuery
 
 
 def set_globals(c, l):
@@ -287,8 +285,8 @@ WHERE tasks.id = {self.id}
 SELECT flags FROM constraints WHERE task_id = {self.id}
         """
         )
-        for C in iter_over(query):
-            yield [np.asarray(list(bool(int(x)) for x in C))]
+        for row in iter_over(query):
+            yield np.asarray(list(bool(int(x)) for x in row(0).split()))
 
     def __last_checked():
         def fget(self):
@@ -461,7 +459,6 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     def considered_open(self):
         if self.deleted or self.draft or self.inactive:
             return False
-
         return not any(t.considered_open for t in self.requires) and not self.done
 
     @property
