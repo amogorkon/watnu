@@ -533,9 +533,10 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.setText(f"Du hast Kopf geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-heads.svg"))
                 mb.setWindowTitle("Hmm..")
+                mb.exec_()
             else:
                 mb = QtWidgets.QMessageBox()
-                mb.exec_()
+
                 mb.setText(f"Du hast Zahl geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
                 mb.setWindowTitle("Hmm..")
@@ -1608,9 +1609,10 @@ def Chooser(editor: TaskEditor, task: Task, kind:str):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
-            deadline = self.deadline.dateTime().toSecsSinceEpoch()
+            self.deadline.setDateTime(QtCore.QDateTime().currentDateTime())
 
         def accept(self):
+            self.editor.deadline = self.deadline.dateTime().toSecsSinceEpoch()
             super().accept()
 
     cases = {"subtasks": SubTaskChooser, 

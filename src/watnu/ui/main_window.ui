@@ -176,6 +176,9 @@
         <property name="focusPolicy">
          <enum>Qt::NoFocus</enum>
         </property>
+        <property name="toolTip">
+         <string>Companion Chat</string>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -213,6 +216,9 @@
         </property>
         <property name="focusPolicy">
          <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>&lt;deine Idee?&gt;</string>
         </property>
         <property name="text">
          <string/>
@@ -298,6 +304,12 @@
         <property name="focusPolicy">
          <enum>Qt::NoFocus</enum>
         </property>
+        <property name="toolTip">
+         <string>Missionen und Fähigkeiten</string>
+        </property>
+        <property name="statusTip">
+         <string/>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -335,6 +347,9 @@
         </property>
         <property name="focusPolicy">
          <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Inventar</string>
         </property>
         <property name="text">
          <string/>
@@ -375,7 +390,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Neue Aufgabe</string>
+         <string>Statistik</string>
         </property>
         <property name="text">
          <string/>
