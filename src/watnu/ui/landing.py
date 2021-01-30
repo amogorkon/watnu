@@ -15,7 +15,7 @@ class Ui_Wizard(object):
     def setupUi(self, Wizard):
         Wizard.setObjectName("Wizard")
         Wizard.setWindowModality(QtCore.Qt.ApplicationModal)
-        Wizard.resize(400, 300)
+        Wizard.resize(610, 365)
         Wizard.setModal(True)
         Wizard.setWizardStyle(QtWidgets.QWizard.ModernStyle)
         Wizard.setOptions(QtWidgets.QWizard.HaveFinishButtonOnEarlyPages|QtWidgets.QWizard.IgnoreSubTitles|QtWidgets.QWizard.NoBackButtonOnStartPage|QtWidgets.QWizard.NoCancelButton)
@@ -25,6 +25,8 @@ class Ui_Wizard(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.face = QtWidgets.QLabel(self.wizardPage1)
         self.face.setText("")
+        self.face.setPixmap(QtGui.QPixmap("ui\\../extra/faces/alexa.png"))
+        self.face.setScaledContents(False)
         self.face.setObjectName("face")
         self.horizontalLayout.addWidget(self.face)
         self.textBrowser = QtWidgets.QTextBrowser(self.wizardPage1)

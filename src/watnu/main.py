@@ -257,12 +257,9 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
 
         @self.timer.timeout.connect
         def timer_timeout():
-            if not self.task_timing:
-                return
-
             T = time()
             # every full second
-            if int(T * 10) % 10 == 0:
+            if self.task_timing and int(T * 10) % 10 == 0:
                 diff = self.task_timing.deadline - T
                 rst, weeks = modf(diff / (7*24*60*60))
                 rst, days = modf(rst*7)
@@ -276,6 +273,19 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
                 self.deadline_minutes.setProperty("intValue", minutes)
                 self.deadline_seconds.setProperty("intValue", seconds)
 
+                self.frame_timing.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_timing.activity_id, "black")}, 
+            stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_timing.secondary_activity_id, 
+                activity_color.get(
+            self.task_timing.activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
+
             self.frame_priority.setStyleSheet(f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
         stop:0 black, 
@@ -287,20 +297,6 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         stop:1 white);
 }}
 """)
-
-            self.frame_timing.setStyleSheet(f"""
-* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-        stop:0 black, 
-        stop:1 white);
-background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {activity_color.get(self.task_timing.activity_id, "black")}, 
-        stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_timing.secondary_activity_id, 
-            activity_color.get(
-        self.task_timing.activity_id, "black"))},
-        stop:1 white);
-}}
-""")
-
 
             self.frame_balanced.setStyleSheet(f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
@@ -1232,7 +1228,7 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         self.player.play()
 
         self.task_space.setText(task.space)
-
+        
         self.frame.setStyleSheet(f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
         stop:0 black, 
@@ -2077,8 +2073,11 @@ if __name__ == "__main__":
         sys.exit()
 
     win_main.show()
-    win_landing = Landing()
-    win_landing.exec_()
+    if config.tutorial_active:
+        win_landing = Landing()
+        concluded = win_landing.exec_()
+        if concluded:
+            config.tutorial_active = False
 
     button = QWinTaskbarButton()
     button.setWindow(win_main.windowHandle())
