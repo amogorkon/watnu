@@ -21,13 +21,19 @@ def read(file):
 
 class boolean:
     def __init__(self, x):
-        self.x = x
-
-    def __call__(self, x):
         if isinstance(x, str):
-            return bool(literal_eval(x))
+            self.x = bool(literal_eval(x))
         if isinstance(x, bool):
-            return x
+            self.x = x
+
+    def __str__(self):
+        return str(self.x)
+
+    def __repr__(self):
+        return repr(self.x)
+
+    def __bool__(self):
+        return self.x
 
 
 @attr.s(
