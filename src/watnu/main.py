@@ -24,6 +24,7 @@ from PyQt5.QtCore import (QDate, QDateTime, QModelIndex, Qt, QTime, QTimer,
 from PyQt5.QtGui import QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
 
@@ -34,9 +35,10 @@ from classes import Skill, Task, iter_over, set_globals, submit_sql
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
-from ui import (attributions, character, choose_skills, chooser, companions,
-                inventory, main_window, running_task, settings, statistics,
-                task_editor, task_finished, task_list, what_now)
+from ui import (attributions, character, choose_constraints, choose_deadline,
+                choose_skills, companions, inventory, landing, main_window,
+                running_task, settings, statistics, task_editor, task_finished,
+                task_list, what_now)
 
 __version__ = (0, 0, 7)
 print("python:", sys.version)
@@ -100,7 +102,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.attributions.triggered.connect
         def _():
-            Attributions()
+            win_attributions.show()
 
         @self.button7.clicked.connect
         def _():
@@ -448,6 +450,12 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.timing.setEnabled(False)
             self.task_timing = None
             self.deadline = None
+            self.deadline_weeks.display("")
+            self.deadline_days.display("")
+            self.deadline_hours.display("")
+            self.deadline_minutes.display("")
+            self.deadline_seconds.display("")
+            
         else:
             self.taskfont.setItalic(False)
             self.task_desc_timing.setFont(self.taskfont)
@@ -529,9 +537,9 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.setText(f"Du hast Kopf geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-heads.svg"))
                 mb.setWindowTitle("Hmm..")
-                mb.exec_()
             else:
                 mb = QtWidgets.QMessageBox()
+                mb.exec_()
                 mb.setText(f"Du hast Zahl geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
                 mb.setWindowTitle("Hmm..")
@@ -897,6 +905,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         self.space.setModel(model)
         self.space.setModelColumn(1)
         self.constraints:str = None
+        self.deadline = "Infinity"
 
         query = submit_sql(f"""
         SELECT activity_id, name FROM activities;
@@ -967,33 +976,45 @@ WHERE url = '{text}'
         def _():
             self.resources.removeItem(self.resources.currentIndex())
 
-        """´
-        @self.deadline_active.stateChanged.connect
-        def _():
-            if self.deadline_active.isChecked():
-                self.deadline.setEnabled(True)
-            else:
-                self.deadline.setEnabled(False)
-        """
-
-        @self.button9.clicked.connect
-        def skills_button():
-            dialog = Chooser(self, self.task)
-            dialog.exec_()
-
         @self.button1.clicked.connect
         def subtasks_button():
-            dialog = Chooser(self, self.task, things="subtasks")
-            dialog.exec_()
-
-        @self.button7.clicked.connect
-        def supertasks_button():
-            dialog = Chooser(self, self.task, things="supertasks")
+            dialog = Chooser(self, self.task, kind="subtasks")
             dialog.exec_()
 
         @self.button2.clicked.connect
         def time_constraints_button():
-            dialog = Constraints(self, self.task)
+            dialog = Chooser(self, self.task, kind="constraints")
+            dialog.exec_()
+
+        @self.button3.clicked.connect
+        def _():
+            print("button3 clicked")
+
+        @self.button4.clicked.connect
+        def _():
+            print("button4 clicked")
+
+        @self.button5.clicked.connect
+        def _():
+            dialog = Chooser(self, self.task, kind="deadline")
+            dialog.exec_()
+
+        @self.button6.clicked.connect
+        def _():
+            print("button6 clicked")
+
+        @self.button7.clicked.connect
+        def supertasks_button():
+            dialog = Chooser(self, self.task, kind="supertasks")
+            dialog.exec_()
+
+        @self.button8.clicked.connect
+        def _():
+            print("button8 clicked")
+
+        @self.button9.clicked.connect
+        def skills_button():
+            dialog = Chooser(self, self.task, kind="skills")
             dialog.exec_()
 
         @self.space.currentIndexChanged.connect
@@ -1005,7 +1026,7 @@ WHERE url = '{text}'
                 for row in iter_over(submit_sql(f"""
 SELECT primary_activity_id, secondary_activity_id
 FROM spaces
-WHERE space_id =´ {space_id}
+WHERE space_id = {space_id}
                 """)):
                     if row(0):
                         self.activity.setCurrentIndex(self.activity.findData(QVariant(row(0))))
@@ -1020,11 +1041,6 @@ WHERE space_id =´ {space_id}
         super().accept()
 
         do = self.desc.toPlainText()
-        if self.deadline_active.isChecked():
-            deadline = self.deadline.dateTime().toSecsSinceEpoch()
-        else:
-            deadline = "Infinity"
-
         priority:float = self.priority.value()
         space_id:int = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
         global editing_space_id
@@ -1041,7 +1057,7 @@ WHERE space_id =´ {space_id}
 INSERT INTO tasks 
 (do, 
 space_id, 
-deadline, ´
+deadline, 
 activity_id,
 secondary_activity_id,
 habit
@@ -1050,7 +1066,7 @@ habit
 VALUES 
 ('{do}', 
 {space_id},
-'{deadline}',
+'{self.deadline}',
 {activity_id},
 {secondary_activity_id},
 {habit}
@@ -1085,7 +1101,7 @@ UPDATE tasks
 SET do = '{do}',
     priority = {priority},
     level_id = {level_id},
-    deadline = '{deadline}',
+    deadline = '{self.deadline}',
     activity_id = {activity_id},
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
@@ -1485,46 +1501,14 @@ Und denk dran:
             mb.setWindowTitle("Hmm..")
             mb.exec_()
 
-class Constraints(QtWidgets.QDialog, chooser.Ui_Dialog):
-    def __init__(self, editor, task=None):
-        super().__init__()
-        self.setupUi(self)
-        self.editor = editor
-        self.table.horizontalHeader().setHighlightSections(False)
-        for i, (hour, part) in enumerate((hour, part) for hour in range(24) 
-                                                    for part in range(0,6)):
-            item = QtWidgets.QTableWidgetItem(f"{hour}: {part}0-{part}9")
-            if i % 6 == 0:
-                font = QtGui.QFont()
-                font.setItalic(True) 
-                font.setWeight(90)
-                item.setFont(font)
-            self.table.setVerticalHeaderItem(i, item)
-
-        @self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect
-        def reset():
-            self.table.clearSelection()
-
-        @self.buttonBox.button(QtWidgets.QDialogButtonBox.Discard).clicked.connect
-        def discard():
-            self.editor.constraints = None
-            self.close()
-
-    def accept(self):
-        super().accept()
-        A = np.zeros(1008)
-        A[[idx.column() *  144 + idx.row() for idx in  self.table.selectedIndexes()]] = 1
-        self.editor.constraints = ' '.join(str(int(x)) for x in A)
-
-class Chooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
-    def __init__(self, editor, task=None, things="skills"):
-        super().__init__()
-        self.setupUi(self)
-        self.task = task
-        self.editor = editor
-        self.things = things
-
-        if things == "skills":
+def Chooser(editor: TaskEditor, task: Task, kind:str):
+    """Returns the fitting instance of a Chooser."""
+    class SkillChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+        def __init__(self, editor, task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.task = task
+            self.editor = editor
             model = QSqlTableModel()
             model.setTable("skills")
             model.setSort(1, Qt.AscendingOrder)
@@ -1538,9 +1522,16 @@ class Chooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
                 for index in range(model.rowCount()):
                     if model.itemData(model.index(index, 0))[0] in task.skill_ids:
                         self.listView.selectionModel().select(
-                            model.index(index, 1), QtCore.QItemSelectionModel.Select)
-
-        if things in ("subtasks", "supertasks"):
+                            model.index(index, 1), QtCore.QItemSelectionModel.Select)    
+        def accept(self):
+            super().accept()
+            self.editor.skill_ids = [self.listView.model().record(idx.row()).value("skill_id") for idx in self.listView.selectedIndexes()]
+    class SubTaskChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+        def __init__(self, editor, task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.task = task
+            self.editor = editor
             model = QSqlTableModel()
             model.setTable("tasks")
             model.setSort(1, Qt.AscendingOrder)
@@ -1549,36 +1540,88 @@ class Chooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
             self.listView.setModelColumn(1)
 
             if task:
+                # holy crap, that was a difficult birth..
                 self.listView.selectionModel().clear()
-                if things == "subtasks":
-                    for index in range(model.rowCount()):
-                        if model.itemData(model.index(index, 0))[0] in editor.subtasks:
-                            self.listView.selectionModel().select(
-                                model.index(index, 1), QtCore.QItemSelectionModel.Select)
-                
-                if things == "supertasks":
-                    for index in range(model.rowCount()):
-                        if model.itemData(model.index(index, 0))[0] in editor.supertasks:
-                            self.listView.selectionModel().select(
-                                model.index(index, 1), QtCore.QItemSelectionModel.Select)
+                for index in range(model.rowCount()):
+                    if model.itemData(model.index(index, 0))[0] in task.subtasks:
+                        self.listView.selectionModel().select(
+                            model.index(index, 1), QtCore.QItemSelectionModel.Select)
 
+        def accept(self):
+            self.editor.subtasks = [self.listView.model().record(idx.row()).value("id") for idx in self.listView.selectedIndexes()]
 
-    def accept(self):
-        super().accept()
-        if self.things == "skills":
-            self.editor.skill_ids = [
-                self.listView.model().record(idx.row()).value("skill_id")
-                    for idx in self.listView.selectedIndexes()]
+    class SuperTaskChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+        def __init__(self, editor, task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.task = task
+            self.editor = editor
+            model = QSqlTableModel()
+            model.setTable("tasks")
+            model.setSort(1, Qt.AscendingOrder)
+            model.select()
+            self.listView.setModel(model)
+            self.listView.setModelColumn(1)
 
-        if self.things == "subtasks":
-            self.editor.subtasks = [
-                self.listView.model().record(idx.row()).value("id")
-                    for idx in self.listView.selectedIndexes()]
+            if task:
+                # holy crap, that was a difficult birth..
+                self.listView.selectionModel().clear()
+                for index in range(model.rowCount()):
+                    if model.itemData(model.index(index, 0))[0] in task.supertasks:
+                        self.listView.selectionModel().select(
+                            model.index(index, 1), QtCore.QItemSelectionModel.Select)
 
-        if self.things == "supertasks":
-            self.editor.subtasks = [
-                self.listView.model().record(idx.row()).value("id")
-                    for idx in self.listView.selectedIndexes()]
+        def accept(self):
+            self.editor.supertasks = [self.listView.model().record(idx.row()).value("id") for idx in self.listView.selectedIndexes()]
+
+    class Constraints(QtWidgets.QDialog, choose_constraints.Ui_Dialog):
+        def __init__(self, editor, task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.editor = editor
+            self.table.horizontalHeader().setHighlightSections(False)
+            for i, (hour, part) in enumerate((hour, part) for hour in range(24) 
+                                                        for part in range(0,6)):
+                item = QtWidgets.QTableWidgetItem(f"{hour}: {part}0-{part}9")
+                if i % 6 == 0:
+                    font = QtGui.QFont()
+                    font.setItalic(True)
+                    font.setWeight(90)
+                    item.setFont(font)
+                self.table.setVerticalHeaderItem(i, item)
+
+            @self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect
+            def reset():
+                self.table.clearSelection()
+
+            @self.buttonBox.button(QtWidgets.QDialogButtonBox.Discard).clicked.connect
+            def discard():
+                self.editor.constraints = None
+                self.close()
+
+        def accept(self):
+            super().accept()
+            A = np.zeros(1008)
+            A[[idx.column() *  144 + idx.row() for idx in  self.table.selectedIndexes()]] = 1
+            self.editor.constraints = ' '.join(str(int(x)) for x in A)
+
+    class DeadlineChooser(QtWidgets.QDialog, choose_deadline.Ui_Dialog):
+        def __init__(self, editor, task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.editor = editor
+            deadline = self.deadline.dateTime().toSecsSinceEpoch()
+
+        def accept(self):
+            super().accept()
+
+    cases = {"subtasks": SubTaskChooser, 
+             "supertasks": SuperTaskChooser, 
+             "skills": SkillChooser,
+             "deadline": DeadlineChooser,
+             "constraints": Constraints,
+             }
+    return cases[kind](editor, task)
 
 
 class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
@@ -1901,10 +1944,13 @@ class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.textBrowser.setSource(QtCore.QUrl("attributions.html"))
-        self.exec_()
+        self.browser = QWebEngineView()
+        with open('attributions.html', "r") as f:
+            html = f.read()
+        self.browser.setHtml(html)
+        self.verticalLayout.addWidget(self.browser)
 
-class Inventory(QtWidgets.QDialog, attributions.Ui_Dialog):
+class Inventory(QtWidgets.QDialog, inventory.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -1944,6 +1990,11 @@ FROM
             activities[row(0)] += row(2)
 
         self.exec_()
+
+class Landing(QtWidgets.QWizard, landing.Ui_Wizard):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
 
 def change_global_font(qobject, event):
     if event.type() == Qt.QEvent.Wheel:
@@ -2004,6 +2055,7 @@ if __name__ == "__main__":
     win_character = None
     win_settings = Settings()
     win_running = None
+    win_attributions = Attributions()
     editing_space_id = None
 
     state = StateMachine(initial=S.init, name="Application State",
@@ -2025,6 +2077,9 @@ if __name__ == "__main__":
         sys.exit()
 
     win_main.show()
+    win_landing = Landing()
+    win_landing.exec_()
+
     button = QWinTaskbarButton()
     button.setWindow(win_main.windowHandle())
     button.setOverlayIcon(QIcon("./extra/feathericons/aperture.svg"))

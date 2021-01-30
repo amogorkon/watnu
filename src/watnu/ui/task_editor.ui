@@ -482,7 +482,7 @@
       <item row="1" column="2">
        <widget class="QPushButton" name="button6">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string/>
@@ -495,7 +495,7 @@
       <item row="3" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string/>
@@ -538,7 +538,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="button8">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string/>
