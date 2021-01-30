@@ -39,7 +39,7 @@ class boolean:
 )
 class Config:
     # "False" is a non-empty string -> True :|
-    first_start: boolean = True
+    first_start: boolean = True  # TODO
     database: str = "watnu.sqlite"
     coin: int = 0b1
     lucky_num: int = 1

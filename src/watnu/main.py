@@ -939,7 +939,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
         # new task - preset space by previous edit
         else:
-            pass # TODO
+            self.space.setCurrentIndex(self.space.findText(last_edited_space))
 
         @self.task_type.toggled.connect
         def _():
@@ -1036,11 +1036,13 @@ WHERE space_id = {space_id}
     def accept(self):
         super().accept()
 
+        global last_edited_space
+        
         do = self.desc.toPlainText()
         priority:float = self.priority.value()
         space_id:int = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
-        global editing_space_id
-        editing_space_id = space_id
+
+        last_edited_space = self.space.currentText()
         activity_id = x if (x:=self.activity.currentData()) is not None else 'NULL'
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id:int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
@@ -2052,7 +2054,7 @@ if __name__ == "__main__":
     win_settings = Settings()
     win_running = None
     win_attributions = Attributions()
-    editing_space_id = None
+    last_edited_space:str = None
 
     state = StateMachine(initial=S.init, name="Application State",
         states={S.init:{S.main},
