@@ -11,6 +11,10 @@ load = Decoder()
 dump = Encoder()
 
 
+class ConfigurationError(Exception):
+    pass
+
+
 def read(file):
     D = {}
     with open(file) as f:
@@ -22,7 +26,10 @@ def read(file):
 class boolean:
     def __init__(self, x):
         if isinstance(x, str):
-            self.x = bool(literal_eval(x))
+            try:
+                self.x = bool(literal_eval(x))
+            except ValueError:
+                raise ConfigurationError(f"{x} is not a Value of True or False!")
         if isinstance(x, bool):
             self.x = x
 
@@ -50,7 +57,6 @@ class Config:
     coin: int = 0b1
     lucky_num: int = 1
     count: int = 1
-    time_program_quit_last: int = 0
     telegram_user: int = None
     telegram_token: str = None
     tictoc_volume: int = 50

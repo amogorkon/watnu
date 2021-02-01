@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from inspect import currentframe, getframeinfo
 from pathlib import Path
 from shlex import split
@@ -55,7 +56,7 @@ class Task(NamedTuple):
     id: int
 
     @property
-    def do(self):
+    def do(self) -> str:
         query = submit_sql(
             f"""
         SELECT do FROM tasks WHERE id={self.id}
@@ -65,7 +66,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def notes(self):
+    def notes(self) -> str:
         query = submit_sql(
             f"""
         SELECT notes FROM tasks WHERE id={self.id}
@@ -75,7 +76,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def space_id(self):
+    def space_id(self) -> int:
         query = submit_sql(
             f"""
         SELECT space_id FROM tasks WHERE id={self.id}
@@ -85,7 +86,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def draft(self):
+    def draft(self) -> bool:
         query = submit_sql(
             f"""
         SELECT draft FROM tasks WHERE id={self.id}
@@ -95,7 +96,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def inactive(self):
+    def inactive(self) -> bool:
         query = submit_sql(
             f"""
         SELECT inactive FROM tasks WHERE id={self.id}
@@ -105,7 +106,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def deleted(self):
+    def deleted(self) -> bool:
         query = submit_sql(
             f"""
         SELECT deleted FROM tasks WHERE id={self.id}
@@ -115,7 +116,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def workload(self):
+    def workload(self) -> int:
         query = submit_sql(
             f"""
         SELECT workload FROM tasks WHERE id={self.id}
@@ -125,7 +126,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def activity_id(self):
+    def primary_activity_id(self) -> int:
         query = submit_sql(
             f"""
         SELECT activity_id FROM tasks WHERE id={self.id}
@@ -135,7 +136,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def difficulty(self):
+    def difficulty(self) -> float:
         query = submit_sql(
             f"""
         SELECT difficulty FROM tasks WHERE id={self.id}
@@ -145,7 +146,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def fear(self):
+    def fear(self) -> float:
         query = submit_sql(
             f"""
         SELECT fear FROM tasks WHERE id={self.id}
@@ -155,7 +156,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def embarassment(self):
+    def embarassment(self) -> float:
         query = submit_sql(
             f"""
         SELECT embarassment FROM tasks WHERE id={self.id}
@@ -165,7 +166,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def conditions(self):
+    def conditions(self) -> str:
         query = submit_sql(
             f"""
         SELECT conditions FROM tasks WHERE id={self.id}
@@ -175,7 +176,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def secondary_activity_id(self):
+    def secondary_activity_id(self) -> int:
         query = submit_sql(
             f"""
         SELECT secondary_activity_id FROM tasks WHERE id={self.id}
@@ -185,7 +186,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def resources(self):
+    def resources(self) -> Generator[str]:
         query = submit_sql(
             f"""
 SELECT resources.url, resources.resource_id
@@ -201,7 +202,7 @@ WHERE tasks.id = {self.id}
             yield row(0), row(1)
 
     @property
-    def habit(self):
+    def habit(self) -> bool:
         query = submit_sql(
             f"""
         SELECT habit FROM tasks WHERE id={self.id}
@@ -211,7 +212,7 @@ WHERE tasks.id = {self.id}
         return query.value(0)
 
     @property
-    def skills(self):
+    def skills(self) -> list[int]:
         query = submit_sql(
             f"""
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}
@@ -220,7 +221,7 @@ WHERE tasks.id = {self.id}
         return [Skill(row(0)) for row in iter_over(query)]
 
     @property
-    def deadline(self):
+    def deadline(self) -> int:
         query = submit_sql(
             f"""
         SELECT deadline, workload FROM tasks WHERE id={self.id}
@@ -235,7 +236,7 @@ WHERE tasks.id = {self.id}
         return min([t.deadline for t in self.required_by] + [own_deadline]) - workload
 
     @property
-    def level_id(self):
+    def level_id(self) -> int:
         query = submit_sql(
             f"""
         SELECT level_id FROM tasks WHERE id={self.id};
@@ -249,7 +250,7 @@ WHERE tasks.id = {self.id}
         return max([t.level_id for t in self.required_by] + [own_level])
 
     @property
-    def priority(self):
+    def priority(self) -> float:
         query = submit_sql(
             f"""
         SELECT priority FROM tasks WHERE id={self.id}
@@ -263,7 +264,7 @@ WHERE tasks.id = {self.id}
         return own_priority + parent_priorities
 
     @property
-    def space_priority(self):
+    def space_priority(self) -> float:
         if self.space_id:
             query = submit_sql(
                 f"""
@@ -279,7 +280,7 @@ WHERE tasks.id = {self.id}
             return 0
 
     @property
-    def constraints(self):
+    def constraints(self) -> np.ndarray:
         query = submit_sql(
             f"""
 SELECT flags FROM constraints WHERE task_id = {self.id}
@@ -288,37 +289,35 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         for row in iter_over(query):
             yield np.asarray(list(bool(int(x)) for x in row(0).split()))
 
-    def __last_checked():
-        def fget(self):
-            query = submit_sql(
-                f"""
-            SELECT last_checked FROM tasks WHERE id={self.id}
-            """
-            )
-            query.first()
-            x = query.value(0)
-            return x
+    @property
+    def last_checked(self) -> int:
+        query = submit_sql(
+            f"""
+        SELECT last_checked FROM tasks WHERE id={self.id}
+        """
+        )
+        query.first()
+        x = query.value(0)
+        return x
 
-        def fset(self, value):
-            value = int(value)
-            submit_sql(
-                f"""
-            UPDATE tasks SET last_checked={value} 
-            WHERE id={self.id}
-            """
-            )
-            return
+    @last_checked.setter
+    def last_checked(self, value) -> None:
+        value = int(value)
+        submit_sql(
+            f"""
+        UPDATE tasks SET last_checked={value} 
+        WHERE id={self.id}
+        """
+        )
+        return
 
         return locals()
 
-    last_checked = property(**__last_checked())
-    del __last_checked
-
     @property
-    def activity(self):
+    def activity(self) -> str:
         query = submit_sql(
             f"""
-        SELECT name FROM activities WHERE activity_id={ID if (ID := self.activity_id) != "" else "NULL"};
+        SELECT name FROM activities WHERE activity_id={ID if (ID := self.primary_activity_id) != "" else "NULL"};
         """
         )
         if query.next():
@@ -328,7 +327,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return res
 
     @property
-    def secondary_activity(self):
+    def secondary_activity(self) -> str:
         if not self.secondary_activity_id:
             return ""
         query = submit_sql(
@@ -342,7 +341,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return res
 
     @property
-    def space(self):
+    def space(self) -> str:
         query = submit_sql(
             f"""
         SELECT name FROM spaces WHERE space_id={self.space_id};
@@ -353,7 +352,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return res
 
     @property
-    def level(self):
+    def level(self) -> int:
         query = submit_sql(
             f"""
         SELECT name FROM levels WHERE level_id={self.level_id};
@@ -364,7 +363,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return res
 
     def __time_spent():
-        def fget(self):
+        def fget(self) -> int:
             query = submit_sql(
                 f"""
             SELECT time_spent FROM tasks WHERE id={self.id}
@@ -374,7 +373,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
             x = query.value(0)
             return x
 
-        def fset(self, value):
+        def fset(self, value) -> None:
             submit_sql(
                 f"""
             UPDATE tasks SET time_spent={int(value)} 
@@ -389,7 +388,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     del __time_spent
 
     def __done():
-        def fget(self):
+        def fget(self) -> bool:
             query = submit_sql(
                 f"""
             SELECT done FROM tasks WHERE id={self.id}
@@ -414,7 +413,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     del __done
 
     @property
-    def requires(self):
+    def requires(self) -> list:
         query = submit_sql(
             f"""
         SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
@@ -432,7 +431,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return [Task(row(0)) for row in iter_over(query)]
 
     def __adjust_time_spent():
-        def fget(self):
+        def fget(self) -> int:
             query = submit_sql(
                 f"""
             SELECT adjust_time_spent FROM tasks WHERE id={self.id}
@@ -441,7 +440,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
             query.first()
             return query.value(0)
 
-        def fset(self, value):
+        def fset(self, value) -> None:
             query = submit_sql(
                 f"""
             UPDATE tasks SET adjust_time_spent={value} 
@@ -456,13 +455,13 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     del __adjust_time_spent
 
     @property
-    def considered_open(self):
+    def considered_open(self) -> bool:
         if self.deleted or self.draft or self.inactive:
             return False
         return not any(t.considered_open for t in self.requires) and not self.done
 
     @property
-    def last_finished(self):
+    def last_finished(self) -> int:
         query = submit_sql(
             f"""
         SELECT stop
@@ -479,11 +478,11 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
             return 0
 
     @property
-    def total_time_spent(self):
+    def total_time_spent(self) -> int:
         return self.adjust_time_spent + self.time_spent
 
     @property
-    def skill_ids(self):
+    def skill_ids(self) -> list[int]:
         query = submit_sql(
             f"""
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id};

@@ -4,8 +4,9 @@ from math import isinf, sqrt
 from time import time
 
 import numpy as np
+from fuzzylogic.functions import bounded_sigmoid, sigmoid
 
-from lib.functions import bounded_sigmoid, sigmoid
+from classes import Task
 
 WEEKTIME = {
     name: i
@@ -25,16 +26,14 @@ habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
 neglection_weight = bounded_sigmoid(0, 5380, inverse=True)
 
 
-def weight(
-    primary_activity_time, secondary_activity_time, time_spent, last_checked, now
-):
+def weight(time_spent, last_checked, now) -> float:
     return min(
         habit_weight(time_spent / (60 * 60)),
         neglection_weight((now - last_checked) / (60 * 60)),
     )
 
 
-def prioritize(tasks: list) -> list:
+def prioritize(tasks: list[Task]) -> list:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
@@ -43,16 +42,21 @@ def prioritize(tasks: list) -> list:
     return deque(sorted_tasks)
 
 
-def balance(tasks: list, activity_time_spent: dict) -> list:
+def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task]:
     # first prefer neglected activity; second prefer neglected tasks/habits
     sorted_tasks = sorted(
         tasks,
-        key=lambda t: weight(
-            activity_time_spent[t.activity_id],
-            activity_time_spent[t.secondary_activity_id],
-            t.time_spent,
-            t.last_checked,
-            time(),
+        key=lambda t: (
+            min(
+                activity_time_spent[t.primary_activity_id],
+                1.618 * activity_time_spent[t.secondary_activity_id],
+            ),
+            # secondary is weighted golden ratio less than primary)
+            weight(  # lightest weights float to the top!
+                t.time_spent,
+                t.last_checked,
+                time(),
+            ),
         ),
     )
     return deque(sorted_tasks)
