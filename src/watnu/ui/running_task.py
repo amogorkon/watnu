@@ -89,6 +89,7 @@ class Ui_Dialog(object):
         self.pomodoro_bar = QtWidgets.QProgressBar(self.groupBox)
         self.pomodoro_bar.setMaximum(100)
         self.pomodoro_bar.setProperty("value", 0)
+        self.pomodoro_bar.setTextVisible(False)
         self.pomodoro_bar.setInvertedAppearance(True)
         self.pomodoro_bar.setTextDirection(QtWidgets.QProgressBar.TopToBottom)
         self.pomodoro_bar.setFormat("")

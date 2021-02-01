@@ -21,7 +21,7 @@ import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import (QDate, QDateTime, QModelIndex, Qt, QTime, QTimer,
                           QUrl, QVariant)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 S = Enum("STATE", "init main editing running final")
+TYPE = Enum("TaskType", "task habit tradition")
 
 WEEKTIME = {name: i for i, name in enumerate([(day, hour, part) 
                     for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] 
@@ -1227,12 +1228,14 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         else:
             self.adjust_time_spent = self.task.adjust_time_spent
         state.flux_to(S.running)
-        self.pomodoro = -35 *60
+        self.pomodoro = -35 * 60
         doc = QtGui.QTextDocument(task.notes)
         self.notes.setDocument(doc) 
 
         doc = QtGui.QTextDocument(task.do)
         self.desc.setDocument(doc)
+        
+        
 
         progress.show()
         if self.task.resources:
@@ -1251,6 +1254,17 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         self.show()
         self.start_task()
         self.timer.start(1000)
+        self.pomodoro_bar.setStyleSheet("""
+QProgressBar{
+    border: 2px solid grey;
+    border-radius: 5px;
+}
+
+QProgressBar::chunk {
+    background-color: steelblue;
+    border-radius: 5px;
+}
+""")
 
         @self.animation_timer.timeout.connect
         def animation_timer_timeout():
@@ -1331,10 +1345,22 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
                 self.player.play()
                 progress.setValue(0)
                 self.pause = True
-                self.pomodoro_bar.reset()
+                self.pomodoro_bar.setStyleSheet("""
+QProgressBar{
+    border: 2px solid grey;
+    border-radius: 5px;
+}
+
+QProgressBar::chunk {
+    background-color: yellowgreen;
+    border-radius: 5px;
+}
+""")
+                
 
             if 0 < self.pomodoro <= 5 * 60:
-                pass
+                pomodoro_percent = 100 - (self.pomodoro / (5*60) * 100)
+                self.pomodoro_bar.setProperty("value", pomodoro_percent)
 
             if self.pomodoro > 5 * 60:
                 self.pomodoro = - 35 * 60
@@ -1343,6 +1369,18 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
                 self.player.setMedia(QMediaContent(url))
                 self.player.setVolume(70)
                 self.player.play()
+                self.pomodoro_bar.reset()
+                self.pomodoro_bar.setStyleSheet("""
+QProgressBar{
+    border: 2px solid grey;
+    border-radius: 5px;
+}
+
+QProgressBar::chunk {
+    background-color: darkorange;
+    border-radius: 5px;
+}
+""")
 
         @self.plus5.clicked.connect
         def _():
