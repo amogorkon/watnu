@@ -782,7 +782,6 @@ WHERE id == {task.id}
         win.show()
 
     def build_task_list(self):
-        print("building list")
         if self.status_draft.isChecked():
             self.button1.setText("set ready")
         else:
