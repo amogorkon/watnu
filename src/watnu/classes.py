@@ -8,10 +8,11 @@ import numpy as np
 from PyQt5.QtSql import QSqlQuery
 
 
-def set_globals(c, l):
-    global config, logger
+def set_globals(c, l, t):
+    global config, logger, TYPE
     config = c
     logger = l
+    TYPE = t
 
 
 def iter_over(query):
@@ -86,7 +87,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def draft(self) -> bool:
+    def is_draft(self) -> bool:
         query = submit_sql(
             f"""
         SELECT draft FROM tasks WHERE id={self.id}
@@ -96,7 +97,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def inactive(self) -> bool:
+    def is_inactive(self) -> bool:
         query = submit_sql(
             f"""
         SELECT inactive FROM tasks WHERE id={self.id}
@@ -106,7 +107,7 @@ class Task(NamedTuple):
         return query.value(0)
 
     @property
-    def deleted(self) -> bool:
+    def is_deleted(self) -> bool:
         query = submit_sql(
             f"""
         SELECT deleted FROM tasks WHERE id={self.id}
@@ -202,14 +203,14 @@ WHERE tasks.id = {self.id}
             yield row(0), row(1)
 
     @property
-    def habit(self) -> bool:
+    def is_habit(self) -> bool:
         query = submit_sql(
             f"""
-        SELECT habit FROM tasks WHERE id={self.id}
+        SELECT type FROM tasks WHERE id={self.id}
         """
         )
         query.first()
-        return query.value(0)
+        return TYPE(query.value(0)) is TYPE.habit
 
     @property
     def skills(self) -> list[int]:
@@ -311,8 +312,6 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         )
         return
 
-        return locals()
-
     @property
     def activity(self) -> str:
         query = submit_sql(
@@ -387,30 +386,26 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     time_spent = property(**__time_spent())
     del __time_spent
 
-    def __done():
-        def fget(self) -> bool:
-            query = submit_sql(
-                f"""
-            SELECT done FROM tasks WHERE id={self.id}
-            """
-            )
-            query.first()
-            x = query.value(0)
-            return x
+    @property
+    def is_done(self) -> bool:
+        query = submit_sql(
+            f"""
+        SELECT done FROM tasks WHERE id={self.id}
+        """
+        )
+        query.first()
+        x = query.value(0)
+        return x
 
-        def fset(self, value):
-            query = submit_sql(
-                f"""
-            UPDATE tasks SET done={value} 
-            WHERE id={self.id}
-            """
-            )
-            return
-
-        return locals()
-
-    done = property(**__done())
-    del __done
+    @is_done.setter
+    def is_done(self, value) -> None:
+        query = submit_sql(
+            f"""
+        UPDATE tasks SET done={value} 
+        WHERE id={self.id}
+        """
+        )
+        return
 
     @property
     def requires(self) -> list:
@@ -456,9 +451,9 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
 
     @property
     def considered_open(self) -> bool:
-        if self.deleted or self.draft or self.inactive:
+        if self.is_deleted or self.is_draft or self.is_inactive:
             return False
-        return not any(t.considered_open for t in self.requires) and not self.done
+        return not any(t.considered_open for t in self.requires) and not self.is_done
 
     @property
     def last_finished(self) -> int:

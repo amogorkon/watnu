@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 S = Enum("STATE", "init main editing running final")
-TYPE = Enum("TaskType", "task habit tradition")
+TYPE = Enum("TaskType", "task habit tradition cycle")  # * enum numbering starts with 1!
 
 WEEKTIME = {name: i for i, name in enumerate([(day, hour, part) 
                     for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] 
@@ -121,9 +121,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         @self.button4.clicked.connect
         def list_tasks():
             """Task List."""
-            win_list.show()
-            win_list.exec_()
-
+            win = Task_List()
+            win.show()
+            list_of_task_lists.append(win)  # ! check if list shrinks when win is closed again
+            
         @self.button5.clicked.connect
         def whatnow():
             """Watnu?!"""
@@ -132,7 +133,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                 self.hide()
 
         @self.button6.clicked.connect
-        def foo():
+        def add_new_task():
             """Add new Task."""
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
@@ -323,9 +324,8 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.go_priority.clicked.connect
         def go_priority_clicked():
             self.hide()
+            global win_running
             win_running = Running(self.task_priority)
-            win_running.exec_()
-            self.show()
 
         @self.skip_priority.clicked.connect
         def skip_priority_clicked():
@@ -347,6 +347,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.go_balanced.clicked.connect
         def go_balanced_clicked():
             self.hide()
+            global win_running
             win_running = Running(self.task_balanced)
 
         @self.skip_balanced.clicked.connect
@@ -363,6 +364,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.go_timing.clicked.connect
         def go_timing_clicked():
             self.hide()
+            global win_running
             win_running = Running(self.task_timing)
  
 
@@ -507,7 +509,7 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.task_list.setStyleSheet("alternate-background-color: #bfffbf; background-color: #deffde;");
+        self.task_list.setStyleSheet("alternate-background-color: #bfffbf; background-color: #deffde;")
         header = self.task_list.horizontalHeader()
         self.tasks = []
 
@@ -516,13 +518,170 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
         clone_as_is = menu.addAction("genau so", self.clone_as_is)
         clone_as_sub = menu.addAction("als Subtask", self.clone_as_sub)
         clone_as_sup = menu.addAction("als Supertask", self.clone_as_sup)
-        self.clone_task.setMenu(menu)
+        self.button9.setMenu(menu)
+        
+        if state() is S.running:
+            self.button5.setEnabled(False)
 
         self.build_task_list()
         self.update()
+        
+        @self.button1.clicked.connect
+        def draft_undraft():
+            try:
+                x = self.task_list.selectedItems()[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+            except IndexError:
+                return
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein anderer Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
 
-        @self.toss_coin.clicked.connect
-        def _():
+            # set not as draft
+            submit_sql(f"""
+    UPDATE tasks
+    SET draft = {not task.is_draft}
+    WHERE id == {task.id}
+    """)
+            self.task_list.removeRow(x)
+            self.update()
+
+        @self.button2.clicked.connect
+        def done_undone():
+            try:
+                x = self.task_list.selectedItems()[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+            except IndexError:
+                return
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein anderer Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
+
+            submit_sql(f"""
+UPDATE tasks
+SET done = {not task.is_done}
+WHERE id == {task.id}
+""")
+            self.task_list.removeRow(x)
+            self.update()
+
+        @self.button3.clicked.connect
+        def active_inactive():
+            try:
+                x = self.task_list.selectedItems()[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+            except IndexError:
+                print("indexerror?")
+                return
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein anderer Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
+
+            submit_sql(f"""
+    UPDATE tasks
+    SET inactive = {not task.is_inactive}
+    WHERE id == {task.id}
+    """)
+            
+            self.task_list.removeRow(x)
+            self.update()
+            
+        @self.button4.clicked.connect
+        def edit_task():
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
+
+            try: 
+                x = self.task_list.selectedItems()[0].row()
+            except IndexError:
+                return
+            
+            task = Task(self.task_list.item(x,0).data(Qt.UserRole))
+            
+            if state() is S.running and task == win_running.task:
+                win_running.show()
+                win_running.activateWindow()
+                win_running.raise_()
+                return
+            
+            win = TaskEditor(task, win_list=self)
+            win.show()
+
+        @self.button5.clicked.connect
+        def start_task():
+            global win_running
+            if state() is S.running:
+                win_running.show()
+                win_running.activateWindow()
+                win_running.raise_()
+                self.hide()
+                return
+
+            try:
+                x = self.task_list.selectedItems()[0].row()
+            except IndexError:
+                return
+
+            task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+            self.hide()
+
+            win_running = Running(task, win_list=self)
+
+        @self.button6.clicked.connect
+        def create_task():
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
+            
+            win = TaskEditor(win_list=self)
+            win.show()
+            
+        @self.button7.clicked.connect
+        def delete_undelete():
+            try:
+                x = self.task_list.selectedItems()[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+            except IndexError:
+                return
+            if state() is S.editing:
+                mb = QtWidgets.QMessageBox()
+                mb.setText("Es wird schon ein anderer Task bearbeitet.")
+                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+                mb.setWindowTitle("Hmm..")
+                mb.exec_()
+                return
+
+            submit_sql(f"""
+UPDATE tasks
+SET deleted = {not task.is_deleted}
+WHERE id == {task.id}
+""")
+            self.task_list.removeRow(x)
+            self.update()
+
+        @self.button8.clicked.connect
+        def throw_coins():
             # vonNeumann!
             i = 0
             first = 0
@@ -556,186 +715,13 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
 
-        @self.start_task.clicked.connect
-        def _():
-            if state() is S.running:
-                win_running.show()
-                win_running.activateWindow()
-                win_running.raise_()
-                return
-
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-
-            task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            win_running = Running(task)
-            win_running.exec_()
-            self.show()
-
-        @self.create_task.clicked.connect
-        def _():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-            
-            win = TaskEditor()
-            win.show()
-
-        @self.edit_task.clicked.connect
-        def _():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            try: 
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-            
-            task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-            win = TaskEditor(task)
-            win.show()
-
         @self.status.buttonClicked.connect
-        def _():
+        def status_switched():
             self.build_task_list()
 
-        @self.button7.clicked.connect
-        def _():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            # undelete
-            if self.status_deleted.isChecked():
-                submit_sql(f"""
-UPDATE tasks
-SET deleted = FALSE
-WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-""")
-            # delete
-            else:
-                submit_sql(f"""
-UPDATE tasks
-SET deleted = TRUE
-WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-""")
-            self.task_list.removeRow(x)
-            self.update()
-
-        @self.button2.clicked.connect
-        def _():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            # undo
-            if self.status_done.isChecked():
-                submit_sql(f"""
-UPDATE tasks
-SET done = FALSE
-WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-""")
-            # done
-            else:
-                submit_sql(f"""
-UPDATE tasks
-SET done = TRUE
-WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-""")
-            self.task_list.removeRow(x)
-            self.update()
-
-        @self.button3.clicked.connect
-        def _():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            # set active
-            if self.status_inactive.isChecked():
-                submit_sql(f"""
-    UPDATE tasks
-    SET inactive = FALSE
-    WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-    """)
-            # inactive
-            else:
-                submit_sql(f"""
-    UPDATE tasks
-    SET inactive = TRUE
-    WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-    """)
-            self.task_list.removeRow(x)
-            self.update()
-
-        @self.button1.clicked.connect
-        def _():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
-                return
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            # set not as draft
-            if self.status_draft.isChecked():
-                submit_sql(f"""
-    UPDATE tasks
-    SET draft = FALSE
-    WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-    """)
-            # inactive
-            else:
-                submit_sql(f"""
-    UPDATE tasks
-    SET draft = TRUE
-    WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
-    """)
-            self.task_list.removeRow(x)
-            self.update()
 
         @self.field_filter.textChanged.connect
-        def _():
+        def field_filter_changed():
             self.arrange_list(filter_tasks(self.tasks, 
                                 self.field_filter.text().casefold()))
             self.update()
@@ -755,7 +741,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=0)
+        win = TaskEditor(task, cloning=True, as_sup=0, win_list=self)
         win.show()
 
     def clone_as_sub(self):
@@ -773,7 +759,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=-1)
+        win = TaskEditor(task, cloning=True, as_sup=-1, win_list=self)
         win.show()
 
 
@@ -792,7 +778,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=1)
+        win = TaskEditor(task, cloning=True, as_sup=1, win_list=self)
         win.show()
 
     def build_task_list(self):
@@ -862,7 +848,7 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
                 "---")
             self.task_list.setItem(i, 6, item)
             item = QtWidgets.QTableWidgetItem()
-            item.setIcon(ok if t.habit else nok)
+            item.setIcon(ok if t.is_habit else nok)
             self.task_list.setItem(i, 7, item)
         
         if not tasks:
@@ -870,14 +856,24 @@ WHERE id == {self.task_list.item(x, 0).data(Qt.UserRole)}
             self.task_list.setRowCount(0)
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
+        
+    def reject(self):
+        super().reject()
+        if state() is  S.running:
+            win_running.show()
+            win_running.raise_()
+        else:
+            win_main.show()
+            win_main.raise_()
 
 
 class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
-    def __init__(self, task=None, cloning=False, as_sup=0):
+    def __init__(self, task:Task=None, cloning:bool=False, as_sup:bool=0, win_list:Task_List=None):
         super().__init__()
         self.activateWindow()
         self.setupUi(self)
+        self.win_list = win_list
 
         if cloning:
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
@@ -935,7 +931,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
             self.desc.document().setPlainText(task.do)
 
-            if task.habit:
+            if task.is_habit:
                 self.is_habit.setChecked(True)
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
@@ -1061,7 +1057,10 @@ WHERE space_id = {space_id}
         primary_activity_id = x if (x:=self.activity.currentData()) is not None else 'NULL'
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id:int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
-        habit:bool = self.is_habit.isChecked()
+        if self.is_habit.isChecked():
+            task_type = TYPE.habit
+        else:
+            task_type = TYPE.task
         task_id: int
 
         # it really is a new task
@@ -1073,16 +1072,16 @@ space_id,
 deadline, 
 activity_id,
 secondary_activity_id,
-habit
+type
 )
 
 VALUES 
 ('{do}', 
-{space_id},
+{x if (x := space_id) is not None else 0},
 '{self.deadline}',
 {primary_activity_id},
 {secondary_activity_id},
-{habit}
+{task_type.value}
 );
 """)             
         
@@ -1118,7 +1117,7 @@ SET do = '{do}',
     activity_id = {primary_activity_id},
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
-    habit = {habit}
+    type = {task_type.value}
 WHERE id={task_id}
 """)        
             # need to clean up first - dependencies
@@ -1185,7 +1184,8 @@ VALUES ({task_id}, {self.resources.itemData(i)});
     VALUES ({task_id}, '{self.constraints}')
             """)
 
-        win_list.build_task_list()
+        for win in list_of_task_lists:
+            win.build_task_list()
         state.flux_to(S.main)
 
     def reject(self):
@@ -1193,13 +1193,16 @@ VALUES ({task_id}, {self.resources.itemData(i)});
         state.flux_to(S.main)
 
 class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
-    def __init__(self, task):
+    def __init__(self, task, win_list=None):
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint |Qt.CustomizeWindowHint )
         win_main.hide()
         if win_new:
             win_new.hide()
+            
+        self.win_list = win_list
+        
         win_settings.hide()
 
         self.task:Task = task
@@ -1223,7 +1226,7 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         self.time_spent = 0  # the time previously tracked by machine
         self.time_spent = self.task.time_spent
         # user estimates time spent with this task untracked 
-        if task.habit:
+        if task.is_habit:
             self.adjust_time_spent = 0  
         else:
             self.adjust_time_spent = self.task.adjust_time_spent
@@ -1235,7 +1238,8 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         doc = QtGui.QTextDocument(task.do)
         self.desc.setDocument(doc)
         
-        
+        for win in list_of_task_lists:
+            win.button5.setEnabled(False)
 
         progress.show()
         if self.task.resources:
@@ -1313,7 +1317,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.ticks += 1
             self.pomodoro += 1
 
-            if not self.task.habit:
+            if not self.task.is_habit:
                 total = (x if 
                     (x:=(self.time_spent + self.adjust_time_spent + self.ticks)) > 0
                         else 0)
@@ -1404,8 +1408,9 @@ QProgressBar::chunk {
             write_session(self.task.id, self.start_time, stop_time,
                             finished=False, pause_time=self.pause_time)
             win_main.show()
-            if not win_list.isHidden():
-                win_list.raise_()
+            if self.win_list:
+                self.win_list.raise_()
+
             if not win_what.isHidden() and win_what:
                 win_what.raise_()
 
@@ -1427,8 +1432,9 @@ QProgressBar::chunk {
             self.hide()
 
             win_main.show()
-            if not win_list.isHidden():
-                win_list.raise_()
+            
+            if self.win_list:
+                self.win_list.raise_()
             if not win_what.isHidden() and win_what:
                 win_what.raise_()
             
@@ -1479,12 +1485,15 @@ QProgressBar::chunk {
         self.ticks = 0
         self.task.last_checked = time()
         self.task = None
+        for win in list_of_task_lists:
+            win.button5.setEnabled(True)
         self.hide()
-        
-        win_main.show()
-        if not win_list.isHidden():
-            win_list.raise_()
-        if not win_what.isHidden():
+
+        if self.win_list:
+            self.win_list.show()
+            self.win_list.raise_()
+        else:
+            win_what.show()
             win_what.raise_()
         state.flux_to(S.main)
 
@@ -1696,7 +1705,7 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
                                 for skill in task.skills]
 
         self.task_desc.setText(task.do)
-        if not task.habit:
+        if not task.is_habit:
             total = task.time_spent + task.adjust_time_spent + ticks
         else:
             total = ticks
@@ -1708,7 +1717,7 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
 
     def accept(self):
         super().accept()
-        if not self.task.habit:
+        if not self.task.is_habit:
             total = self.hours.value() * 60*60 + self.minutes.value() * 60 - self.pause_time
 
         else:
@@ -1738,7 +1747,9 @@ YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
                 mb.setWindowTitle("LEVEL UP")
                 mb.exec_()
 
-        win_list.build_task_list()
+        for win in list_of_task_lists:
+            win.button5.setEnabled(True)
+            win.build_task_list()
         win_what.lets_check_whats_next()
         return True
 
@@ -2057,6 +2068,20 @@ class Landing(QtWidgets.QWizard, landing.Ui_Wizard):
         super().__init__()
         self.setupUi(self)
 
+class TrayIcon(QtWidgets.QSystemTrayIcon):
+    def __init__(self, icon, parent):
+        super().__init__(icon, parent)
+        menu = QtWidgets.QMenu()
+        action = menu.addAction("Manage Aufgaben")
+        self.setContextMenu(menu)
+        menu.triggered.connect(self.liste)
+        
+    def liste(self):
+        win = Task_List()
+        list_of_task_lists.append(win)
+        win.show()
+
+
 def change_global_font(qobject, event):
     if event.type() == Qt.QEvent.Wheel:
         font = app.font()
@@ -2088,7 +2113,7 @@ if __name__ == "__main__":
     db.setDatabaseName(config.database)
     query = QSqlQuery()
 
-    set_globals(config, logger)
+    set_globals(config, logger, TYPE)
 
     if not db.open():
         logger.critical("Could not open DB!")
@@ -2108,7 +2133,7 @@ if __name__ == "__main__":
     win_main = MainWindow()
     win_main.statusBar.show()
     win_main.statusBar.showMessage("Willkommen zurück! Lass uns was schaffen!", 10000)
-    win_list = Task_List()
+    list_of_task_lists: list[Task_List] = []
     win_what = What_Now()
     win_what.lets_check_whats_next()
     win_new = None
@@ -2145,8 +2170,11 @@ if __name__ == "__main__":
 
     button = QWinTaskbarButton()
     button.setWindow(win_main.windowHandle())
-    button.setOverlayIcon(QIcon("./extra/feathericons/aperture.svg"))
+    icon = QIcon("./extra/feathericons/aperture.svg")
+    button.setOverlayIcon(icon)
     progress = button.progress()
     progress.setRange(0,100)
+    tray = TrayIcon(icon, win_main)
+    tray.show()
 
     sys.exit(app.exec_())

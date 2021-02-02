@@ -98,6 +98,19 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
+           <widget class="QRadioButton" name="is_task">
+            <property name="text">
+             <string>Aufgabe</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">kind_of</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
            <widget class="QRadioButton" name="is_habit">
             <property name="text">
              <string>Gewohnheit</string>
@@ -118,12 +131,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QRadioButton" name="is_task">
+           <widget class="QRadioButton" name="is_cycle">
             <property name="text">
-             <string>Aufgabe</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
+             <string>Zyklus</string>
             </property>
             <attribute name="buttonGroup">
              <string notr="true">kind_of</string>

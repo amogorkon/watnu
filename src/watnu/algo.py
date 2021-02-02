@@ -70,11 +70,11 @@ def schedule(tasks: list) -> list:
 
 
 def check_task_conditions(task, now: datetime):
-    if task.habit:
+    if task.is_habit:
         if (today := now.date()) > (
             then := datetime.fromtimestamp(task.last_finished).date()
         ):
-            task.done = False
+            task.is_done = False
 
 
 def filter_tasks(tasks, pattern):

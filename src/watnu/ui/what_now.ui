@@ -3,13 +3,16 @@
  <class>Dialog</class>
  <widget class="QDialog" name="Dialog">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="enabled">
+   <bool>true</bool>
   </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>752</width>
+    <width>765</width>
     <height>458</height>
    </rect>
   </property>
@@ -20,7 +23,7 @@
    <bool>false</bool>
   </property>
   <property name="modal">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

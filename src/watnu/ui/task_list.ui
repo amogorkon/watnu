@@ -287,7 +287,7 @@
          <number>0</number>
         </property>
         <item row="2" column="3">
-         <widget class="QPushButton" name="create_task">
+         <widget class="QPushButton" name="button6">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -306,7 +306,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QPushButton" name="edit_task">
+         <widget class="QPushButton" name="button4">
           <property name="text">
            <string>bearbeite Aufgabe</string>
           </property>
@@ -360,7 +360,7 @@
          </widget>
         </item>
         <item row="2" column="2">
-         <widget class="QPushButton" name="start_task">
+         <widget class="QPushButton" name="button5">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
             <horstretch>0</horstretch>
@@ -411,7 +411,7 @@
          </widget>
         </item>
         <item row="1" column="2">
-         <widget class="QPushButton" name="toss_coin">
+         <widget class="QPushButton" name="button8">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
             <horstretch>0</horstretch>
@@ -431,7 +431,7 @@
          </widget>
         </item>
         <item row="1" column="3">
-         <widget class="QPushButton" name="clone_task">
+         <widget class="QPushButton" name="button9">
           <property name="enabled">
            <bool>true</bool>
           </property>
