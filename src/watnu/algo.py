@@ -47,11 +47,10 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
     sorted_tasks = sorted(
         tasks,
         key=lambda t: (
-            min(
+            max(
                 activity_time_spent[t.primary_activity_id],
                 1.618 * activity_time_spent[t.secondary_activity_id],
             ),
-            # secondary is weighted golden ratio less than primary)
             weight(  # lightest weights float to the top!
                 t.time_spent,
                 t.last_checked,
@@ -80,7 +79,8 @@ def check_task_conditions(task, now: datetime):
 def filter_tasks(tasks, pattern):
     if pattern.isspace() or not pattern:
         return tasks
-    return list(filter(lambda t: pattern in t.do.casefold(), tasks))
+    res = list(filter(lambda t: pattern in t.do.casefold(), tasks))
+    return res
 
 
 def skill_level(seconds):
@@ -114,11 +114,11 @@ def skill_level(seconds):
     return 2 * (sqrt(x + 5625) - 75)
 
 
-def time_constraints_met(constraints: list[np.array], now: datetime):
+def constraints_met(constraints: np.array, now: datetime):
     weekday = now.weekday()
     hour, minute = now.time().hour, now.time().minute
     idx = weekday * 144 + hour * 6 + minute // 10
-    if not constraints:
+    if constraints is None:
         return True
     else:
-        return all(C[idx] for C in constraints)
+        return constraints[idx]

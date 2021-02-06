@@ -1,9 +1,11 @@
 import logging
+
 from ast import literal_eval
 
 import attr
 
-from lib.stay import Decoder, Encoder
+from lib.stay import Decoder
+from lib.stay import Encoder
 
 print("attrs:", attr.__version__)
 
@@ -65,6 +67,7 @@ class Config:
     activity_color_spirit: str = "indigo"
     generated_faces_token: str = None
     tutorial_active: boolean = True
+    run_sql_stuff: boolean = False
 
     def write(self):
         with open("config.stay", "w") as f:

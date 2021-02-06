@@ -18,9 +18,10 @@ from time import time, time_ns
 from typing import NamedTuple
 
 import numpy as np
+from dateutil.relativedelta import relativedelta
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import (QDate, QDateTime, QModelIndex, Qt, QTime, QTimer,
-                          QUrl, QVariant)
+from PyQt5.QtCore import (QDate, QDateTime, QEvent, QModelIndex, Qt, QTime,
+                          QTimer, QUrl, QVariant)
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
@@ -29,9 +30,9 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
 
 import config
-from algo import (balance, check_task_conditions, filter_tasks, prioritize,
-                  schedule, skill_level, time_constraints_met)
-from classes import Skill, Task, iter_over, set_globals, submit_sql
+from algo import (balance, check_task_conditions, constraints_met,
+                  filter_tasks, prioritize, schedule, skill_level)
+from classes import Skill, Task, iter_over, set_globals, submit_sql, typed
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
@@ -96,13 +97,15 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-
+ 
         @self.about.triggered.connect
         def _():
             webbrowser.open("https://github.com/amogorkon/watnu/blob/main/README.md")
 
         @self.attributions.triggered.connect
         def _():
+            global win_attributions
+            win_attributions = Attributions()
             win_attributions.show()
 
         @self.button7.clicked.connect
@@ -111,7 +114,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.button8.clicked.connect
         def companions():
-            Companions()
+            global win_companions
+            win_companions = Companions()
+            win_companions.show()
 
         @self.button9.clicked.connect
         def community():
@@ -123,11 +128,13 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             """Task List."""
             win = Task_List()
             win.show()
-            list_of_task_lists.append(win)  # ! check if list shrinks when win is closed again
+            list_of_task_lists.append(win)
             
         @self.button5.clicked.connect
         def whatnow():
             """Watnu?!"""
+            global win_what
+            win_what = What_Now()
             if win_what.lets_check_whats_next():
                 win_what.show()
                 self.hide()
@@ -150,17 +157,21 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
      
         @self.button1.clicked.connect
         def statistics():
-            Statistics()
+            global win_statistics
+            win_statistics = Statistics()
+            win_statistics.show()
 
         @self.button2.clicked.connect
         def character():
+            global win_character
             win_character = Character()
             win_character.show()
-            win_character.exec_()
 
         @self.button3.clicked.connect
         def inventory():
-            Inventory()
+            global win_inventory
+            win_inventory = Inventory()
+            win_inventory.show()
 
         @self.actionSupportMe.triggered.connect
         def actionSupportMe_triggered():
@@ -177,8 +188,9 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.actionSettings.triggered.connect
         def actionSettings():
+            global win_settings
+            win_settings = Settings()
             win_settings.show()
-            win_settings.exec_()
 
         @self.actionExport.triggered.connect
         def actionExport():
@@ -258,7 +270,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         self.balanced_tasks = None
         self.priority_tasks = None
         self.timing_tasks = None
-
+        
         @self.sec_timer.timeout.connect
         def sec_timer_timeout():
             T: float
@@ -297,29 +309,35 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
             else:
                 self.frame_timing.setStyleSheet("color: grey")
 
-            self.frame_priority.setStyleSheet(f"""
-* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-        stop:0 black, 
-        stop:1 white);
-background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {activity_color.get(self.task_priority.primary_activity_id, "black")},
-        stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_priority.secondary_activity_id, 
-                  activity_color.get(self.task_priority.primary_activity_id, "black"))},
-        stop:1 white);
-}}
-""")
+            if self.task_priority:
+                self.frame_priority.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_priority.primary_activity_id, "black")},
+            stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_priority.secondary_activity_id, 
+                    activity_color.get(self.task_priority.primary_activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
+            else:
+                self.frame_priority.setStyleSheet("color: grey")
 
-            self.frame_balanced.setStyleSheet(f"""
-* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-        stop:0 black, 
-        stop:1 white);
-background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {activity_color.get(self.task_balanced.primary_activity_id, "black")},
-        stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_balanced.secondary_activity_id, 
-                  activity_color.get(self.task_balanced.primary_activity_id, "black"))},
-        stop:1 white);
-}}
-""")
+            if self.task_balanced:
+                self.frame_balanced.setStyleSheet(f"""
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
+            stop:0 black, 
+            stop:1 white);
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+            stop:0 {activity_color.get(self.task_balanced.primary_activity_id, "black")},
+            stop:{sin(T*0.1) * 0.5 + 0.5} {activity_color.get(self.task_balanced.secondary_activity_id, 
+                    activity_color.get(self.task_balanced.primary_activity_id, "black"))},
+            stop:1 white);
+    }}
+    """)
+            else:
+                self.frame_balanced.setStyleSheet("color: grey")
 
         @self.go_priority.clicked.connect
         def go_priority_clicked():
@@ -395,8 +413,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
     def lets_check_whats_next(self):
         global config
-        foo = (config.coin^config.lucky_num) * config.count
-        seed(foo)
+        seed((config.coin^config.lucky_num) * config.count)
         config.count += 1
 
         query = submit_sql(f"""
@@ -408,11 +425,11 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
         all_tasks = [Task(row(0)) for row in iter_over(query)]
         now = datetime.now()
-
+        
         for t in all_tasks:
             check_task_conditions(t, now=now)
-
-        self.tasks = list(filter(lambda t: t.considered_open and time_constraints_met(t.constraints, now), all_tasks))
+        
+        self.tasks = list(filter(lambda t: t.considered_open and constraints_met(t.constraints, now), all_tasks))
 
         if not self.tasks:
             mb = QtWidgets.QMessageBox()
@@ -433,6 +450,9 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
     def reject(self):
         super().reject()
         win_main.show()
+        self.sec_timer.stop()
+        self.animation_timer.stop()
+        win_what = None
 
 
     def set_task_priority(self):
@@ -479,22 +499,32 @@ FROM activities
 WHERE activity_id not NULL
 """)
         for row in iter_over(query):
-            activity_time_spent[row(0)] = row(1)
-
+            activity_time_spent[typed(row, 0, int, default=None)] = typed(row, 1, int)
+            
         query = submit_sql(f"""
 SELECT
-    activity_id,
+    primary_activity_id,
     SUM(time_spent)
 FROM
     tasks
 GROUP BY
-    activity_id;
+    primary_activity_id;
 """)
         
         for row in iter_over(query):
-            if not row(0): continue
-            activity_time_spent[row(0)] += row(1)
-        activity_time_spent[""] = max(activity_time_spent.values())
+            activity_time_spent[typed(row, 0, int, default=None)] += typed(row, 1, int)
+        query = submit_sql(f"""
+SELECT
+    secondary_activity_id,
+    SUM(time_spent)
+FROM
+    tasks
+GROUP BY
+    secondary_activity_id;
+""")
+        for row in iter_over(query):
+            activity_time_spent[typed(row, 0, int, default=None)] += int(typed(row, 1, int) * 0.382)
+        activity_time_spent[None] = max(activity_time_spent.values())
 
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
         
@@ -864,6 +894,8 @@ WHERE id == {task.id}
         else:
             win_main.show()
             win_main.raise_()
+        
+        list_of_task_lists.remove(self)
 
 
 class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
@@ -911,7 +943,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         self.space.setModel(model)
         self.space.setModelColumn(1)
         self.constraints:str = None
-        self.deadline = "Infinity"
+        self.deadline = float("inf")
 
         query = submit_sql(f"""
         SELECT activity_id, name FROM activities;
@@ -1045,7 +1077,6 @@ WHERE space_id = {space_id}
 
     def accept(self):
         super().accept()
-
         global last_edited_space
         
         do = self.desc.toPlainText()
@@ -1068,8 +1099,7 @@ WHERE space_id = {space_id}
 INSERT INTO tasks 
 (do, 
 space_id, 
-deadline, 
-activity_id,
+primary_activity_id,
 secondary_activity_id,
 type
 )
@@ -1077,7 +1107,6 @@ type
 VALUES 
 ('{do}', 
 {x if (x := space_id) is not None else 0},
-'{self.deadline}',
 {primary_activity_id},
 {secondary_activity_id},
 {task_type.value}
@@ -1112,8 +1141,7 @@ UPDATE tasks
 SET do = '{do}',
     priority = {priority},
     level_id = {level_id},
-    deadline = '{self.deadline}',
-    activity_id = {primary_activity_id},
+    primary_activity_id = {primary_activity_id},
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
     type = {task_type.value}
@@ -1128,15 +1156,20 @@ DELETE FROM task_requires_task WHERE required_task == {task_id}
 """)
             # need to clean up first - skills
             submit_sql(f"""
-    DELETE FROM task_trains_skill WHERE task_id = {task_id}
+DELETE FROM task_trains_skill WHERE task_id = {task_id}
     """)
             # need to clean up first - resources
             submit_sql(f"""
-    DELETE FROM task_uses_resource WHERE task_id = {task_id}
+DELETE FROM task_uses_resource WHERE task_id = {task_id}
     """)
             # need to clean up first - constraints
             submit_sql(f"""
 DELETE FROM constraints WHERE task_id = {task_id}
+            """)
+            
+            # need to clean up first - deadlines
+            submit_sql(f"""
+DELETE FROM deadlines WHERE task_id = {task_id}
             """)
 
         # enter fresh, no matter whether new or old
@@ -1182,6 +1215,14 @@ VALUES ({task_id}, {self.resources.itemData(i)});
     (task_id, flags)
     VALUES ({task_id}, '{self.constraints}')
             """)
+            
+        # enter deadline
+        if self.deadline != float("inf"):
+            submit_sql(f"""
+    INSERT INTO deadlines
+    (task_id, time_of_reference)
+    VALUES ({task_id}, '{self.deadline}')
+            """)
 
         for win in list_of_task_lists:
             win.build_task_list()
@@ -1202,7 +1243,8 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
             
         self.win_list = win_list
         
-        win_settings.hide()
+        if win_settings:
+            win_settings.hide()
 
         self.task:Task = task
         self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) 
@@ -1643,7 +1685,7 @@ def Chooser(editor: TaskEditor, task: Task, kind:str):
             self.editor.supertasks = [self.listView.model().record(idx.row()).value("id") for idx in self.listView.selectedIndexes()]
 
     class Constraints(QtWidgets.QDialog, choose_constraints.Ui_Dialog):
-        def __init__(self, editor, task=None):
+        def __init__(self, editor, task:Task=None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
@@ -1657,6 +1699,14 @@ def Chooser(editor: TaskEditor, task: Task, kind:str):
                     font.setWeight(90)
                     item.setFont(font)
                 self.table.setVerticalHeaderItem(i, item)
+            try: 
+                for column, day in enumerate(np.reshape(task.constraints, (7,144))):
+                    for row, value in enumerate(day):
+                        if value:
+                            self.table.setCurrentCell(row, column)
+            except AttributeError:
+                pass
+                        
 
             @self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect
             def reset():
@@ -1669,20 +1719,31 @@ def Chooser(editor: TaskEditor, task: Task, kind:str):
 
         def accept(self):
             super().accept()
-            A = np.zeros(1008)
+            A = np.zeros(1008, int)
             A[[idx.column() *  144 + idx.row() for idx in  self.table.selectedIndexes()]] = 1
-            self.editor.constraints = ' '.join(str(int(x)) for x in A)
+            self.editor.constraints = (x := ''.join(str(x) for x in A))
 
     class DeadlineChooser(QtWidgets.QDialog, choose_deadline.Ui_Dialog):
         def __init__(self, editor, task=None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
-            self.deadline.setDateTime(QtCore.QDateTime().currentDateTime())
+            self.reference_date.setDate(QtCore.QDate().currentDate())
+        
+            @self.enter_date.clicked.connect
+            def enter_date():
+                now = datetime.fromtimestamp(self.reference_date.dateTime().toSecsSinceEpoch())
+                days = self.in_days.value()
+                weeks = self.in_weeks.value()
+                months = self.in_months.value()
+                qdate = QDateTime()
+                qdate.setSecsSinceEpoch(
+                    int(datetime.timestamp(now + relativedelta(days=days, weeks=weeks, months=months))))
+                self.reference_date.setDateTime(qdate)
 
         def accept(self):
-            self.editor.deadline = self.deadline.dateTime().toSecsSinceEpoch()
             super().accept()
+            self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
     cases = {"subtasks": SubTaskChooser, 
              "supertasks": SuperTaskChooser, 
@@ -1782,7 +1843,6 @@ class Character(QtWidgets.QDialog, character.Ui_Dialog):
             query = submit_sql(f"""
             SELECT name FROM skills WHERE skill_id=={skill};
             """)
-            query.next()
 
             self.skills_table.setRowCount(i+1)
             item = QtWidgets.QTableWidgetItem(query.value(0))
@@ -2008,9 +2068,11 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
         for i, row in enumerate(iter_over(query)):
             self.space_primary_activity.addItem(row(1), QVariant(row(0)))
             self.space_secondary_activity.addItem(row(1), QVariant(row(0)))
-
         self.update()
-
+        
+    def reject(self):
+        super().reject()
+        win_settings = None
 class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
     def __init__(self):
         super().__init__()
@@ -2020,18 +2082,28 @@ class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
             html = f.read()
         self.browser.setHtml(html)
         self.verticalLayout.addWidget(self.browser)
+        
+    def reject(self):
+        super().reject()
+        win_attributions = None
 
 class Inventory(QtWidgets.QDialog, inventory.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.exec_()
+        
+    def reject(self):
+        super().reject()
+        win_inventory = None
 
 class Companions(QtWidgets.QDialog, companions.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.exec_()
+        
+    def reject(self):
+        super().reject()
+        win_companions = None
 
 class Statistics(QtWidgets.QDialog, statistics.Ui_Dialog):
     def __init__(self):
@@ -2040,12 +2112,12 @@ class Statistics(QtWidgets.QDialog, statistics.Ui_Dialog):
 
         query = submit_sql(f"""
 SELECT
-    activity_id,
+    primary_activity_id,
     SUM(time_spent)
 FROM
     tasks
 GROUP BY
-    activity_id;
+    primary_activity_id;
 """)
         activities = {row(0): row(1) for row in iter_over(query)}
         print(activities.items())
@@ -2059,13 +2131,19 @@ FROM
 
         for row in iter_over(query):
             activities[row(0)] += row(2)
-
-        self.exec_()
+        
+    def reject(self):
+        super().reject()
+        win_statistics = None
 
 class Landing(QtWidgets.QWizard, landing.Ui_Wizard):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        
+    def reject(self):
+        super().reject()
+        win_landing = None
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
     def __init__(self, icon, parent):
@@ -2080,9 +2158,15 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         list_of_task_lists.append(win)
         win.show()
 
-
-def change_global_font(qobject, event):
-    if event.type() == Qt.QEvent.Wheel:
+class Application(QtWidgets.QApplication):
+    def __init__(self, argv):
+        super().__init__(argv)
+    
+    def mouseMoveEvent(self, event):
+        global test
+        logger.info("ASDF")
+        event.ignore()
+        return False
         font = app.font()
         font.setPointSize(font.pointSize() + 1)
         app.setFont(font)
@@ -2093,25 +2177,17 @@ def change_global_font(qobject, event):
         #     app.setFont(font)
 
 if __name__ == "__main__":
-    path = Path(sys.argv[0])
-    try:
-        # overwriting the module with the instance for convenience
-       config = config.read("config.stay")
-    except FileNotFoundError:
-        p1 = path.parents[0] / "default-config.stay"
-        p2 = path.parents[0] / "config.stay"
-
-        from shutil import copyfileobj
-        with open(p1, "r") as f1, open(p2, "w+") as f2:
-           copyfileobj(f1, f2)
-        config = config.read(p2)
+    path = Path(sys.argv[0]).parents[0]
+    # touch, just in case user killed the config or first start
+    (path/"config.stay").touch()
+    # overwriting the module with the instance for convenience
+    config = config.read(path/"config.stay")
 
     seed((config.coin^config.lucky_num) * config.count)
 
     db = QSqlDatabase.addDatabase("QSQLITE")
     db.setDatabaseName(config.database)
     query = QSqlQuery()
-
     set_globals(config, logger, TYPE)
 
     if not db.open():
@@ -2122,26 +2198,32 @@ if __name__ == "__main__":
         first_start.run(db, query, config, logger)
         config.first_start = False
         config.write()
-
+        
+    if config.run_sql_stuff:
+        config.run_sql_stuff = False
+        config.write()
+        import sql_stuff
+        
+    
     activity_color = {0: config.activity_color_body,
                     1: config.activity_color_mind,
                     2: config.activity_color_spirit,
                     }
 
-    app = QtWidgets.QApplication(sys.argv) 
+    app = Application(sys.argv) 
     win_main = MainWindow()
     win_main.statusBar.show()
     win_main.statusBar.showMessage("Willkommen zurück! Lass uns was schaffen!", 10000)
     list_of_task_lists: list[Task_List] = []
-    win_what = What_Now()
-    win_what.lets_check_whats_next()
+    win_what = None
     win_new = None
     win_character = None
-    win_settings = Settings()
+    win_settings = None
     win_running = None
-    win_attributions = Attributions()
+    win_attributions = None
     last_edited_space:str = None
-
+    test = "..."  # TODO
+        
     state = StateMachine(initial=S.init, name="Application State",
         states={S.init:{S.main},
                 S.main:{S.final, S.running, S.editing},
@@ -2177,3 +2259,4 @@ if __name__ == "__main__":
     tray.show()
 
     sys.exit(app.exec_())
+    

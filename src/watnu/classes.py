@@ -1,7 +1,10 @@
+import sys
 from collections.abc import Generator
+from functools import wraps
 from inspect import currentframe, getframeinfo
 from pathlib import Path
 from shlex import split
+from types import MethodType
 from typing import NamedTuple
 
 import numpy as np
@@ -14,25 +17,66 @@ def set_globals(c, l, t):
     logger = l
     TYPE = t
 
-
 def iter_over(query):
+    if query.isValid():
+        yield query.value
     while query.next():
         yield query.value
 
+def logged(func):
+    def wrapper(*args, **kwargs):
+        if type(func) is property:
+            print(args[0], "=>",  func.fget.__name__)
+            res = func.fget(*args, **kwargs)
+            print(args[0], func.fget.__name__, "=>", res)
+            return res
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+from enum import Flag
+
+ASPECT = Flag("Aspect", "property")
+
+def aspectized(decorator, aspect=ASPECT.property):
+    def wrapping (cls):
+        if ASPECT.property in aspect:
+            for name, attr in cls.__dict__.items():
+                if not name.startswith("__") and type(attr) is property:
+                    setattr(cls, name, property(decorator(attr), attr.fset))
+        return cls
+    return wrapping
+
+def typed(row, idx, kind: type, default=...):
+    filename, line_number, function_name, lines, index = getframeinfo(currentframe().f_back)
+    res = row(idx)
+    if default is not ...:
+        if res == "" or res is None:
+            return default
+        else:
+            assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
+            return res
+    else:
+        assert type(res) is kind, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
+    return res
 
 def submit_sql(statement, debugging=False):
     query = QSqlQuery()
+    (filename, line_number, function_name, lines, index) = getframeinfo(
+            currentframe().f_back
+        )
     if query.exec_(statement):
         if debugging:
             print("OK", statement)
     else:
-        (filename, line_number, function_name, lines, index) = getframeinfo(
-            currentframe().f_back
-        )
         logger.warning(
             f"SQL failed {Path(filename).stem, line_number, function_name}:" + statement
         )
         logger.warning(query.lastError().text())
+    query.first()
+    if not query.isValid():
+        logger.info(
+            f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}:" + statement
+        )
     return query
 
 
@@ -50,9 +94,9 @@ ON tasks.id = task_trains_skill.task_id
 WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
 """
         )
-        return sum(row(0) + row(1) for row in iter_over(query))
+        return sum(typed(row, 0, int) + typed(row, 1, int) for row in iter_over(query))
 
-
+#@aspectized(logged, ASPECT.property)
 class Task(NamedTuple):
     id: int
 
@@ -63,8 +107,7 @@ class Task(NamedTuple):
         SELECT do FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, str)
 
     @property
     def notes(self) -> str:
@@ -73,8 +116,7 @@ class Task(NamedTuple):
         SELECT notes FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, str, default=None)
 
     @property
     def space_id(self) -> int:
@@ -83,8 +125,7 @@ class Task(NamedTuple):
         SELECT space_id FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, int, default=None)
 
     @property
     def is_draft(self) -> bool:
@@ -93,8 +134,7 @@ class Task(NamedTuple):
         SELECT draft FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return bool(typed(query.value, 0, int))
 
     @property
     def is_inactive(self) -> bool:
@@ -103,8 +143,7 @@ class Task(NamedTuple):
         SELECT inactive FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return bool(typed(query.value, 0, int))
 
     @property
     def is_deleted(self) -> bool:
@@ -113,8 +152,7 @@ class Task(NamedTuple):
         SELECT deleted FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return bool(typed(query.value, 0, int))
 
     @property
     def workload(self) -> int:
@@ -123,18 +161,16 @@ class Task(NamedTuple):
         SELECT workload FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, int, default=None)
 
     @property
     def primary_activity_id(self) -> int:
         query = submit_sql(
             f"""
-        SELECT activity_id FROM tasks WHERE id={self.id}
+        SELECT primary_activity_id FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, int, default=None)
 
     @property
     def difficulty(self) -> float:
@@ -143,8 +179,7 @@ class Task(NamedTuple):
         SELECT difficulty FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, float)
 
     @property
     def fear(self) -> float:
@@ -153,8 +188,7 @@ class Task(NamedTuple):
         SELECT fear FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, float)
 
     @property
     def embarassment(self) -> float:
@@ -163,18 +197,7 @@ class Task(NamedTuple):
         SELECT embarassment FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
-
-    @property
-    def conditions(self) -> str:
-        query = submit_sql(
-            f"""
-        SELECT conditions FROM tasks WHERE id={self.id}
-        """
-        )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, float)
 
     @property
     def secondary_activity_id(self) -> int:
@@ -183,8 +206,7 @@ class Task(NamedTuple):
         SELECT secondary_activity_id FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return query.value(0)
+        return typed(query.value, 0, int, default=None)
 
     @property
     def resources(self) -> Generator[str]:
@@ -200,7 +222,7 @@ WHERE tasks.id = {self.id}
         """
         )
         for row in iter_over(query):
-            yield row(0), row(1)
+            yield typed(row, 0, str), typed(row, 1, int)
 
     @property
     def is_habit(self) -> bool:
@@ -209,8 +231,7 @@ WHERE tasks.id = {self.id}
         SELECT type FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        return TYPE(query.value(0)) is TYPE.habit
+        return TYPE(typed(query.value, 0, int)) is TYPE.habit
 
     @property
     def skills(self) -> list[int]:
@@ -219,21 +240,25 @@ WHERE tasks.id = {self.id}
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}
         """
         )
-        return [Skill(row(0)) for row in iter_over(query)]
+        return [Skill(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
-    def deadline(self) -> int:
+    def deadline(self) -> float:
         query = submit_sql(
             f"""
-        SELECT deadline, workload FROM tasks WHERE id={self.id}
+        SELECT time_of_reference FROM deadlines WHERE task_id={self.id}
+        """)
+        if query.isValid():  #  # !WTF QSqlQuery::value: not positioned on a valid record ?!
+        # the reason for aspectized and still couldn't figure out what makes this a special case
+            own_deadline = typed(query.value, 0, float, default=float("inf")) 
+        else:
+            own_deadline = float("inf")
+        query = submit_sql(
+            f"""
+        SELECT workload FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        own_deadline, workload = (
-            float(query.value(0)),
-            w if (w := query.value(1)) else 0,
-        )
-
+        workload = typed(query.value, 0, int, default=0)
         return min([t.deadline for t in self.required_by] + [own_deadline]) - workload
 
     @property
@@ -243,10 +268,7 @@ WHERE tasks.id = {self.id}
         SELECT level_id FROM tasks WHERE id={self.id};
         """
         )
-        if query.first():
-            own_level = query.value(0)
-        else:
-            raise AssertionError
+        own_level = typed(query.value, 0, int)
         # recursion!
         return max([t.level_id for t in self.required_by] + [own_level])
 
@@ -257,9 +279,7 @@ WHERE tasks.id = {self.id}
         SELECT priority FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        own_priority = query.value(0)
-        assert isinstance(own_priority, float), (own_priority, type(own_priority))
+        own_priority = typed(query.value, 0, float)
         parent_priorities = max((t.priority for t in self.required_by), default=0)
 
         return own_priority + parent_priorities
@@ -272,11 +292,7 @@ WHERE tasks.id = {self.id}
             SELECT priority FROM spaces WHERE space_id={self.space_id};
             """
             )
-            if not query.next():
-                space_priority = 0
-                print("space_priority is giving troubles again!")
-            else:
-                return x if (x := query.value(0)) is not None else 0
+            return typed(query.value, 0, float)
         else:
             return 0
 
@@ -287,8 +303,10 @@ WHERE tasks.id = {self.id}
 SELECT flags FROM constraints WHERE task_id = {self.id}
         """
         )
-        for row in iter_over(query):
-            yield np.asarray(list(bool(int(x)) for x in row(0).split()))
+        if query.isValid():
+            return np.fromiter((int(x) for x in typed(query.value, 0, str)), int)
+        else:
+            return None
 
     @property
     def last_checked(self) -> int:
@@ -297,16 +315,13 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT last_checked FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        x = query.value(0)
-        return x
+        return typed(query.value, 0, int)
 
     @last_checked.setter
     def last_checked(self, value) -> None:
-        value = int(value)
         submit_sql(
             f"""
-        UPDATE tasks SET last_checked={value} 
+        UPDATE tasks SET last_checked={int(value)} 
         WHERE id={self.id}
         """
         )
@@ -314,16 +329,16 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
 
     @property
     def activity(self) -> str:
-        query = submit_sql(
-            f"""
-        SELECT name FROM activities WHERE activity_id={ID if (ID := self.primary_activity_id) != "" else "NULL"};
-        """
-        )
-        if query.next():
-            res = query.value(0)
+        if self.primary_activity_id is None:
+            return ""
         else:
-            res = ""
-        return res
+            query = submit_sql(
+                f"""
+            SELECT name FROM activities WHERE activity_id={self.primary_activity_id};
+            """
+            )
+        return typed(query.value, 0, str, default="")
+
 
     @property
     def secondary_activity(self) -> str:
@@ -334,10 +349,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT name FROM activities WHERE activity_id={self.secondary_activity_id};
         """
         )
-        res = None
-        if query.next():
-            res = query.value(0)
-        return res
+        return typed(query.value, 0, str, default=None)
 
     @property
     def space(self) -> str:
@@ -346,45 +358,34 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT name FROM spaces WHERE space_id={self.space_id};
         """
         )
-        query.next()
-        res = query.value(0)
-        return res
+        return typed(query.value, 0, str, default=None)
 
     @property
-    def level(self) -> int:
+    def level(self) -> str:
         query = submit_sql(
             f"""
         SELECT name FROM levels WHERE level_id={self.level_id};
         """
         )
-        query.next()
-        res = query.value(0)
-        return res
+        return typed(query.value, 0, str)
 
-    def __time_spent():
-        def fget(self) -> int:
-            query = submit_sql(
-                f"""
-            SELECT time_spent FROM tasks WHERE id={self.id}
-            """
-            )
-            query.first()
-            x = query.value(0)
-            return x
+    @property
+    def time_spent(self) -> int:
+        query = submit_sql(
+            f"""
+        SELECT time_spent FROM tasks WHERE id={self.id}
+        """
+        )
+        return typed(query.value, 0, int)
 
-        def fset(self, value) -> None:
-            submit_sql(
-                f"""
-            UPDATE tasks SET time_spent={int(value)} 
-            WHERE id={self.id}
-            """
-            )
-            return
-
-        return locals()
-
-    time_spent = property(**__time_spent())
-    del __time_spent
+    @time_spent.setter
+    def time_spent(self, value) -> None:
+        submit_sql(
+            f"""
+        UPDATE tasks SET time_spent={int(value)} 
+        WHERE id={self.id}
+        """
+        )
 
     @property
     def is_done(self) -> bool:
@@ -393,9 +394,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT done FROM tasks WHERE id={self.id}
         """
         )
-        query.first()
-        x = query.value(0)
-        return x
+        return bool(typed(query.value, 0, int))
 
     @is_done.setter
     def is_done(self, value) -> None:
@@ -405,7 +404,6 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         WHERE id={self.id}
         """
         )
-        return
 
     @property
     def requires(self) -> list:
@@ -414,7 +412,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         """
         )
-        return [Task(row(0)) for row in iter_over(query)]
+        return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
     def required_by(self):
@@ -423,31 +421,26 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
-        return [Task(row(0)) for row in iter_over(query)]
+        res = [Task(typed(row, 0, int)) for row in iter_over(query)]
+        return res
 
-    def __adjust_time_spent():
-        def fget(self) -> int:
-            query = submit_sql(
-                f"""
-            SELECT adjust_time_spent FROM tasks WHERE id={self.id}
-            """
-            )
-            query.first()
-            return query.value(0)
+    @property
+    def adjust_time_spent(self) -> int:
+        query = submit_sql(
+            f"""
+        SELECT adjust_time_spent FROM tasks WHERE id={self.id}
+        """
+        )
+        return typed(query.value, 0, int)
 
-        def fset(self, value) -> None:
-            query = submit_sql(
-                f"""
-            UPDATE tasks SET adjust_time_spent={value} 
-            WHERE id={self.id}
-            """
-            )
-            return
-
-        return locals()
-
-    adjust_time_spent = property(**__adjust_time_spent())
-    del __adjust_time_spent
+    @adjust_time_spent.setter
+    def adjust_time_spent(self, value) -> None:
+        query = submit_sql(
+            f"""
+        UPDATE tasks SET adjust_time_spent={value} 
+        WHERE id={self.id}
+        """
+        )
 
     @property
     def considered_open(self) -> bool:
@@ -467,10 +460,9 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         ;
         """
         )
-        if query.next():
-            return query.value(0)
-        else:
+        if not query.isValid():
             return 0
+        return typed(query.value, 0, int, default=0)
 
     @property
     def total_time_spent(self) -> int:
@@ -483,7 +475,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id};
         """
         )
-        res = [row(0) for row in iter_over(query)]
+        res = [typed(row, 0, int) for row in iter_over(query)]
         return res
 
     def __eq__(self, other):

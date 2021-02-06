@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>928</width>
+    <width>388</width>
     <height>409</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
      <property name="currentIndex">
       <number>1</number>
      </property>
-     <widget class="QWidget" name="before_deadline" native="true">
+     <widget class="QWidget" name="before_deadline">
       <attribute name="title">
        <string>vor Deadline</string>
       </attribute>
@@ -162,29 +162,268 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
-        <widget class="QDateTimeEdit" name="deadline">
-         <property name="specialValueText">
-          <string>&quot;Never&quot;</string>
-         </property>
-         <property name="accelerated">
-          <bool>false</bool>
-         </property>
-         <property name="dateTime">
-          <datetime>
-           <hour>0</hour>
-           <minute>0</minute>
-           <second>0</second>
-           <year>2020</year>
-           <month>1</month>
-           <day>1</day>
-          </datetime>
-         </property>
-         <property name="calendarPopup">
-          <bool>true</bool>
-         </property>
-        </widget>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="title">
+            <string>Datum nach ...</string>
+           </property>
+           <layout class="QFormLayout" name="formLayout">
+            <item row="0" column="0">
+             <widget class="QSpinBox" name="in_days">
+              <property name="maximum">
+               <number>999</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Tage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Wochen</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QSpinBox" name="in_weeks">
+              <property name="maximum">
+               <number>999</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Monate</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QSpinBox" name="in_months">
+              <property name="maximum">
+               <number>999</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Referenzdatum</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDateTimeEdit" name="reference_date">
+           <property name="specialValueText">
+            <string>&quot;Never&quot;</string>
+           </property>
+           <property name="accelerated">
+            <bool>false</bool>
+           </property>
+           <property name="dateTime">
+            <datetime>
+             <hour>0</hour>
+             <minute>0</minute>
+             <second>0</second>
+             <year>2020</year>
+             <month>1</month>
+             <day>1</day>
+            </datetime>
+           </property>
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="enter_date">
+           <property name="text">
+            <string>Eintragen</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
+     </widget>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Page</string>
+      </attribute>
+      <widget class="QCheckBox" name="every_month">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>196</y>
+         <width>108</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jeden Xten Monat</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="every_minute">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>300</y>
+         <width>98</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jede Xte Minute</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="every_hour">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>274</y>
+         <width>100</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jede Xte Stunde</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="every_week">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>222</y>
+         <width>99</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jede Xte Woche</string>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_2">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>196</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_3">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>222</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_5">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>274</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>23</number>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="every_day">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>248</y>
+         <width>96</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jeden Xten Tag</string>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>170</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_6">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>300</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>59</number>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="every_year">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>170</y>
+         <width>92</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>jedes Xte Jahr</string>
+       </property>
+      </widget>
+      <widget class="QSpinBox" name="spinBox_4">
+       <property name="geometry">
+        <rect>
+         <x>314</x>
+         <y>248</y>
+         <width>230</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>365</number>
+       </property>
+      </widget>
      </widget>
      <widget class="QWidget" name="after_deadline">
       <attribute name="title">
@@ -315,7 +554,7 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Discard|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Discard|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
      </property>
     </widget>
    </item>
