@@ -131,9 +131,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QRadioButton" name="is_cycle">
+           <widget class="QRadioButton" name="is_routine">
             <property name="text">
-             <string>Zyklus</string>
+             <string>Routine</string>
             </property>
             <attribute name="buttonGroup">
              <string notr="true">kind_of</string>

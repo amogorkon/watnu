@@ -1,21 +1,26 @@
 import sys
 from collections.abc import Generator
+from enum import Enum, Flag
 from functools import wraps
 from inspect import currentframe, getframeinfo
 from pathlib import Path
 from shlex import split
+from time import time
 from types import MethodType
 from typing import NamedTuple
 
 import numpy as np
 from PyQt5.QtSql import QSqlQuery
 
+last_sql_access = 0
 
-def set_globals(c, l, t):
-    global config, logger, TYPE
+ASPECT = Flag("Aspect", "property_set property_get")
+ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
+
+def set_globals(c, l):
+    global config, logger
     config = c
     logger = l
-    TYPE = t
 
 def iter_over(query):
     if query.isValid():
@@ -33,13 +38,31 @@ def logged(func):
         else:
             return func(*args, **kwargs)
     return wrapper
-from enum import Flag
 
-ASPECT = Flag("Aspect", "property")
 
-def aspectized(decorator, aspect=ASPECT.property):
+
+def cached(func):
+    cache = {}  # (args[0] -> (last_called, result)
+    
+    def wrapper(*args, **kwargs):
+        global last_sql_access
+        nonlocal cache
+        try:
+            if cache[args[0]][0] <= last_sql_access:
+                res = func.fget(*args, **kwargs)
+                cache[args[0]] = time(), res
+                return res
+            else: 
+                return cache[args[0]][1]
+        except KeyError:
+            res = func.fget(*args, **kwargs)
+            cache[args[0]] = time(), res
+            return res
+    return wrapper
+
+def aspectized(decorator, aspect=ASPECT.property_get, pattern=None):
     def wrapping (cls):
-        if ASPECT.property in aspect:
+        if ASPECT.property_get in aspect:
             for name, attr in cls.__dict__.items():
                 if not name.startswith("__") and type(attr) is property:
                     setattr(cls, name, property(decorator(attr), attr.fset))
@@ -77,6 +100,8 @@ def submit_sql(statement, debugging=False):
         logger.info(
             f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}:" + statement
         )
+    global last_sql_access
+    last_sql_access = time() -1
     return query
 
 
@@ -96,7 +121,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         return sum(typed(row, 0, int) + typed(row, 1, int) for row in iter_over(query))
 
-#@aspectized(logged, ASPECT.property)
+@aspectized(cached, ASPECT.property_get)
 class Task(NamedTuple):
     id: int
 
@@ -223,15 +248,6 @@ WHERE tasks.id = {self.id}
         )
         for row in iter_over(query):
             yield typed(row, 0, str), typed(row, 1, int)
-
-    @property
-    def is_habit(self) -> bool:
-        query = submit_sql(
-            f"""
-        SELECT type FROM tasks WHERE id={self.id}
-        """
-        )
-        return TYPE(typed(query.value, 0, int)) is TYPE.habit
 
     @property
     def skills(self) -> list[int]:
@@ -402,7 +418,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
             f"""
         UPDATE tasks SET done={value} 
         WHERE id={self.id}
-        """
+        """,
         )
 
     @property
@@ -477,6 +493,13 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         )
         res = [typed(row, 0, int) for row in iter_over(query)]
         return res
+    
+    @property
+    def ilk(self):
+        query = submit_sql(f"""
+SELECT ilk FROM tasks WHERE id={self.id}
+                           """)
+        return ILK(typed(query.value, 0, int))
 
     def __eq__(self, other):
         return self.id == other.id

@@ -258,6 +258,17 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="edit_priority">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>../extra/feathericons/edit.svg</normaloff>../extra/feathericons/edit.svg</iconset>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -551,6 +562,17 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="edit_timing">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>../extra/feathericons/edit.svg</normaloff>../extra/feathericons/edit.svg</iconset>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -771,6 +793,17 @@
                </property>
                <property name="alignment">
                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="edit_balanced">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>../extra/feathericons/edit.svg</normaloff>../extra/feathericons/edit.svg</iconset>
                </property>
               </widget>
              </item>

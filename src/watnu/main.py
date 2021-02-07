@@ -32,7 +32,7 @@ from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
 import config
 from algo import (balance, check_task_conditions, constraints_met,
                   filter_tasks, prioritize, schedule, skill_level)
-from classes import Skill, Task, iter_over, set_globals, submit_sql, typed
+from classes import ILK, Task, iter_over, set_globals, submit_sql, typed
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
@@ -58,7 +58,6 @@ logger = logging.getLogger(__name__)
 ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 S = Enum("STATE", "init main editing running final")
-TYPE = Enum("TaskType", "task habit tradition cycle")  # * enum numbering starts with 1!
 
 WEEKTIME = {name: i for i, name in enumerate([(day, hour, part) 
                     for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] 
@@ -246,6 +245,7 @@ VALUES ('{d["do"]}',
         if reply == QtWidgets.QMessageBox.Yes:
             print(config.count, bin(config.coin))
             config.write()
+            tray.setVisible(False)
             state.flux_to(S.final)
             event.accept()
         else:
@@ -270,6 +270,28 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         self.balanced_tasks = None
         self.priority_tasks = None
         self.timing_tasks = None
+        
+        @self.edit_priority.clicked.connect
+        def edit_priority():
+            global list_of_task_lists
+            win = TaskEditor(self.task_priority, win_list=list_of_task_lists)
+            if win.exec_():
+                self.lets_check_whats_next()
+        
+        @self.edit_timing.clicked.connect
+        def edit_timing():
+            global list_of_task_lists
+            win = TaskEditor(self.task_timing, win_list=list_of_task_lists)
+            if win.exec_():
+                self.lets_check_whats_next()
+
+        @self.edit_balanced.clicked.connect
+        def edit_balanced():
+            global list_of_task_lists
+            win = TaskEditor(self.task_balanced, win_list=list_of_task_lists)
+            if win.exec_():
+                self.lets_check_whats_next()
+            
         
         @self.sec_timer.timeout.connect
         def sec_timer_timeout():
@@ -877,7 +899,7 @@ WHERE id == {task.id}
                 "---")
             self.task_list.setItem(i, 6, item)
             item = QtWidgets.QTableWidgetItem()
-            item.setIcon(ok if t.is_habit else nok)
+            item.setIcon(ok if t.ilk is ILK.habit else nok)
             self.task_list.setItem(i, 7, item)
         
         if not tasks:
@@ -955,6 +977,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
         # editing a task - need to set all values accordingly
         if task:
+            self.deadline = task.deadline
             self.skill_ids = self.task.skill_ids
 
             for url, ID in task.resources:
@@ -962,7 +985,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
             self.desc.document().setPlainText(task.do)
 
-            if task.is_habit:
+            if task.ilk is ILK.habit:
                 self.is_habit.setChecked(True)
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
@@ -978,17 +1001,16 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
                 self.deadline.setDate(dt.date())
                 self.deadline.setTime(dt.time())
             """
-
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(last_edited_space))
 
         @self.task_type.toggled.connect
-        def _():
+        def task_type_toggled():
             print("changed selection")
 
         @self.resource_add.clicked.connect
-        def _():
+        def resource_added():
             text, okPressed = QtWidgets.QInputDialog.getText(self, 
                 "Resource hinzufügen",
                 f"Welche URL?", 
@@ -1088,9 +1110,9 @@ WHERE space_id = {space_id}
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id:int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
         if self.is_habit.isChecked():
-            task_type = TYPE.habit
+            task_type = ILK.habit
         else:
-            task_type = TYPE.task
+            task_type = ILK.task
         task_id: int
 
         # it really is a new task
@@ -1267,7 +1289,7 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         self.time_spent = 0  # the time previously tracked by machine
         self.time_spent = self.task.time_spent
         # user estimates time spent with this task untracked 
-        if task.is_habit:
+        if task.ilk is ILK.habit:
             self.adjust_time_spent = 0  
         else:
             self.adjust_time_spent = self.task.adjust_time_spent
@@ -1358,7 +1380,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.ticks += 1
             self.pomodoro += 1
 
-            if not self.task.is_habit:
+            if not self.task.ilk is ILK.habit:
                 total = (x if 
                     (x:=(self.time_spent + self.adjust_time_spent + self.ticks)) > 0
                         else 0)
@@ -1765,7 +1787,7 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
                                 for skill in task.skills]
 
         self.task_desc.setText(task.do)
-        if not task.is_habit:
+        if not task.ilk is ILK.habit:
             total = task.time_spent + task.adjust_time_spent + ticks
         else:
             total = ticks
@@ -1777,7 +1799,7 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
 
     def accept(self):
         super().accept()
-        if not self.task.is_habit:
+        if not self.task.ilk is ILK.habit:
             total = self.hours.value() * 60*60 + self.minutes.value() * 60 - self.pause_time
 
         else:
@@ -2188,7 +2210,7 @@ if __name__ == "__main__":
     db = QSqlDatabase.addDatabase("QSQLITE")
     db.setDatabaseName(config.database)
     query = QSqlQuery()
-    set_globals(config, logger, TYPE)
+    set_globals(config, logger)
 
     if not db.open():
         logger.critical("Could not open DB!")

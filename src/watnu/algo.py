@@ -6,7 +6,7 @@ from time import time
 import numpy as np
 from fuzzylogic.functions import bounded_sigmoid, sigmoid
 
-from classes import Task
+from classes import ILK, Task
 
 WEEKTIME = {
     name: i
@@ -69,7 +69,7 @@ def schedule(tasks: list) -> list:
 
 
 def check_task_conditions(task, now: datetime):
-    if task.is_habit:
+    if task.ilk is ILK.habit:
         if (today := now.date()) > (
             then := datetime.fromtimestamp(task.last_finished).date()
         ):
