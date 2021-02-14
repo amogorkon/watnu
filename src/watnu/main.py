@@ -6,7 +6,7 @@ Run with python main.py and watch the Magik happen!
 import logging
 import sys
 import webbrowser
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 from datetime import datetime, timedelta
 from enum import Enum
 from itertools import count
@@ -32,19 +32,20 @@ from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
 import config
 from algo import (balance, check_task_conditions, constraints_met,
                   filter_tasks, prioritize, schedule, skill_level)
-from classes import ILK, Task, iter_over, set_globals, submit_sql, typed
+from classes import (EVERY, ILK, Every, Task, iter_over, set_globals,
+                     submit_sql, typed)
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
 from ui import (attributions, character, choose_constraints, choose_deadline,
-                choose_skills, companions, inventory, landing, main_window,
-                running_task, settings, statistics, task_editor, task_finished,
-                task_list, what_now)
+                choose_repeats, choose_skills, companions, inventory, landing,
+                main_window, running_task, settings, statistics, task_editor,
+                task_finished, task_list, what_now)
 
 __version__ = (0, 0, 10)
-print("python:", sys.version)
+print("Python:", sys.version)
 print("Watnu Version:", __version__)
-print("numpy:", np.__version__)
+print("Numpy:", np.__version__)
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -59,11 +60,6 @@ ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 S = Enum("STATE", "init main editing running final")
 
-WEEKTIME = {name: i for i, name in enumerate([(day, hour, part) 
-                    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] 
-                    for hour in range(24) 
-                    for part in range(6)])
-            }
 
 def sanitize_db():
     query = submit_sql(f"""
@@ -85,12 +81,12 @@ def write_session(task_id, start, stop, finished=False, pause_time=0):
     query = submit_sql(f"""
         INSERT INTO sessions (task_id, start, stop, pause_time, finished)
         VALUES ('{task_id}', {int(start)}, {int(stop)}, {pause_time}, {finished})
-        """, debugging=True)
+        """)
 
 def breakpoint_():
     from PyQt5.QtCore import pyqtRemoveInputHook
     pyqtRemoveInputHook()
-    breakpoint()
+    sys.breakpointhook()
 
 class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     def __init__(self):
@@ -150,7 +146,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
                 return
-            win = TaskEditor()
+            win = Editor()
             win.activateWindow()
             win.show()
      
@@ -195,9 +191,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         def actionExport():
             logger.error("Not Implemented.")
             return
-            with open("f{space}.stay", "w") as f:
-                tasks
-                f.write(dumps(tasks))
 
         @self.actionImport.triggered.connect
         def actionImport():
@@ -274,21 +267,21 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         @self.edit_priority.clicked.connect
         def edit_priority():
             global list_of_task_lists
-            win = TaskEditor(self.task_priority, win_list=list_of_task_lists)
+            win = Editor(self.task_priority, win_list=list_of_task_lists)
             if win.exec_():
                 self.lets_check_whats_next()
         
         @self.edit_timing.clicked.connect
         def edit_timing():
             global list_of_task_lists
-            win = TaskEditor(self.task_timing, win_list=list_of_task_lists)
+            win = Editor(self.task_timing, win_list=list_of_task_lists)
             if win.exec_():
                 self.lets_check_whats_next()
 
         @self.edit_balanced.clicked.connect
         def edit_balanced():
             global list_of_task_lists
-            win = TaskEditor(self.task_balanced, win_list=list_of_task_lists)
+            win = Editor(self.task_balanced, win_list=list_of_task_lists)
             if win.exec_():
                 self.lets_check_whats_next()
             
@@ -423,41 +416,34 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
 
         @self.done_priority.clicked.connect
         def done_priority_clicked():
-            Task_Finished(self.task_priority)
+            win = Task_Finished(self.task_priority)
+            win.exec_()            
 
         @self.done_balanced.clicked.connect
         def _done_balanced_clicked():
-            Task_Finished(self.task_balanced)
+            win = Task_Finished(self.task_balanced)
+            win.exec_()
 
         @self.done_timing.clicked.connect
         def done_timing_clicked():
-            Task_Finished(self.task_timing)
+            win = Task_Finished(self.task_timing)
+            win.exec_()
 
     def lets_check_whats_next(self):
-        global config
+        global config, considered_tasks
         seed((config.coin^config.lucky_num) * config.count)
         config.count += 1
 
-        query = submit_sql(f"""
-        SELECT id FROM tasks
-        WHERE deleted != TRUE AND draft != TRUE AND inactive != TRUE
-        ;
-        """)        
         self.groups = defaultdict(lambda: list())
 
-        all_tasks = [Task(row(0)) for row in iter_over(query)]
         now = datetime.now()
-        
-        for t in all_tasks:
+        for t in considered_tasks:
             check_task_conditions(t, now=now)
-        
-        self.tasks = list(filter(lambda t: t.considered_open and constraints_met(t.constraints, now), all_tasks))
+        self.tasks = list(filter(lambda t: t.considered_open and constraints_met(t.constraints, now), considered_tasks))
 
         if not self.tasks:
             mb = QtWidgets.QMessageBox()
-            mb.setText(
-                "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte."
-            )
+            mb.setText("Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.")
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
             mb.exec_()
@@ -624,6 +610,7 @@ WHERE id == {task.id}
 """)
             self.task_list.removeRow(x)
             self.update()
+            consider_tasks()
 
         @self.button3.clicked.connect
         def active_inactive():
@@ -649,6 +636,7 @@ WHERE id == {task.id}
             
             self.task_list.removeRow(x)
             self.update()
+            consider_tasks()
             
         @self.button4.clicked.connect
         def edit_task():
@@ -673,7 +661,7 @@ WHERE id == {task.id}
                 win_running.raise_()
                 return
             
-            win = TaskEditor(task, win_list=self)
+            win = Editor(task, win_list=self)
             win.show()
 
         @self.button5.clicked.connect
@@ -706,7 +694,7 @@ WHERE id == {task.id}
                 mb.exec_()
                 return
             
-            win = TaskEditor(win_list=self)
+            win = Editor(win_list=self)
             win.show()
             
         @self.button7.clicked.connect
@@ -719,6 +707,7 @@ WHERE id == {task.id}
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein anderer Task bearbeitet.")
+                mb = QtWidgets.QMessageBox()
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
@@ -731,6 +720,7 @@ WHERE id == {task.id}
 """)
             self.task_list.removeRow(x)
             self.update()
+            consider_tasks()
 
         @self.button8.clicked.connect
         def throw_coins():
@@ -753,19 +743,15 @@ WHERE id == {task.id}
             seed((config.coin^config.lucky_num) * config.count)
 
             x = choice(['Kopf', 'Zahl'])
+            mb = QtWidgets.QMessageBox()
+            mb.setWindowTitle("Hmm..")
             if x == "Kopf":
-                mb = QtWidgets.QMessageBox()
                 mb.setText(f"Du hast Kopf geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-heads.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
             else:
-                mb = QtWidgets.QMessageBox()
-
                 mb.setText(f"Du hast Zahl geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
+            mb.exec_()
 
         @self.status.buttonClicked.connect
         def status_switched():
@@ -793,7 +779,7 @@ WHERE id == {task.id}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=0, win_list=self)
+        win = Editor(task, cloning=True, as_sup=0, win_list=self)
         win.show()
 
     def clone_as_sub(self):
@@ -811,7 +797,7 @@ WHERE id == {task.id}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=-1, win_list=self)
+        win = Editor(task, cloning=True, as_sup=-1, win_list=self)
         win.show()
 
 
@@ -830,7 +816,7 @@ WHERE id == {task.id}
             return
         
         task = Task(self.task_list.item(x,0).data(Qt.UserRole))
-        win = TaskEditor(task, cloning=True, as_sup=1, win_list=self)
+        win = Editor(task, cloning=True, as_sup=1, win_list=self)
         win.show()
 
     def build_task_list(self):
@@ -920,9 +906,15 @@ WHERE id == {task.id}
         list_of_task_lists.remove(self)
 
 
-class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
+class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
-    def __init__(self, task:Task=None, cloning:bool=False, as_sup:bool=0, win_list:Task_List=None):
+    def __init__(self, 
+                 task:Task=None, 
+                 cloning:bool=False, 
+                 templating:bool=False, 
+                as_sup:bool=0, 
+                win_list:Task_List=None,
+                ):
         super().__init__()
         self.activateWindow()
         self.setupUi(self)
@@ -931,9 +923,13 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         if cloning:
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
         
+        if templating:
+            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
+        
         self.setOption(QtWidgets.QWizard.HaveFinishButtonOnEarlyPages, True)
         self.task:Task = task
         self.cloning = cloning
+        self.templating = templating
         self.subtasks: list[int] = []
         self.supertasks: list[int] = []
         self.skill_ids: list[int] = []
@@ -966,6 +962,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         self.space.setModelColumn(1)
         self.constraints:str = None
         self.deadline = float("inf")
+        self.repeats: namedtuple = None
 
         query = submit_sql(f"""
         SELECT activity_id, name FROM activities;
@@ -979,6 +976,7 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         if task:
             self.deadline = task.deadline
             self.skill_ids = self.task.skill_ids
+            self.priority.setValue(task.priority)
 
             for url, ID in task.resources:
                 self.resources.addItem(url, ID)
@@ -987,27 +985,30 @@ class TaskEditor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
             if task.ilk is ILK.habit:
                 self.is_habit.setChecked(True)
+            if task.ilk is ILK.tradition:
+                self.is_tradition.setChecked(True)
+            if task.ilk is ILK.routine:
+                self.is_routine.setChecked(True)
+                
+            if task.ilk in (ILK.habit, ILK.tradition, ILK.routine):
+                self.button8.setEnabled(True)
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
             self.level.setCurrentIndex(self.level.findText(self.task.level))
             self.activity.setCurrentIndex(self.activity.findText(self.task.activity))
             self.secondary_activity.setCurrentIndex(
                 self.secondary_activity.findText(self.task.secondary_activity))
-            """
-            if not isinf(self.task.deadline):
-                self.deadline.setEnabled(True)
-                self.deadline_active.setChecked(True)
-                dt = QDateTime.fromSecsSinceEpoch(int(self.task.deadline))
-                self.deadline.setDate(dt.date())
-                self.deadline.setTime(dt.time())
-            """
+            self.repeats = self.task.repeats
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(last_edited_space))
 
-        @self.task_type.toggled.connect
-        def task_type_toggled():
-            print("changed selection")
+        @self.kind_of.buttonToggled.connect
+        def kind_of_toggled():
+            if self.is_task.isChecked():
+                self.button8.setEnabled(False)
+            else:
+                self.button8.setEnabled(True)
 
         @self.resource_add.clicked.connect
         def resource_added():
@@ -1070,7 +1071,8 @@ WHERE url = '{text}'
 
         @self.button8.clicked.connect
         def _():
-            print("button8 clicked")
+            dialog = Chooser(self, self.task, kind="repeats")
+            dialog.exec_()
 
         @self.button9.clicked.connect
         def skills_button():
@@ -1098,6 +1100,7 @@ WHERE space_id = {space_id}
                         self.secondary_activity.setCurrentIndex(0)
 
     def accept(self):
+        # TODO check sanity for traditions and routines
         super().accept()
         global last_edited_space
         
@@ -1109,21 +1112,26 @@ WHERE space_id = {space_id}
         primary_activity_id = x if (x:=self.activity.currentData()) is not None else 'NULL'
         secondary_activity_id = x if (x:=self.secondary_activity.currentData()) is not None else 'NULL'
         level_id:int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
+        
+        task_type = ILK.task
         if self.is_habit.isChecked():
             task_type = ILK.habit
-        else:
-            task_type = ILK.task
+        if self.is_routine.isChecked():
+            task_type = ILK.routine
+        if self.is_tradition.isChecked():
+            task_type = ILK.tradition
+        
         task_id: int
 
         # it really is a new task
-        if not self.task or (self.task and self.cloning):
+        if not self.task or (self.task and self.cloning) or (self.task and self.templating):
             query = submit_sql(f"""
 INSERT INTO tasks 
 (do, 
 space_id, 
 primary_activity_id,
 secondary_activity_id,
-type
+ilk
 )
 
 VALUES 
@@ -1166,32 +1174,30 @@ SET do = '{do}',
     primary_activity_id = {primary_activity_id},
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
-    type = {task_type.value}
+    ilk = {task_type.value}
 WHERE id={task_id}
-""")        
-            # need to clean up first - dependencies
+""", debugging=True)        
+            # need to clean up first
             submit_sql(f"""
 DELETE FROM task_requires_task WHERE task_of_concern == {task_id}
     """)
             submit_sql(f"""
 DELETE FROM task_requires_task WHERE required_task == {task_id}
 """)
-            # need to clean up first - skills
-            submit_sql(f"""
-DELETE FROM task_trains_skill WHERE task_id = {task_id}
-    """)
-            # need to clean up first - resources
             submit_sql(f"""
 DELETE FROM task_uses_resource WHERE task_id = {task_id}
     """)
-            # need to clean up first - constraints
+            submit_sql(f"""
+DELETE FROM task_trains_skill WHERE task_id = {task_id}
+    """)
             submit_sql(f"""
 DELETE FROM constraints WHERE task_id = {task_id}
             """)
-            
-            # need to clean up first - deadlines
             submit_sql(f"""
 DELETE FROM deadlines WHERE task_id = {task_id}
+            """)
+            submit_sql(f"""
+DELETE FROM repeats WHERE task_id = {task_id}
             """)
 
         # enter fresh, no matter whether new or old
@@ -1203,7 +1209,6 @@ INSERT OR IGNORE INTO task_requires_task
 VALUES ({task_id}, {required_task})
 ;
 """)
-
         for task_of_concern in self.supertasks:
             submit_sql(f"""
 INSERT OR IGNORE INTO task_requires_task
@@ -1211,43 +1216,50 @@ INSERT OR IGNORE INTO task_requires_task
 VALUES ({task_of_concern}, {task_id})
 ;
 """)        
-
-        # enter dependencies
         for skill_id in self.skill_ids:
             submit_sql(f"""
 INSERT INTO task_trains_skill
-    (task_id, skill_id)
-    VALUES (
-    {task_id}, {skill_id}
+(task_id, skill_id)
+VALUES (
+{task_id}, {skill_id}
     );
 """)
-
-        # enter resources
         for i in range(self.resources.count()):
             submit_sql(f"""
 INSERT INTO task_uses_resource
 (task_id, resource_id)
 VALUES ({task_id}, {self.resources.itemData(i)});
 """)
-
-        # enter constraints
         if self.constraints:
             submit_sql(f"""
     INSERT INTO constraints
     (task_id, flags)
     VALUES ({task_id}, '{self.constraints}')
             """)
-            
-        # enter deadline
         if self.deadline != float("inf"):
             submit_sql(f"""
-    INSERT INTO deadlines
-    (task_id, time_of_reference)
-    VALUES ({task_id}, '{self.deadline}')
+INSERT INTO deadlines
+(task_id, time_of_reference)
+VALUES ({task_id}, '{self.deadline}')
             """)
+            
+        if self.repeats is not None:
+            submit_sql(f"""
+INSERT INTO repeats
+(task_id, every_ilk, x_every, min_distance, x_per)
+VALUES (
+{task_id}, 
+{self.repeats.every_ilk.value},
+{self.repeats.x_every},
+{self.repeats.x_per},
+{self.repeats.per_ilk.value}
+)
+            """, debugging=True)
 
         for win in list_of_task_lists:
             win.build_task_list()
+        
+        consider_tasks()
         state.flux_to(S.main)
 
     def reject(self):
@@ -1486,8 +1498,11 @@ QProgressBar::chunk {
             if (timer_was_running := self.timer.isActive()):
                 self.timer.stop()
                 self.player.pause()
-            if not Task_Finished(self.task, ticks=self.ticks, 
-                    start=self.start_time, pause_time=self.pause_time).result():
+            win = Task_Finished(self.task, 
+                                ticks=self.ticks, 
+                                start=self.start_time, 
+                                pause_time=self.pause_time)
+            if not win.exec_():
                 if timer_was_running:
                     self.timer.start()
                     self.player.play()
@@ -1633,7 +1648,7 @@ Und denk dran:
             mb.setWindowTitle("Hmm..")
             mb.exec_()
 
-def Chooser(editor: TaskEditor, task: Task, kind:str):
+def Chooser(editor: Editor, task: Task, kind:str):
     """Returns the fitting instance of a Chooser."""
     class SkillChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
         def __init__(self, editor, task=None):
@@ -1767,11 +1782,47 @@ def Chooser(editor: TaskEditor, task: Task, kind:str):
             super().accept()
             self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
+
+    class RepeatChooser(QtWidgets.QDialog, choose_repeats.Ui_Dialog):
+        def __init__(self, editor:Editor, task:Task=None):
+            super().__init__()
+            self.setupUi(self)
+            self.editor = editor
+            self.every_ilk.setId(self.every_minute, 1)
+            self.every_ilk.setId(self.every_hour, 2)
+            self.every_ilk.setId(self.every_day, 3)
+            self.every_ilk.setId(self.every_week, 4)
+            self.every_ilk.setId(self.every_month, 5)
+            self.every_ilk.setId(self.every_year, 6)
+            
+            self.per_ilk.setId(self.per_minute, 1)
+            self.per_ilk.setId(self.per_hour, 2)
+            self.per_ilk.setId(self.per_day, 3)
+            self.per_ilk.setId(self.per_week, 4)
+            self.per_ilk.setId(self.per_month, 5)
+            self.per_ilk.setId(self.per_year, 6)
+            
+            if task is not None:
+                self.every_ilk.button(task.repeats.every_ilk.value).setChecked(True)
+                self.x_every.setValue(task.repeats.amount)
+                self.per_ilk.button(task.repeats.per_ilk.value).setChecked(True)
+                self.x_per.setValue(task.repeats.min_distance)
+                
+        
+        def accept(self):
+            super().accept()
+            self.editor.repeats = Every(EVERY(self.every_ilk.checkedId()),
+                                        self.x_every.value(),
+                                        EVERY(self.per_ilk.checkedId()),
+                                        self.x_per.value()
+                                        )
+
     cases = {"subtasks": SubTaskChooser, 
              "supertasks": SuperTaskChooser, 
              "skills": SkillChooser,
              "deadline": DeadlineChooser,
              "constraints": Constraints,
+             "repeats": RepeatChooser,
              }
     return cases[kind](editor, task)
 
@@ -1783,11 +1834,13 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
         self.pause_time = pause_time
         self.task = task
         self.start = time() if not start else start
-        self.old_skills = old_skills if old_skills else [(skill.id, int(skill_level(skill.time_spent))) 
-                                for skill in task.skills]
+        self.old_skills = old_skills or [
+            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
+        ]
+
 
         self.task_desc.setText(task.do)
-        if not task.ilk is ILK.habit:
+        if task.ilk is not ILK.habit:
             total = task.time_spent + task.adjust_time_spent + ticks
         else:
             total = ticks
@@ -1795,13 +1848,11 @@ class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
         rst, minutes = modf(rst*60)
         self.hours.setValue(int(hours))
         self.minutes.setValue(int(minutes))
-        self.exec_()
-
+                    
     def accept(self):
         super().accept()
-        if not self.task.ilk is ILK.habit:
+        if self.task.ilk not in (ILK.habit, ILK.routine):  # ? is that right?
             total = self.hours.value() * 60*60 + self.minutes.value() * 60 - self.pause_time
-
         else:
             total = (self.task.time_spent + self.task.adjust_time_spent + 
                 self.hours.value() * 60*60 + self.minutes.value() * 60)
@@ -1833,6 +1884,19 @@ YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
             win.button5.setEnabled(True)
             win.build_task_list()
         win_what.lets_check_whats_next()
+        
+        if self.task.ilk is ILK.tradition:
+                mb = QMessageBox()
+                mb.setText("""
+Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den nächsten Stichtag erstellt werden?
+""")
+                mb.setInformativeText("Bitte bestätigen!")
+                mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+                mb.setDefaultButton(QMessageBox.Yes)
+                 # TODO check on edit if deadline and repeat is set for tradition
+                if mb.exec_():
+                    win = Editor(task=self.task, templating=True)   # TODO templating!
+                    win.exec_()
         return True
 
     def reject(self):
@@ -2189,14 +2253,23 @@ class Application(QtWidgets.QApplication):
         logger.info("ASDF")
         event.ignore()
         return False
-        font = app.font()
-        font.setPointSize(font.pointSize() + 1)
-        app.setFont(font)
+        #font = app.font()
+        #font.setPointSize(font.pointSize() + 1)
+        #app.setFont(font)
 
         # if QtGui.QApplication.keyboardModifiers() == Qt.ControlModifier:
         #     font = app.font()
         #     font.setPointSize(font.pointSize() + 1)
         #     app.setFont(font)
+
+def consider_tasks():
+    global considered_tasks
+    query = submit_sql(f"""
+        SELECT id FROM tasks
+        WHERE deleted != TRUE AND draft != TRUE AND inactive != TRUE
+        ;
+        """)
+    considered_tasks = [Task(row(0)) for row in iter_over(query)]
 
 if __name__ == "__main__":
     path = Path(sys.argv[0]).parents[0]
@@ -2220,12 +2293,15 @@ if __name__ == "__main__":
         first_start.run(db, query, config, logger)
         config.first_start = False
         config.write()
-        
+    
     if config.run_sql_stuff:
         config.run_sql_stuff = False
         config.write()
+        # just in case..
+        dbpath = path/config.database
+        backup = path/(config.database + ".bak")
+        backup.write_bytes(dbpath.read_bytes())  # nice way to copy a file
         import sql_stuff
-        
     
     activity_color = {0: config.activity_color_body,
                     1: config.activity_color_mind,
@@ -2233,10 +2309,17 @@ if __name__ == "__main__":
                     }
 
     app = Application(sys.argv) 
+    font = QtGui.QFontDatabase.addApplicationFont("extra/exo 2/Exo2.0-Black.otf")  # TODO
+    icon = QIcon(config.icon)
     win_main = MainWindow()
+    win_main.setWindowIcon(icon)
     win_main.statusBar.show()
-    win_main.statusBar.showMessage("Willkommen zurück! Lass uns was schaffen!", 10000)
+    win_main.statusBar.showMessage("Willkommen zurück! Lese Aufgaben ein...", 10000)
+    considered_tasks = []
+    consider_tasks()
+    win_main.statusBar.showMessage("Bereit.", 10000)
     list_of_task_lists: list[Task_List] = []
+    tasks = []
     win_what = None
     win_new = None
     win_character = None
@@ -2256,6 +2339,7 @@ if __name__ == "__main__":
         )
 
     state.flux_to(S.main)
+    timer = datetime 
 
     if not db.tables():
         logger.critical("Empty DB - config.first_start has now been set to True, please restart!")
@@ -2273,7 +2357,7 @@ if __name__ == "__main__":
 
     button = QWinTaskbarButton()
     button.setWindow(win_main.windowHandle())
-    icon = QIcon("./extra/feathericons/aperture.svg")
+
     button.setOverlayIcon(icon)
     progress = button.progress()
     progress.setRange(0,100)

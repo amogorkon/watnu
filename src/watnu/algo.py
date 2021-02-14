@@ -1,24 +1,12 @@
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import isinf, sqrt
 from time import time
 
 import numpy as np
 from fuzzylogic.functions import bounded_sigmoid, sigmoid
 
-from classes import ILK, Task
-
-WEEKTIME = {
-    name: i
-    for i, name in enumerate(
-        [
-            (day, hour, part)
-            for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-            for hour in range(24)
-            for part in range(6)
-        ]
-    )
-}
+from classes import EVERY, ILK, Task, iter_over, submit_sql
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
 habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
@@ -62,25 +50,86 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
 
 
 def schedule(tasks: list) -> list:
-    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)), tasks)
+    filtered_by_infinity = filter(lambda t: 
+        not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
     sorted_by_last_checked = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
     sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
     return deque(sorted_by_deadline)
 
 
-def check_task_conditions(task, now: datetime):
+def check_task_conditions(task, now: datetime, finished_sessions:list=None):
+    if not task.is_done:
+        return
+    
+    if task.repeats is None:
+        return
+    
+    
+    every_x = task.repeats.x_every
+    # ! that would be a nice place for pattern matching...
+    then = datetime.fromtimestamp(task.last_finished)
     if task.ilk is ILK.habit:
-        if (today := now.date()) > (
-            then := datetime.fromtimestamp(task.last_finished).date()
-        ):
+        if now.date() > then.date():
             task.is_done = False
+
+    elif task.repeats is not None:
+        every_ilk, x_every, per_ilk, x_per = task.repeats
+        
+        now = datetime.timestamp(now)
+        
+        if every_ilk is EVERY.minute:
+            then_minute = task.last_finished // 60
+            now_minute = now // 60
+            if (now_minute - then_minute) % every_x == 0:
+                task.is_done = False
+        
+        if every_ilk is EVERY.hour:
+            then_hour = task.last_finished // (60 * 60)
+            now_hour = now // (60 * 60)
+            if (now_hour - then_hour) % every_x == 0:
+                task.is_done = False
+                
+        if every_ilk is EVERY.day:
+            then_day = task.last_finished // ( 60* 60*24)
+            now_day = now // (60*60*24)
+            if (now_day - then_day ) % every_x == 0:
+                task.is_done = False
+        
+        if every_ilk is EVERY.week:
+            then_month = task.last_finished // ( 60* 60 * 24 * 7)
+            now_day = now // (60 * 60*24* 7)
+            if (now_day - then_day ) % every_x == 0:
+                task.is_done = False
+
+        if every_ilk is EVERY.year:
+            now_year = now // (60*60*24*365.25)
+            then_year = task.last_finished // (60 * 60 * 24*365.25)
+            if (now_day - then_day ) % every_x == 0:
+                task.is_done = False
+        
+        if per_ilk is not EVERY.undetermined:
+            td = timedelta({EVERY.minute: 60,
+                            EVERY.hour : 60*60,
+                            EVERY.day: 60*60*24,
+                            EVERY.week: 60*60*24*7,
+                            EVERY.year: 60*60*24*365.25
+                            }[per_ilk])
+            
+            now = datetime.fromtimestamp(now)
+            then = now - td  # TODO: refactor
+            query = submit_sql(f"""
+SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  
+""")
+            if len(list(iter_over(query))) < x_per:
+                task.is_done = False
+        print(22, task.is_done)
+        
 
 
 def filter_tasks(tasks, pattern):
     if pattern.isspace() or not pattern:
         return tasks
-    res = list(filter(lambda t: pattern in t.do.casefold(), tasks))
-    return res
+    return list(filter(lambda t: pattern in t.do.casefold(), tasks))
 
 
 def skill_level(seconds):

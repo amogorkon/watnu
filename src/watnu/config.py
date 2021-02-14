@@ -68,6 +68,7 @@ class Config:
     generated_faces_token: str = None
     tutorial_active: boolean = True
     run_sql_stuff: boolean = False
+    icon: str = "./extra/feathericons/watnu1.png"
 
     def write(self):
         with open("config.stay", "w") as f:

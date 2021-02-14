@@ -111,16 +111,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QRadioButton" name="is_habit">
-            <property name="text">
-             <string>Gewohnheit</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">kind_of</string>
-            </attribute>
-           </widget>
-          </item>
-          <item>
            <widget class="QRadioButton" name="is_tradition">
             <property name="text">
              <string>Tradition</string>
@@ -134,6 +124,16 @@
            <widget class="QRadioButton" name="is_routine">
             <property name="text">
              <string>Routine</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">kind_of</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="is_habit">
+            <property name="text">
+             <string>Gewohnheit</string>
             </property>
             <attribute name="buttonGroup">
              <string notr="true">kind_of</string>
@@ -270,11 +270,14 @@
          </item>
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="priority">
+           <property name="decimals">
+            <number>2</number>
+           </property>
            <property name="minimum">
-            <double>-9001.000000000000000</double>
+            <double>-99999.990000000005239</double>
            </property>
            <property name="maximum">
-            <double>9001.000000000000000</double>
+            <double>99999.990000000005239</double>
            </property>
           </widget>
          </item>
@@ -370,7 +373,11 @@
          <item row="6" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <widget class="QSpinBox" name="ETA_hours"/>
+            <widget class="QSpinBox" name="ETA_hours">
+             <property name="maximum">
+              <number>9999</number>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QSpinBox" name="ETA_mins"/>
@@ -492,7 +499,7 @@
       <item row="1" column="2">
        <widget class="QPushButton" name="button6">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="text">
          <string/>
@@ -505,7 +512,7 @@
       <item row="3" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="text">
          <string/>
@@ -548,10 +555,10 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="button8">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="text">
-         <string/>
+         <string>zeitlicher Abstand von Wiederholungen...</string>
         </property>
         <property name="shortcut">
          <string>8</string>

@@ -25,10 +25,6 @@
   <property name="windowTitle">
    <string>watnu</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="../icons.qrc">
-    <normaloff>:/feather/extra/feathericons/aperture.svg</normaloff>:/feather/extra/feathericons/aperture.svg</iconset>
-  </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>false</bool>
   </property>

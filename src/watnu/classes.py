@@ -1,4 +1,5 @@
 import sys
+from collections import namedtuple
 from collections.abc import Generator
 from enum import Enum, Flag
 from functools import wraps
@@ -16,6 +17,16 @@ last_sql_access = 0
 
 ASPECT = Flag("Aspect", "property_set property_get")
 ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
+class EVERY(Enum):
+    undetermined = -1
+    minute = 1
+    hour = 2
+    day = 3
+    week = 4
+    month = 5
+    year = 6
+
+Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
 
 def set_globals(c, l):
     global config, logger
@@ -35,8 +46,7 @@ def logged(func):
             res = func.fget(*args, **kwargs)
             print(args[0], func.fget.__name__, "=>", res)
             return res
-        else:
-            return func(*args, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
 
 
@@ -52,8 +62,7 @@ def cached(func):
                 res = func.fget(*args, **kwargs)
                 cache[args[0]] = time(), res
                 return res
-            else: 
-                return cache[args[0]][1]
+            return cache[args[0]][1]
         except KeyError:
             res = func.fget(*args, **kwargs)
             cache[args[0]] = time(), res
@@ -75,9 +84,8 @@ def typed(row, idx, kind: type, default=...):
     if default is not ...:
         if res == "" or res is None:
             return default
-        else:
-            assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
-            return res
+        assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
+        return res
     else:
         assert type(res) is kind, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
     return res
@@ -407,19 +415,37 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
     def is_done(self) -> bool:
         query = submit_sql(
             f"""
-        SELECT done FROM tasks WHERE id={self.id}
+SELECT done FROM tasks where id={self.id}
         """
         )
-        return bool(typed(query.value, 0, int))
+        return typed(query.value, 0, int)
+        
+#                 query = submit_sql(
+#             f"""
+# SELECT COUNT(*) FROM sessions WHERE task_id={self.id} and finished=TRUE
+#         """)
+#         return typed(query.value, 0, int)
 
     @is_done.setter
     def is_done(self, value) -> None:
         query = submit_sql(
             f"""
-        UPDATE tasks SET done={value} 
-        WHERE id={self.id}
-        """,
+UPDATE tasks
+SET done={value} 
+WHERE id={self.id}
+        """
         )
+        
+#                 query = submit_sql(f"""
+# SELECT session_id  FROM sessions WHERE task_id = {self.id} AND finished = TRUE ORDER BY stop DESC
+# """)
+#         session_id = typed(query.value, 0, int, default=None)
+#         if session_id is not None:
+#             query = submit_sql(f"""
+# UPDATE sessions 
+# SET finished={value}
+# WHERE session_id = {session_id}
+# """,debugging=True)
 
     @property
     def requires(self) -> list:
@@ -437,8 +463,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
-        res = [Task(typed(row, 0, int)) for row in iter_over(query)]
-        return res
+        return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
     def adjust_time_spent(self) -> int:
@@ -491,8 +516,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id};
         """
         )
-        res = [typed(row, 0, int) for row in iter_over(query)]
-        return res
+        return [typed(row, 0, int) for row in iter_over(query)]
     
     @property
     def ilk(self):
@@ -500,6 +524,27 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
 SELECT ilk FROM tasks WHERE id={self.id}
                            """)
         return ILK(typed(query.value, 0, int))
+   
+    @property
+    def repeats(self):
+        query = submit_sql(f"""
+SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
+                           """)
+        if not query.isValid():
+            return None
+        else:
+            return Every(EVERY(typed(query.value, 0, int,)),
+                        typed(query.value, 1, int), 
+                        EVERY(typed(query.value, 2, int)), 
+                        typed(query.value, 3, int,),
+                        )
+    @property
+    def template(self):
+        query = submit_sql(f"""
+SELECT template FROM tasks WHERE id={self.id}
+""")
+        return typed(query.value(), 0, int, default=None)
 
     def __eq__(self, other):
         return self.id == other.id
+
