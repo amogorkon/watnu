@@ -59,7 +59,7 @@ class Config:
     coin: int = 0b1
     lucky_num: int = 1
     count: int = 1
-    telegram_user: int = None
+    telegram_user: int = 0
     telegram_token: str = None
     tictoc_volume: int = 50
     activity_color_body: str = "darkred"

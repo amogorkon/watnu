@@ -1005,7 +1005,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
         @self.kind_of.buttonToggled.connect
         def kind_of_toggled():
-            if self.is_task.isChecked():
+            if self.is_task.isChecked() or self.is_habit.isChecked():
                 self.button8.setEnabled(False)
             else:
                 self.button8.setEnabled(True)
@@ -1030,7 +1030,6 @@ WHERE url = '{text}'
 """)
                 query.next()
                 resource_id = query.value(0)
-
                 self.resources.addItem(text, resource_id)
 
         @self.resource_remove.clicked.connect
@@ -1969,6 +1968,7 @@ class Settings(QtWidgets.QDialog, settings.Ui_Dialog):
 INSERT OR IGNORE INTO skills (name)
 VALUES ('{text}')
 """)
+                self.build_skill_table()
 
         @self.rename_skill.clicked.connect
         def _():
@@ -1991,6 +1991,7 @@ UPDATE skills
 SET name = '{text}'
 WHERE skill_id == {skill_id};
 """)
+                self.build_skill_table()
 
         @self.clear_unused_resources.clicked.connect
         def _():
@@ -2038,6 +2039,7 @@ DELETE FROM skills WHERE skill_id == {skill_id};
 INSERT OR IGNORE INTO spaces (name)
 VALUES ('{text}')
 """)
+                self.build_spaces_table()
 
         @self.delete_space.clicked.connect
         def _():
@@ -2085,6 +2087,23 @@ SELECT * from spaces where space_id = {self.space_id}
                         (x := self.space_secondary_activity.findData(QVariant(row(4)))) != -1 
                         else 0)
 
+        @self.space_name.textChanged.connect
+        def space_name_changed():
+            submit_sql(f"""
+UPDATE spaces
+SET name = '{self.space_name.toPlainText()}'
+WHERE space_id = {self.space_id}
+            """)
+            self.spaces_table.item(self.spaces_table.selectedItems()[0].row(), 0).setText(self.space_name.toPlainText())
+
+        @self.space_priority.valueChanged.connect
+        def space_priority_changed():
+            submit_sql(f"""
+UPDATE spaces
+SET priority = {self.space_priority.value()}
+WHERE space_id = {self.space_id}
+            """, debugging=True)
+
         @self.space_primary_activity.currentIndexChanged.connect
         def _():
             x = self.space_primary_activity.itemData(
@@ -2122,6 +2141,7 @@ WHERE space_id = {self.space_id}
             item.setData(Qt.UserRole, row(0))
             item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.skills_table.setSortingEnabled(True)
+        self.skills_table.sortItems(1)  # ? strange
         self.update()
 
 
@@ -2146,6 +2166,7 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
             self.spaces_table.setItem(i, 1, item)
 
         self.spaces_table.setSortingEnabled(True)
+        self.spaces_table.sortItems(0)  # ? strange 
 
         query = submit_sql(f"""
         SELECT activity_id, name FROM activities;
@@ -2159,6 +2180,7 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
     def reject(self):
         super().reject()
         win_settings = None
+        
 class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
     def __init__(self):
         super().__init__()
@@ -2203,10 +2225,12 @@ SELECT
 FROM
     tasks
 GROUP BY
-    primary_activity_id;
+    primary_activity_id
 """)
         activities = {row(0): row(1) for row in iter_over(query)}
         print(activities.items())
+        if not activities:
+            return
 
         query = submit_sql(f"""
 SELECT
@@ -2309,7 +2333,6 @@ if __name__ == "__main__":
                     }
 
     app = Application(sys.argv) 
-    font = QtGui.QFontDatabase.addApplicationFont("extra/exo 2/Exo2.0-Black.otf")  # TODO
     icon = QIcon(config.icon)
     win_main = MainWindow()
     win_main.setWindowIcon(icon)
