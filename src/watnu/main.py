@@ -42,7 +42,7 @@ from ui import (attributions, character, choose_constraints, choose_deadline,
                 main_window, running_task, settings, statistics, task_editor,
                 task_finished, task_list, what_now)
 
-__version__ = (0, 0, 10)
+__version__ = (0, 1, 1)
 print("Python:", sys.version)
 print("Watnu Version:", __version__)
 print("Numpy:", np.__version__)
@@ -2331,6 +2331,12 @@ if __name__ == "__main__":
                     1: config.activity_color_mind,
                     2: config.activity_color_spirit,
                     }
+    try: 
+        from PyQt5.QtWinExtras import QtWin
+        myappid = 'AGK.watnu.0.1.1'
+        QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
+    except ImportError:
+        pass
 
     app = Application(sys.argv) 
     icon = QIcon(config.icon)

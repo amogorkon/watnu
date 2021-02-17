@@ -96,19 +96,19 @@ def check_task_conditions(task, now: datetime, finished_sessions:list=None):
                 task.is_done = False
         
         if every_ilk is EVERY.week:
-            then_month = task.last_finished // ( 60* 60 * 24 * 7)
-            now_day = now // (60 * 60*24* 7)
-            if (now_day - then_day ) % every_x == 0:
+            then_week = task.last_finished // ( 60* 60 * 24 * 7)
+            now_week = now // (60 * 60*24* 7)
+            if (now_week - then_week) % every_x == 0:
                 task.is_done = False
 
         if every_ilk is EVERY.year:
             now_year = now // (60*60*24*365.25)
             then_year = task.last_finished // (60 * 60 * 24*365.25)
-            if (now_day - then_day ) % every_x == 0:
+            if (now_year - then_year ) % every_x == 0:
                 task.is_done = False
         
         if per_ilk is not EVERY.undetermined:
-            td = timedelta({EVERY.minute: 60,
+            td = timedelta(seconds={EVERY.minute: 60,
                             EVERY.hour : 60*60,
                             EVERY.day: 60*60*24,
                             EVERY.week: 60*60*24*7,
@@ -116,15 +116,13 @@ def check_task_conditions(task, now: datetime, finished_sessions:list=None):
                             }[per_ilk])
             
             now = datetime.fromtimestamp(now)
+            print(23, now, td)
             then = now - td  # TODO: refactor
             query = submit_sql(f"""
 SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  
 """)
             if len(list(iter_over(query))) < x_per:
                 task.is_done = False
-        print(22, task.is_done)
-        
-
 
 def filter_tasks(tasks, pattern):
     if pattern.isspace() or not pattern:
