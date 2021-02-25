@@ -282,7 +282,7 @@ class StateMachine:
         return f"{self.name} in {self.state} with {self.states}"
 
     def __mul__(self, number):
-        for x in range(number):
+        for _ in range(number):
             yield self.clone()
 
     def __call__(self):

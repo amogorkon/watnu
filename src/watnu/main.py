@@ -2306,7 +2306,7 @@ if __name__ == "__main__":
     
     if config.first_start:
         import first_start
-        first_start.run(db, query, config, logger)
+        first_start.run(db, query, config)
         config.first_start = False
         config.write()
     
