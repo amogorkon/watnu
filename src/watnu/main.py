@@ -2,8 +2,6 @@
 
 Run with python main.py and watch the Magik happen!
 """
-
-import logging
 import sys
 import webbrowser
 from collections import Counter, defaultdict, namedtuple
@@ -12,7 +10,6 @@ from enum import Enum
 from itertools import count
 from math import cos, isinf, modf, sin
 from pathlib import Path
-from pprint import pprint
 from random import choice, randint, random, seed
 from time import time, time_ns
 from typing import NamedTuple
@@ -29,11 +26,12 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
 
+import classes
 import config
+import q
 from algo import (balance, check_task_conditions, constraints_met,
                   filter_tasks, prioritize, schedule, skill_level)
-from classes import (EVERY, ILK, Every, Task, iter_over, set_globals,
-                     submit_sql, typed)
+from classes import EVERY, ILK, Every, Task, iter_over, submit_sql, typed
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
@@ -43,18 +41,14 @@ from ui import (attributions, character, choose_constraints, choose_deadline,
                 task_finished, task_list, what_now)
 
 __version__ = (0, 1, 1)
-print("Python:", sys.version)
-print("Watnu Version:", __version__)
-print("Numpy:", np.__version__)
+__author__ = 'Anselm Kiefner'
+q("Python:", sys.version)
+q("Watnu Version:", __version__)
+q("Numpy:", np.__version__)
 
 _translate = QtCore.QCoreApplication.translate
 
 load = Decoder()
-
-logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%S',
-    level=logging.CRITICAL)
-logger = logging.getLogger(__name__)
 
 ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
@@ -75,7 +69,7 @@ WHERE task_uses_resource.task_id is NULL
 DELETE FROM resources
 WHERE resource_id = {row(0)}
 """)
-    print(i+1 if i is not None else "Nothing found, so no", "unused resources deleted.")
+    q(i+1 if i is not None else "Nothing found, so no", "unused resources deleted.")
 
 def write_session(task_id, start, stop, finished=False, pause_time=0):
     query = submit_sql(f"""
@@ -178,7 +172,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.actionContact.triggered.connect
         def actionContact():
-            webbrowser.open("https://twitter.com/amogorkon")
+            webbrowser.open("https://calendly.com/amogorkon/officehours")
 
 
         @self.actionSettings.triggered.connect
@@ -189,7 +183,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.actionExport.triggered.connect
         def actionExport():
-            logger.error("Not Implemented.")
+            q("Not Implemented.")
             return
 
         @self.actionImport.triggered.connect
@@ -212,9 +206,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                         d = defaultdict(lambda: None, **d)
                         d["space"] = path.stem
                         if not d["do"]:
-                            logger.warning(
-                                f"Tried to load a task with nothing to 'do': {d.items()}."
-                            )
+                            q(f"Tried to load a task with nothing to 'do': {d.items()}.")
                             continue
 
                         submit_sql(f"""
@@ -236,7 +228,7 @@ VALUES ('{d["do"]}',
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
-            print(config.count, bin(config.coin))
+            q(config.count, bin(config.coin))
             config.write()
             tray.setVisible(False)
             state.flux_to(S.final)
@@ -618,7 +610,7 @@ WHERE id == {task.id}
                 x = self.task_list.selectedItems()[0].row()
                 task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
             except IndexError:
-                print("indexerror?")
+                q("indexerror?")
                 return
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
@@ -734,7 +726,7 @@ WHERE id == {task.id}
                 if first != second:
                     break
             # 'threw 31688 pairs!' - so much for "should"
-            print("threw", i, "pairs!")
+            q("threw", i, "pairs!")
 
             # bitshift to the left
             config.coin <<= 1
@@ -857,7 +849,7 @@ WHERE id == {task.id}
 
     def arrange_list(self, tasks):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
-        print("arranging list", len(tasks), "tasks")
+        q("arranging list", len(tasks), "tasks")
         self.task_list.setSortingEnabled(False)
 
         ok = QIcon("./extra/feathericons/check.svg")
@@ -1048,11 +1040,11 @@ WHERE url = '{text}'
 
         @self.button3.clicked.connect
         def _():
-            print("button3 clicked")
+            q("button3 clicked")
 
         @self.button4.clicked.connect
         def _():
-            print("button4 clicked")
+            q("button4 clicked")
 
         @self.button5.clicked.connect
         def _():
@@ -1061,7 +1053,7 @@ WHERE url = '{text}'
 
         @self.button6.clicked.connect
         def _():
-            print("button6 clicked")
+            q("button6 clicked")
 
         @self.button7.clicked.connect
         def supertasks_button():
@@ -1377,8 +1369,8 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             query.bindValue(":notes", self.notes.document().toMarkdown())
             query.bindValue(":id", task.id)
             if not query.exec_():
-                logger.warning("SQL failed:\n" + statement)
-                logger.warning(query.lastError().text())
+                q("SQL failed:\n" + statement)
+                q(query.lastError().text())
             return
 
         @self.timer.timeout.connect
@@ -1416,7 +1408,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
                 try:
                     tell_telegram("pomodoro done! pause!", config)
                 except Exception as e:
-                    logger.critical(e)
+                    q(e)
                 url = QUrl.fromLocalFile(r"./extra/alarm twice.wav")
                 self.player.setMedia(QMediaContent(url))
                 self.player.setVolume(70)
@@ -1995,7 +1987,7 @@ WHERE skill_id == {skill_id};
 
         @self.clear_unused_resources.clicked.connect
         def _():
-            print("sanitizing db..")
+            q("sanitizing db..")
             sanitize_db()
 
         @self.clear_all_deleted.clicked.connect
@@ -2228,7 +2220,7 @@ GROUP BY
     primary_activity_id
 """)
         activities = {row(0): row(1) for row in iter_over(query)}
-        print(activities.items())
+        q(activities.items())
         if not activities:
             return
 
@@ -2274,7 +2266,6 @@ class Application(QtWidgets.QApplication):
     
     def mouseMoveEvent(self, event):
         global test
-        logger.info("ASDF")
         event.ignore()
         return False
         #font = app.font()
@@ -2307,11 +2298,12 @@ if __name__ == "__main__":
     db = QSqlDatabase.addDatabase("QSQLITE")
     db.setDatabaseName(config.database)
     query = QSqlQuery()
-    set_globals(config, logger)
+    classes.set_globals(config)
 
     if not db.open():
-        logger.critical("Could not open DB!")
+        q("Could not open DB!")
 
+    
     if config.first_start:
         import first_start
         first_start.run(db, query, config, logger)
@@ -2371,10 +2363,14 @@ if __name__ == "__main__":
     timer = datetime 
 
     if not db.tables():
-        logger.critical("Empty DB - config.first_start has now been set to True, please restart!")
         config.first_start = True
         config.write()
+        mb = QtWidgets.QMessageBox()
         state.flux_to(S.final)
+        mb.setText("Found an empty DB. Everything has been reset. Shutting down - please restart!")
+        mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
+        mb.setWindowTitle("Hmm..")
+        mb.exec_()
         sys.exit()
 
     win_main.show()

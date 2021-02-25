@@ -13,6 +13,8 @@ from typing import NamedTuple
 import numpy as np
 from PyQt5.QtSql import QSqlQuery
 
+import q
+
 last_sql_access = 0
 
 ASPECT = Flag("Aspect", "property_set property_get")
@@ -28,10 +30,9 @@ class EVERY(Enum):
 
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
 
-def set_globals(c, l):
-    global config, logger
+def set_globals(c):
+    global config
     config = c
-    logger = l
 
 def iter_over(query):
     if query.isValid():
@@ -42,9 +43,9 @@ def iter_over(query):
 def logged(func):
     def wrapper(*args, **kwargs):
         if type(func) is property:
-            print(args[0], "=>",  func.fget.__name__)
+            q(args[0], "=>",  func.fget.__name__)
             res = func.fget(*args, **kwargs)
-            print(args[0], func.fget.__name__, "=>", res)
+            q(args[0], func.fget.__name__, "=>", res)
             return res
         return func(*args, **kwargs)
     return wrapper
@@ -91,21 +92,23 @@ def typed(row, idx, kind: type, default=...):
     return res
 
 def submit_sql(statement, debugging=False):
+    if config.debugging:
+        debugging = True
     query = QSqlQuery()
     (filename, line_number, function_name, lines, index) = getframeinfo(
             currentframe().f_back
         )
     if query.exec_(statement):
         if debugging:
-            print("OK", statement)
+            q("OK", statement)
     else:
-        logger.warning(
+        q(
             f"SQL failed {Path(filename).stem, line_number, function_name}:" + statement
         )
-        logger.warning(query.lastError().text())
+        q(query.lastError().text())
     query.first()
-    if not query.isValid():
-        logger.info(
+    if not query.isValid() and debugging:
+        q(
             f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}:" + statement
         )
     global last_sql_access

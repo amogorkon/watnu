@@ -12,6 +12,7 @@ src/log
 box
 *sqlite
 config.stay
+src/watnu/logs/*
 
 
 =======

@@ -116,7 +116,6 @@ def check_task_conditions(task, now: datetime, finished_sessions:list=None):
                             }[per_ilk])
             
             now = datetime.fromtimestamp(now)
-            print(23, now, td)
             then = now - td  # TODO: refactor
             query = submit_sql(f"""
 SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  

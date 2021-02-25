@@ -22,18 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from collections import Counter
-from collections import OrderedDict
-from collections import defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from copy import copy
 from functools import wraps
 from inspect import isclass
-from logging import INFO
-from logging import basicConfig
-from logging import getLogger
-from uuid import UUID
-from uuid import uuid4
+from logging import INFO, basicConfig, getLogger
+from uuid import UUID, uuid4
 from warnings import warn
+
+import q
 
 logger = getLogger("fluxx")
 logger.setLevel(INFO)
@@ -189,9 +186,9 @@ class StateMachine:
                 self.previous = self.state  # often used in user code
                 self.state = to_state
                 if isclass(to_state):
-                    logger.info(f"{self.name} now {to_state.__name__}")
+                    q(f"{self.name} now {to_state.__name__}")
                 else:
-                    logger.info(f"{self.name} now {to_state}")
+                    q(f"{self.name} now {to_state}")
                 if self.tracing:
                     self.history.append(to_state)
                 return True

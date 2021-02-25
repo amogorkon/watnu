@@ -1,13 +1,12 @@
 import logging
-
 from ast import literal_eval
 
 import attr
 
-from lib.stay import Decoder
-from lib.stay import Encoder
+import q
+from lib.stay import Decoder, Encoder
 
-print("attrs:", attr.__version__)
+q("attrs:", attr.__version__)
 
 load = Decoder()
 dump = Encoder()
@@ -69,6 +68,7 @@ class Config:
     tutorial_active: boolean = True
     run_sql_stuff: boolean = False
     icon: str = "./extra/feathericons/watnu1.png"
+    debugging:boolean = False
 
     def write(self):
         with open("config.stay", "w") as f:
