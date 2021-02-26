@@ -982,7 +982,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
             if task.ilk is ILK.routine:
                 self.is_routine.setChecked(True)
                 
-            if task.ilk in (ILK.habit, ILK.tradition, ILK.routine):
+            if task.ilk in (ILK.tradition, ILK.routine):
                 self.button8.setEnabled(True)
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
@@ -1789,14 +1789,14 @@ def Chooser(editor: Editor, task: Task, kind:str):
             self.every_ilk.setId(self.every_hour, 2)
             self.every_ilk.setId(self.every_day, 3)
             self.every_ilk.setId(self.every_week, 4)
-            self.every_ilk.setId(self.every_month, 5)
+            #self.every_ilk.setId(self.every_month, 5)
             self.every_ilk.setId(self.every_year, 6)
             
             self.per_ilk.setId(self.per_minute, 1)
             self.per_ilk.setId(self.per_hour, 2)
             self.per_ilk.setId(self.per_day, 3)
             self.per_ilk.setId(self.per_week, 4)
-            self.per_ilk.setId(self.per_month, 5)
+            #self.per_ilk.setId(self.per_month, 5)
             self.per_ilk.setId(self.per_year, 6)
             
             if task is not None:
