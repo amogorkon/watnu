@@ -1,10 +1,11 @@
-import logging
 from ast import literal_eval
 
 import attr
 
 import q
-from lib.stay import Decoder, Encoder
+
+from lib.stay import Decoder
+from lib.stay import Encoder
 
 q("attrs:", attr.__version__)
 
@@ -75,5 +76,5 @@ class Config:
             try:
                 f.write(dump(attr.asdict(self)))
             except Exception as e:
-                logging.critical("COULD NOT WRITE CONFIG!")
-                logging.critical(e)
+                q("COULD NOT WRITE CONFIG!")
+                q(e)

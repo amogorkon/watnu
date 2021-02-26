@@ -40,7 +40,7 @@ from ui import (attributions, character, choose_constraints, choose_deadline,
                 main_window, running_task, settings, statistics, task_editor,
                 task_finished, task_list, what_now)
 
-__version__ = (0, 1, 1)
+__version__ = (0, 1, 2)
 __author__ = 'Anselm Kiefner'
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
