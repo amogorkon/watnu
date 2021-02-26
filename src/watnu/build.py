@@ -42,6 +42,10 @@ for p in src.glob("**/*"):
 
 
 subprocess.run(["pyinstaller", "--distpath", "G:/Watnu-dist", "--workpath", "G:/Watnu-build", "G:/Watnu/main.spec", "-y"])
+
 print("building zip..")
-make_archive(f"G:/Watnu-dist/watnu-{__version__}", "zip", "G:/Watnu-dist/main")
+from platform import platform
+
+make_archive(f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)}", "zip", "G:/Watnu-dist/main")
+
 print(f"\nFinished building in {time() - before:.2f} seconds.")

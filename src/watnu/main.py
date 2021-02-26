@@ -1030,43 +1030,49 @@ WHERE url = '{text}'
 
         @self.button1.clicked.connect
         def subtasks_button():
+            q("button1 clicked", self.task)
             dialog = Chooser(self, self.task, kind="subtasks")
             dialog.exec_()
 
         @self.button2.clicked.connect
         def time_constraints_button():
+            q("button2 clicked", self.task)
             dialog = Chooser(self, self.task, kind="constraints")
             dialog.exec_()
 
         @self.button3.clicked.connect
         def _():
-            q("button3 clicked")
+            q("button3 clicked", self.task)
 
         @self.button4.clicked.connect
         def _():
-            q("button4 clicked")
+            q("button4 clicked", self.task)
 
         @self.button5.clicked.connect
         def _():
+            q("button5 clicked", self.task)
             dialog = Chooser(self, self.task, kind="deadline")
             dialog.exec_()
 
         @self.button6.clicked.connect
         def _():
-            q("button6 clicked")
+            q("button6 clicked", self.task)
 
         @self.button7.clicked.connect
         def supertasks_button():
+            q("button7 clicked", self.task)
             dialog = Chooser(self, self.task, kind="supertasks")
             dialog.exec_()
 
         @self.button8.clicked.connect
         def _():
+            q("button8 clicked", self.task)
             dialog = Chooser(self, self.task, kind="repeats")
             dialog.exec_()
 
         @self.button9.clicked.connect
         def skills_button():
+            q("button9 clicked", self.task)
             dialog = Chooser(self, self.task, kind="skills")
             dialog.exec_()
 
@@ -1681,7 +1687,7 @@ def Chooser(editor: Editor, task: Task, kind:str):
                 # holy crap, that was a difficult birth..
                 self.listView.selectionModel().clear()
                 for index in range(model.rowCount()):
-                    if model.itemData(model.index(index, 0))[0] in task.subtasks:
+                    if Task(model.itemData(model.index(index, 0))[0]) in task.subtasks:
                         self.listView.selectionModel().select(
                             model.index(index, 1), QtCore.QItemSelectionModel.Select)
 
@@ -1705,7 +1711,7 @@ def Chooser(editor: Editor, task: Task, kind:str):
                 # holy crap, that was a difficult birth..
                 self.listView.selectionModel().clear()
                 for index in range(model.rowCount()):
-                    if model.itemData(model.index(index, 0))[0] in task.supertasks:
+                    if Task(model.itemData(model.index(index, 0))[0]) in task.supertasks:
                         self.listView.selectionModel().select(
                             model.index(index, 1), QtCore.QItemSelectionModel.Select)
 
