@@ -368,7 +368,7 @@
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="4" column="2">
-      <widget class="QPushButton" name="plus5">
+      <widget class="QPushButton" name="button9">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -384,7 +384,7 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QPushButton" name="done_for_now">
+      <widget class="QPushButton" name="button5">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -400,7 +400,7 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QPushButton" name="finished">
+      <widget class="QPushButton" name="button8">
        <property name="text">
         <string>Aufgabe beendet</string>
        </property>
@@ -416,7 +416,7 @@
       </widget>
      </item>
      <item row="5" column="2">
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="button6">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -435,7 +435,7 @@
       </widget>
      </item>
      <item row="5" column="0">
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="button4">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -451,7 +451,7 @@
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QPushButton" name="pause">
+      <widget class="QPushButton" name="button2">
        <property name="text">
         <string>Pause</string>
        </property>
@@ -467,7 +467,7 @@
       </widget>
      </item>
      <item row="7" column="2">
-      <widget class="QPushButton" name="reset">
+      <widget class="QPushButton" name="button3">
        <property name="text">
         <string>Zurücksetzen</string>
        </property>
@@ -483,7 +483,7 @@
       </widget>
      </item>
      <item row="7" column="0">
-      <widget class="QPushButton" name="pushButton_5">
+      <widget class="QPushButton" name="button1">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -499,7 +499,7 @@
       </widget>
      </item>
      <item row="4" column="0">
-      <widget class="QPushButton" name="minus5">
+      <widget class="QPushButton" name="button7">
        <property name="enabled">
         <bool>true</bool>
        </property>

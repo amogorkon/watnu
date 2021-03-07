@@ -168,7 +168,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         @self.actionIssue_Tracker.triggered.connect
         def actionIssueTracker():
-            webbrowser.open("https://github.com/users/amogorkon/projects/1")
+            webbrowser.open("https://github.com/amogorkon/watnu/issues")
 
         @self.actionContact.triggered.connect
         def actionContact():
@@ -229,6 +229,16 @@ VALUES ('{d["do"]}',
 
         if reply == QtWidgets.QMessageBox.Yes:
             q(config.count, bin(config.coin))
+            if config.autostart and False:  # TODO
+                import getpass
+                try:
+                    link = rf'C:\Users\{getpass.getuser()}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\Start Watnu.bat'
+                    target = Path(sys.executable)
+                    with open(Path(link), "w+") as file:
+                        file.write(rf'start "" {target}')
+                except Exception as e:
+                    q(e, link, target)
+                
             config.write()
             tray.setVisible(False)
             state.flux_to(S.final)
@@ -857,28 +867,25 @@ WHERE id == {task.id}
 
         for i, t in enumerate(tasks):
             self.task_list.setRowCount(i+1)
-            item = QtWidgets.QTableWidgetItem(t.do)
+            short = t.do if len(t.do) <= 80 else t.do[:80] + "[…]"
+            item = QtWidgets.QTableWidgetItem(short)
+            item.setToolTip(t.do)
             self.task_list.setItem(i, 0, item)
             item.setData(Qt.UserRole, t.id)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-            item = QtWidgets.QTableWidgetItem(t.notes)
-            self.task_list.setItem(i, 1, item)
-            item = QtWidgets.QTableWidgetItem(str(t.priority))
-            self.task_list.setItem(i, 2, item)
+            #item.setTextAlignment(QtCore.Qt.AlignCenter)
             item = QtWidgets.QTableWidgetItem(t.space)
+            self.task_list.setItem(i, 1, item)
+            item = QtWidgets.QTableWidgetItem(str(t.level))
+            self.task_list.setItem(i, 2, item)
+            item = QtWidgets.QTableWidgetItem(str(t.priority))
             self.task_list.setItem(i, 3, item)
-            item = QtWidgets.QTableWidgetItem(t.level)
+            item = QtWidgets.QTableWidgetItem(str(t.ilk.name))
             self.task_list.setItem(i, 4, item)
-            item = QtWidgets.QTableWidgetItem(t.activity)
-            self.task_list.setItem(i, 5, item)
             item = QtWidgets.QTableWidgetItem(
                 datetime.fromtimestamp(t.deadline).isoformat() 
                     if not isinf(t.deadline) else
                 "---")
-            self.task_list.setItem(i, 6, item)
-            item = QtWidgets.QTableWidgetItem()
-            item.setIcon(ok if t.ilk is ILK.habit else nok)
-            self.task_list.setItem(i, 7, item)
+            self.task_list.setItem(i, 5, item)
         
         if not tasks:
             self.task_list.clearContents()
@@ -1458,16 +1465,36 @@ QProgressBar::chunk {
 }
 """)
 
-        @self.plus5.clicked.connect
+        @self.button1.clicked.connect
         def _():
-            self.adjust_time_spent += 5 * 60
-
-        @self.minus5.clicked.connect
+            pass
+        
+        @self.button2.clicked.connect
         def _():
-            if (self.adjust_time_spent + self.time_spent + self.ticks) >= 5*60:
-                self.adjust_time_spent -= 5 * 60
-
-        @self.done_for_now.clicked.connect
+            print(23, self.paused)
+            if not self.paused:
+                self.button2.setText("Unpause")
+                self.paused = True
+                progress.pause()
+                self.player.stop()
+            else:
+                self.button2.setText("Pause")
+                self.paused = False
+                progress.resume()
+                self.player.play()
+        
+        @self.button3.clicked.connect
+        def _():
+            self.start_time = time()
+            self.time_spent = self.task.time_spent
+            self.adjust_time_spent = self.task.adjust_time_spent
+            self.ticks = 0
+        
+        @self.button4.clicked.connect
+        def _():
+            pass
+        
+        @self.button5.clicked.connect
         def _():
             stop_time = time()
             self.player.stop()
@@ -1489,8 +1516,17 @@ QProgressBar::chunk {
             progress.setValue(0)
 
             state.flux_to(S.main)
+        
+        @self.button6.clicked.connect
+        def _():
+            pass
 
-        @self.finished.clicked.connect
+        @self.button7.clicked.connect
+        def _():
+            if (self.adjust_time_spent + self.time_spent + self.ticks) >= 5*60:
+                self.adjust_time_spent -= 5 * 60
+
+        @self.button8.clicked.connect
         def _():
             if (timer_was_running := self.timer.isActive()):
                 self.timer.stop()
@@ -1505,9 +1541,7 @@ QProgressBar::chunk {
                     self.player.play()
                 return
             self.hide()
-
             win_main.show()
-            
             if self.win_list:
                 self.win_list.raise_()
             if not win_what.isHidden() and win_what:
@@ -1515,24 +1549,11 @@ QProgressBar::chunk {
             
             progress.setValue(0)
             state.flux_to(S.main)
-
-        @self.reset.clicked.connect
+            
+        @self.button9.clicked.connect
         def _():
-            self.start_time = time()
-            self.time_spent = self.task.time_spent
-            self.adjust_time_spent = self.task.adjust_time_spent
-            self.ticks = 0
+            self.adjust_time_spent += 5 * 60
 
-        @self.pause.clicked.connect
-        def _():
-            if not self.paused:
-                self.paused = True
-                progress.pause()
-                self.player.stop()
-            else:
-                self.paused = False
-                progress.resume()
-                self.player.play()
 
         @self.clock_audio.clicked.connect
         def _():
@@ -2293,7 +2314,9 @@ def consider_tasks():
     considered_tasks = [Task(row(0)) for row in iter_over(query)]
 
 if __name__ == "__main__":
-    path = Path(sys.argv[0]).parents[0]
+    q(46546, sys.argv)
+    path = Path(__file__).resolve().parents[0]
+    q(243234, path)
     # touch, just in case user killed the config or first start
     (path/"config.stay").touch()
     # overwriting the module with the instance for convenience

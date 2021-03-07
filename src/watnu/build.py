@@ -44,8 +44,18 @@ for p in src.glob("**/*"):
 subprocess.run(["pyinstaller", "--distpath", "G:/Watnu-dist", "--workpath", "G:/Watnu-build", "G:/Watnu/main.spec", "-y"])
 
 print("building zip..")
+from datetime import date
+from math import modf
 from platform import platform
+from time import localtime
 
-make_archive(f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)}", "zip", "G:/Watnu-dist/main")
+
+def timestamp2fragday(x):
+    now = localtime(x)
+    seconds = now.tm_hour*60*60 + now.tm_min*60 + now.tm_sec
+    total_seconds = 24*60*60
+    return f"{modf(seconds/total_seconds)[0]:.4f}"[1:]
+now = time()
+make_archive(f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)} (nightly {date.fromtimestamp(now)}{timestamp2fragday(now)})", "zip", "G:/Watnu-dist/main")
 
 print(f"\nFinished building in {time() - before:.2f} seconds.")

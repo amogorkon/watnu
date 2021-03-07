@@ -3,9 +3,7 @@ from ast import literal_eval
 import attr
 
 import q
-
-from lib.stay import Decoder
-from lib.stay import Encoder
+from lib.stay import Decoder, Encoder
 
 q("attrs:", attr.__version__)
 
@@ -18,8 +16,8 @@ class ConfigurationError(Exception):
 
 
 def read(file):
-    D = {}
     with open(file) as f:
+        D = {}
         for D in load(f):
             pass
         return Config(**D)
@@ -70,6 +68,7 @@ class Config:
     run_sql_stuff: boolean = False
     icon: str = "./extra/feathericons/watnu1.png"
     debugging:boolean = False
+    autostart:boolean = True
 
     def write(self):
         with open("config.stay", "w") as f:

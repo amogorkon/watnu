@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>986</width>
-    <height>548</height>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -192,12 +192,7 @@
         </attribute>
         <column>
          <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>do</string>
+          <string>Beschreibung</string>
          </property>
          <property name="font">
           <font>
@@ -208,7 +203,7 @@
         </column>
         <column>
          <property name="text">
-          <string>notes</string>
+          <string>Raum</string>
          </property>
          <property name="font">
           <font>
@@ -219,7 +214,7 @@
         </column>
         <column>
          <property name="text">
-          <string>priority</string>
+          <string>Level</string>
          </property>
          <property name="font">
           <font>
@@ -230,7 +225,7 @@
         </column>
         <column>
          <property name="text">
-          <string>space</string>
+          <string>Priorität</string>
          </property>
          <property name="font">
           <font>
@@ -241,7 +236,7 @@
         </column>
         <column>
          <property name="text">
-          <string>level</string>
+          <string>Art</string>
          </property>
          <property name="font">
           <font>
@@ -252,34 +247,12 @@
         </column>
         <column>
          <property name="text">
-          <string>activity</string>
+          <string>Deadline</string>
          </property>
          <property name="font">
           <font>
            <weight>75</weight>
            <italic>false</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>deadline</string>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>habit</string>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
