@@ -560,6 +560,10 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
         clone_as_sup = menu.addAction("als Supertask", self.clone_as_sup)
         self.button9.setMenu(menu)
         
+        item = QtWidgets.QTableWidgetItem()
+        item.setFlags(Qt.ItemIsUserCheckable)
+        self.task_list.setVerticalHeaderItem(0, item)
+        
         if state() is S.running:
             self.button5.setEnabled(False)
 
@@ -866,26 +870,37 @@ WHERE id == {task.id}
         nok = QIcon("./extra/feathericons/x.svg")
 
         for i, t in enumerate(tasks):
-            self.task_list.setRowCount(i+1)
+            self.task_list.setRowCount(i+1)            
+            item = QtWidgets.QWidget()
+            chk_bx = QtWidgets.QCheckBox()
+            lay_out = QtWidgets.QHBoxLayout(item)
+            lay_out.addWidget(chk_bx)
+            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setContentsMargins(0,0,0,0)
+            item.setLayout(lay_out)
+            self.task_list.setCellWidget(i, 0, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(Qt.UserRole, t.id)
+            self.task_list.setItem(i, 0, item)
             short = t.do if len(t.do) <= 80 else t.do[:80] + "[…]"
             item = QtWidgets.QTableWidgetItem(short)
             item.setToolTip(t.do)
-            self.task_list.setItem(i, 0, item)
-            item.setData(Qt.UserRole, t.id)
+            self.task_list.setItem(i, 1, item)
+
             #item.setTextAlignment(QtCore.Qt.AlignCenter)
             item = QtWidgets.QTableWidgetItem(t.space)
-            self.task_list.setItem(i, 1, item)
-            item = QtWidgets.QTableWidgetItem(str(t.level))
             self.task_list.setItem(i, 2, item)
-            item = QtWidgets.QTableWidgetItem(str(t.priority))
+            item = QtWidgets.QTableWidgetItem(str(t.level))
             self.task_list.setItem(i, 3, item)
-            item = QtWidgets.QTableWidgetItem(str(t.ilk.name))
+            item = QtWidgets.QTableWidgetItem(str(t.priority))
             self.task_list.setItem(i, 4, item)
+            item = QtWidgets.QTableWidgetItem(str(t.ilk.name))
+            self.task_list.setItem(i, 5, item)
             item = QtWidgets.QTableWidgetItem(
                 datetime.fromtimestamp(t.deadline).isoformat() 
                     if not isinf(t.deadline) else
                 "---")
-            self.task_list.setItem(i, 5, item)
+            self.task_list.setItem(i, 6, item)
         
         if not tasks:
             self.task_list.clearContents()
