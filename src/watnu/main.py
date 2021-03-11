@@ -585,7 +585,7 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.exec_()
                 return
 
-            # set not as draft
+                    # set not as draft
             submit_sql(f"""
     UPDATE tasks
     SET draft = {not task.is_draft}
@@ -1013,6 +1013,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
             self.secondary_activity.setCurrentIndex(
                 self.secondary_activity.findText(self.task.secondary_activity))
             self.repeats = self.task.repeats
+            self.constraints = x if (x := self.task.constraints) is not None else np.zeros((7,144))
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(last_edited_space))
@@ -1249,11 +1250,11 @@ INSERT INTO task_uses_resource
 (task_id, resource_id)
 VALUES ({task_id}, {self.resources.itemData(i)});
 """)
-        if self.constraints:
+        if np.any(self.constraints):
             submit_sql(f"""
     INSERT INTO constraints
     (task_id, flags)
-    VALUES ({task_id}, '{self.constraints}')
+    VALUES ({task_id}, '{''.join(str(x) for x in self.constraints.flatten())}')
             """)
         if self.deadline != float("inf"):
             submit_sql(f"""
@@ -1486,7 +1487,6 @@ QProgressBar::chunk {
         
         @self.button2.clicked.connect
         def _():
-            print(23, self.paused)
             if not self.paused:
                 self.button2.setText("Unpause")
                 self.paused = True
@@ -1769,14 +1769,10 @@ def Chooser(editor: Editor, task: Task, kind:str):
                     font.setWeight(90)
                     item.setFont(font)
                 self.table.setVerticalHeaderItem(i, item)
-            try: 
-                for column, day in enumerate(np.reshape(task.constraints, (7,144))):
-                    for row, value in enumerate(day):
-                        if value:
-                            self.table.setCurrentCell(row, column)
-            except AttributeError:
-                pass
-                        
+            for column, day in enumerate(editor.constraints):
+                for row, value in enumerate(day):
+                    if value:
+                        self.table.setCurrentCell(row, column)                        
 
             @self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect
             def reset():
@@ -1791,7 +1787,7 @@ def Chooser(editor: Editor, task: Task, kind:str):
             super().accept()
             A = np.zeros(1008, int)
             A[[idx.column() *  144 + idx.row() for idx in  self.table.selectedIndexes()]] = 1
-            self.editor.constraints = (x := ''.join(str(x) for x in A))
+            self.editor.constraints = A.reshape(7,144)
 
     class DeadlineChooser(QtWidgets.QDialog, choose_deadline.Ui_Dialog):
         def __init__(self, editor, task=None):
@@ -2168,14 +2164,20 @@ WHERE space_id = {self.space_id}
 
         for i, row in enumerate(iter_over(query)):
             self.skills_table.setRowCount(i+1)
-            item = QtWidgets.QTableWidgetItem()
+            item = QtWidgets.QTableWidgetItem(typed(row, 1, str))
             self.skills_table.setItem(i, 1, item)
-            item.setText(row(1))
-            # skill_id
-            item.setData(Qt.UserRole, row(0))
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
+            item.setText(typed(row, 1, str))
+            item.setData(Qt.UserRole, typed(row, 0, int))
+
+            inner_query = submit_sql(f"""
+SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int))};
+""")
+            inner_query.first()
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, 0)))
+            self.skills_table.setItem(i, 2, item)
+            
         self.skills_table.setSortingEnabled(True)
-        self.skills_table.sortItems(1)  # ? strange
+        self.skills_table.sortItems(0)  # ? strange
         self.update()
 
 
@@ -2186,17 +2188,19 @@ WHERE space_id = {self.space_id}
         self.spaces_table.setSortingEnabled(False)
 
         for i, row in enumerate(iter_over(query)):
+            space_id = typed(row, 0, int)
+            name = typed(row, 1, str)
             self.spaces_table.setRowCount(i+1)
-            item = QtWidgets.QTableWidgetItem(row(1))
+            item = QtWidgets.QTableWidgetItem(name)
             self.spaces_table.setItem(i, 0, item)
-            item.setData(Qt.UserRole, row(0))
+            item.setData(Qt.UserRole, space_id)
             item.setTextAlignment(QtCore.Qt.AlignCenter)
 
             inner_query = submit_sql(f"""
 SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
 """)
-            text = "0" if not inner_query.next() else str(inner_query.value(0))
-            item = QtWidgets.QTableWidgetItem(text)
+            inner_query.first()
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, 0)))
             self.spaces_table.setItem(i, 1, item)
 
         self.spaces_table.setSortingEnabled(True)
@@ -2207,8 +2211,8 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
         """)
 
         for i, row in enumerate(iter_over(query)):
-            self.space_primary_activity.addItem(row(1), QVariant(row(0)))
-            self.space_secondary_activity.addItem(row(1), QVariant(row(0)))
+            self.space_primary_activity.addItem(typed(row, 1, str) , QVariant(typed(row, 0, int)))
+            self.space_secondary_activity.addItem(typed(row, 1, str), QVariant(typed(row, 0, int)))
         self.update()
         
     def reject(self):

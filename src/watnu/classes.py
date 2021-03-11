@@ -50,8 +50,6 @@ def logged(func):
         return func(*args, **kwargs)
     return wrapper
 
-
-
 def cached(func):
     cache = {}  # (args[0] -> (last_called, result)
     
@@ -180,7 +178,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         """
         )
         if query.isValid():
-            return np.fromiter((int(x) for x in typed(query.value, 0, str)), int)
+            return np.fromiter((int(x) for x in typed(query.value, 0, str)), int).reshape(7,144)
         else:
             return None
 
