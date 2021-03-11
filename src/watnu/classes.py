@@ -498,14 +498,14 @@ WHERE tasks.id = {self.id}
         query = submit_sql(f"""
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """)
-        return [Task(typed(row, 0, int) for row in iter_over(query))]
+        return [Task(typed(row, 0, int)) for row in iter_over(query)]
     
     @property
     def supertasks(self) -> "list[Task]":
         query = submit_sql(f"""
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """)
-        return [Task(typed(row, 0, int) for row in iter_over(query))]
+        return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
     def time_spent(self) -> int:

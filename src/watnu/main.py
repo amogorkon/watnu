@@ -869,7 +869,7 @@ WHERE id == {task.id}
         ok = QIcon("./extra/feathericons/check.svg")
         nok = QIcon("./extra/feathericons/x.svg")
 
-        for i, t in enumerate(tasks):
+        for i, task in enumerate(tasks):
             self.task_list.setRowCount(i+1)            
             item = QtWidgets.QWidget()
             chk_bx = QtWidgets.QCheckBox()
@@ -878,36 +878,57 @@ WHERE id == {task.id}
             lay_out.setAlignment(Qt.AlignCenter)
             lay_out.setContentsMargins(0,0,0,0)
             item.setLayout(lay_out)
-            self.task_list.setCellWidget(i, 0, item)
+            #self.task_list.setCellWidget(i, 0, item)
             item = QtWidgets.QTableWidgetItem()
-            item.setData(Qt.UserRole, t.id)
+            item.setData(Qt.UserRole, task.id)
             self.task_list.setItem(i, 0, item)
-            short = t.do if len(t.do) <= 80 else t.do[:80] + "[…]"
+            short = task.do if len(task.do) <= 80 else task.do[:80] + "[…]"
             item = QtWidgets.QTableWidgetItem(short)
-            item.setToolTip(t.do)
+            item.setToolTip(task.do)
             self.task_list.setItem(i, 1, item)
 
             #item.setTextAlignment(QtCore.Qt.AlignCenter)
-            item = QtWidgets.QTableWidgetItem(t.space)
+            item = QtWidgets.QTableWidgetItem(task.space)
             self.task_list.setItem(i, 2, item)
-            item = QtWidgets.QTableWidgetItem(str(t.level))
+            item = QtWidgets.QTableWidgetItem(str(task.level))
             self.task_list.setItem(i, 3, item)
-            item = QtWidgets.QTableWidgetItem(str(t.priority))
+            item = QtWidgets.QTableWidgetItem(str(task.priority))
             self.task_list.setItem(i, 4, item)
-            item = QtWidgets.QTableWidgetItem(str(t.ilk.name))
+            item = QtWidgets.QTableWidgetItem(str(task.ilk.name))
             self.task_list.setItem(i, 5, item)
             item = QtWidgets.QTableWidgetItem(
-                datetime.fromtimestamp(t.deadline).isoformat() 
-                    if not isinf(t.deadline) else
+                datetime.fromtimestamp(task.deadline).isoformat() 
+                    if not isinf(task.deadline) else
                 "---")
             self.task_list.setItem(i, 6, item)
+            item = QtWidgets.QWidget()
+            combo = QtWidgets.QComboBox()
+            for t in task.supertasks:
+                combo.addItem(t.do, t.id)
+            lay_out = QtWidgets.QHBoxLayout(item)
+            lay_out.addWidget(combo)
+            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setContentsMargins(0,0,0,0)
+            item.setLayout(lay_out)
+            self.task_list.setCellWidget(i, 7, item)
+            
+            item = QtWidgets.QWidget()
+            combo = QtWidgets.QComboBox()
+            for t in task.subtasks:
+                combo.addItem(t.do, t.id)
+            lay_out = QtWidgets.QHBoxLayout(item)
+            lay_out.addWidget(combo)
+            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setContentsMargins(0,0,0,0)
+            item.setLayout(lay_out)
+            self.task_list.setCellWidget(i, 8, item)
         
         if not tasks:
             self.task_list.clearContents()
             self.task_list.setRowCount(0)
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
-        
+    
     def reject(self):
         super().reject()
         if state() is  S.running:
