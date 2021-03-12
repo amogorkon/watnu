@@ -228,7 +228,7 @@ VALUES ('{d["do"]}',
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
-            q(config.count, bin(config.coin))
+            q(config.count)
             if config.autostart and False:  # TODO
                 import getpass
                 try:
@@ -570,6 +570,11 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
         self.build_task_list()
         self.update()
         
+        @self.task_list.clicked.connect
+        def task_list_click():
+            return  # TODO focus on sub/supertask
+            print("adsf")
+        
         @self.button1.clicked.connect
         def draft_undraft():
             try:
@@ -878,7 +883,7 @@ WHERE id == {task.id}
             lay_out.setAlignment(Qt.AlignCenter)
             lay_out.setContentsMargins(0,0,0,0)
             item.setLayout(lay_out)
-            #self.task_list.setCellWidget(i, 0, item)
+            self.task_list.setCellWidget(i, 0, item)
             item = QtWidgets.QTableWidgetItem()
             item.setData(Qt.UserRole, task.id)
             self.task_list.setItem(i, 0, item)
@@ -939,7 +944,6 @@ WHERE id == {task.id}
             win_main.raise_()
         
         list_of_task_lists.remove(self)
-
 
 class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
@@ -1185,25 +1189,7 @@ VALUES
 """)             
         
             task_id = query.lastInsertId()
-            
-            # subtasks
-            for required_task in self.subtasks:
-                submit_sql(f"""
-INSERT OR IGNORE INTO task_requires_task
-(task_of_concern, required_task)
-VALUES (
-{task_id}, {required_task}
-);
-""")
-            # supertasks
-            for task_of_concern in self.supertasks:
-                submit_sql(f"""
-    INSERT OR IGNORE INTO task_requires_task
-        (task_of_concern, required_task)
-        VALUES (
-        {task_of_concern}, {task_id}
-        );
-    """)
+
         # we're editing a task
         else:
             task_id = self.task.id
