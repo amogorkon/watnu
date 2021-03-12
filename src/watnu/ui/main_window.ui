@@ -433,11 +433,12 @@
     <property name="title">
      <string>Hilfe</string>
     </property>
+    <addaction name="actionReadme"/>
     <addaction name="actionIssue_Tracker"/>
     <addaction name="actionContact"/>
     <addaction name="actionSupportMe"/>
-    <addaction name="about"/>
     <addaction name="attributions"/>
+    <addaction name="about"/>
    </widget>
    <widget class="QMenu" name="menuDatei">
     <property name="title">
@@ -568,6 +569,15 @@
    </property>
    <property name="text">
     <string>Thanks and Licenses</string>
+   </property>
+  </action>
+  <action name="actionReadme">
+   <property name="icon">
+    <iconset>
+     <normaloff>../extra/feathericons/help-circle.svg</normaloff>../extra/feathericons/help-circle.svg</iconset>
+   </property>
+   <property name="text">
+    <string>FAQ und Wiki...</string>
    </property>
   </action>
  </widget>

@@ -35,10 +35,10 @@ from classes import EVERY, ILK, Every, Task, iter_over, submit_sql, typed
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from telegram import tell_telegram
-from ui import (attributions, character, choose_constraints, choose_deadline,
-                choose_repeats, choose_skills, companions, inventory, landing,
-                main_window, running_task, settings, statistics, task_editor,
-                task_finished, task_list, what_now)
+from ui import (about, attributions, character, choose_constraints,
+                choose_deadline, choose_repeats, choose_skills, companions,
+                inventory, landing, main_window, running_task, settings,
+                statistics, task_editor, task_finished, task_list, what_now)
 
 __version__ = (0, 1, 2)
 __author__ = 'Anselm Kiefner'
@@ -86,8 +86,14 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
- 
+
+
         @self.about.triggered.connect
+        def _():
+            win = About()
+            win.exec_()
+            
+        @self.actionReadme.triggered.connect
         def _():
             webbrowser.open("https://github.com/amogorkon/watnu/blob/main/README.md")
 
@@ -246,7 +252,11 @@ VALUES ('{d["do"]}',
         else:
             event.ignore()
 
-
+class About(QtWidgets.QDialog, about.Ui_Dialog):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.version.setText(str(__version__))
 class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
