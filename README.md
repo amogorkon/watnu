@@ -1,5 +1,8 @@
 # Watnu?!
 
+## Priority
+Higher numbers => higher priorities!
+
 # Office Hours!
 You can contact me one-on-one! Please follow https://calendly.com/amogorkon/officehours to set up a meeting :-)
 
