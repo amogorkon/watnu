@@ -327,7 +327,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>setze Aufgabe als nicht ...</string>
        </property>
        <property name="shortcut">
         <string>3</string>
@@ -378,7 +378,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>setze Aufgabe als ...</string>
        </property>
        <property name="shortcut">
         <string>1</string>

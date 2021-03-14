@@ -4,15 +4,15 @@ Run with python main.py and watch the Magik happen!
 """
 import sys
 import webbrowser
-from collections import Counter, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 from datetime import datetime, timedelta
 from enum import Enum
+from functools import partial
 from itertools import count
-from math import cos, isinf, modf, sin
+from math import isinf, modf, sin
 from pathlib import Path
-from random import choice, randint, random, seed
+from random import choice, seed
 from time import time, time_ns
-from typing import NamedTuple
 
 import numpy as np
 from dateutil.relativedelta import relativedelta
@@ -585,13 +585,26 @@ class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
         header = self.task_list.horizontalHeader()
         self.tasks = []
 
-        toolbar = QtWidgets.QToolBar()
         menu = QtWidgets.QMenu()
-        clone_as_is = menu.addAction("genau so", self.clone_as_is)
-        clone_as_sub = menu.addAction("als Subtask", self.clone_as_sub)
-        clone_as_sup = menu.addAction("als Supertask", self.clone_as_sup)
+        menu.addAction("genau so", self.clone_as_is)
+        menu.addAction("als Subtask", self.clone_as_sub)
+        menu.addAction("als Supertask", self.clone_as_sup)
         self.button9.setMenu(menu)
-        #self.shift_modifier = False
+        
+        menu = QtWidgets.QToolBar()
+        menu = QtWidgets.QMenu()
+        menu.addAction("erledigt", self.set_as_done)
+        menu.addAction("Entwurf", self.set_as_draft)
+        menu.addAction("inaktiv", self.set_as_inactive)
+        menu.addAction("gelöscht", self.set_as_deleted)
+        self.button1.setMenu(menu)
+        
+        menu = QtWidgets.QMenu()
+        menu.addAction("erledigt", partial(self.set_as_done, False))
+        menu.addAction("Entwurf", partial(self.set_as_draft, False))
+        menu.addAction("inaktiv", partial(self.set_as_inactive, False))
+        menu.addAction("gelöscht", partial(self.set_as_deleted, False))
+        self.button3.setMenu(menu)
         
         item = QtWidgets.QTableWidgetItem()
         item.setFlags(Qt.ItemIsUserCheckable)
@@ -605,7 +618,6 @@ class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
         self.statusBar = QtWidgets.QStatusBar(self)
         self.statusBar.setObjectName("statusBar")
         self.layout.addWidget(self.statusBar)
-        self.set_buttons()
         self.update()
         
         @self.task_list.cellDoubleClicked.connect
@@ -621,84 +633,7 @@ UPDATE tasks
 SET do = '{text}'
 WHERE id == {task.id}
 """)
-        
-        @self.button1.clicked.connect
-        def draft_undraft():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-
-            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-            
-            if not X:
-                return
-
-            for x in X:
-                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-                submit_sql(f"""
-    UPDATE tasks
-    SET draft = {not self.shift_modifier}
-    WHERE id == {task.id}
-    """)
-            consider_tasks()
-            self.build_task_list()
-
-        @self.button2.clicked.connect
-        def done_undone():           
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-            
-            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-            
-            if not X:
-                return
-
-            for x in X:
-                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-                submit_sql(f"""
-UPDATE tasks
-SET done = {not self.shift_modifier}
-WHERE id == {task.id}
-""")
-            consider_tasks()
-            self.build_task_list()
-
-
-        @self.button3.clicked.connect
-        def active_inactive():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-            
-            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-            
-            if not X:
-                return
-            
-            for x in X:
-                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-                submit_sql(f"""
-    UPDATE tasks
-    SET inactive = {not self.shift_modifier}
-    WHERE id == {task.id}
-    """)
-            consider_tasks()            
-            self.build_task_list()
-
-            
+                    
         @self.button4.clicked.connect
         def edit_task():
             if state() is S.editing:
@@ -767,31 +702,6 @@ WHERE id == {task.id}
             win = Editor(win_list=self)
             win.show()
             
-        @self.button7.clicked.connect
-        def delete_undelete():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec_()
-                return
-            
-            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-            
-            if not X:
-                return
-            
-            for x in X:
-                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-                submit_sql(f"""
-UPDATE tasks
-SET deleted = {not self.shift_modifier}
-WHERE id == {task.id}
-""", debugging=True)
-            consider_tasks()
-            self.build_task_list()
-
         @self.button8.clicked.connect
         def throw_coins():
             # vonNeumann!
@@ -833,24 +743,66 @@ WHERE id == {task.id}
                                 self.field_filter.text().casefold()))
             self.update()
 
-    def set_buttons(self):
-        if self.shift_modifier:
-            self.button1.setText("set as reviewed")
-            self.button2.setText("set as not done")
-            self.button3.setText("set as active")
-            self.button7.setText("undelete")
-        else:
-            self.button1.setText("set as draft")
-            self.button2.setText("set as done")
-            self.button3.setText("set as inactive")
-            self.button7.setText("delete")
+    def set_as_inactive(set_flag=True):       
+        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+        
+        if not X:
+            return
+        
+        for x in X:
+            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+            submit_sql(f"""
+UPDATE tasks
+SET inactive = {set_flag}
+WHERE id == {task.id}
+""")
+        consider_tasks()            
+        self.build_task_list()
 
+    def set_as_deleted(set_flag=True):       
+        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+        if not X:
+            return
+        
+        for x in X:
+            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+            submit_sql(f"""
+UPDATE tasks
+SET deleted = {set_flag}
+WHERE id == {task.id}
+""")
+        consider_tasks()
+        self.build_task_list()
 
-    def keyPressEvent(self, event):
-        if event.modifiers() == QtCore.Qt.ShiftModifier:
-            self.shift_modifier ^= True
-        self.set_buttons()
-        super().keyPressEvent(event)
+    def set_as_done(set_flag=True):      
+        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+        if not X:
+            return
+
+        for x in X:
+            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+            submit_sql(f"""
+UPDATE tasks
+SET done = {set_flag}
+WHERE id == {task.id}
+""")
+        consider_tasks()
+        self.build_task_list()
+
+    def set_as_draft(self, set_flag=True):
+        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+        if not X:
+            return
+
+        for x in X:
+            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+            submit_sql(f"""
+UPDATE tasks
+SET draft = {set_flag}
+WHERE id == {task.id}
+""")
+        consider_tasks()
+        self.build_task_list()
 
     def clone_as_is(self):
         if state() is S.editing:
