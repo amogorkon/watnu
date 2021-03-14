@@ -77,9 +77,13 @@ def aspectized(decorator, aspect=ASPECT.property_get, pattern=None):
         return cls
     return wrapping
 
-def typed(row, idx, kind: type, default=...):
+def typed(row, idx, kind: type, default=..., debugging=False):
+    if config.debugging:
+        debugging = True
     filename, line_number, function_name, lines, index = getframeinfo(currentframe().f_back)
     res = row(idx)
+    if debugging:
+        q(res)
     if default is not ...:
         if res == "" or res is None:
             return default
@@ -101,13 +105,13 @@ def submit_sql(statement, debugging=False):
             q("OK", statement)
     else:
         q(
-            f"SQL failed {Path(filename).stem, line_number, function_name}:" + statement
+            f"SQL failed {Path(filename).stem, line_number, function_name}: {statement}"
         )
         q(query.lastError().text())
     query.first()
     if not query.isValid() and debugging:
         q(
-            f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}:" + statement
+            f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}: {statement}"
         )
     global last_sql_access
     last_sql_access = time() -1
@@ -166,9 +170,9 @@ class Task(NamedTuple):
 
     @property
     def considered_open(self) -> bool:
-        if self.is_deleted or self.is_draft or self.is_inactive:
+        if self.is_deleted or self.is_draft or self.is_inactive or self.is_done:
             return False
-        return not any(t.considered_open for t in self.requires) and not self.is_done
+        return not any(t.considered_open for t in self.requires)
 
     @property
     def constraints(self) -> np.ndarray:

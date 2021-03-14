@@ -82,6 +82,27 @@ def breakpoint_():
     pyqtRemoveInputHook()
     sys.breakpointhook()
 
+
+class Application(QtWidgets.QApplication):
+    def __init__(self, argv):
+        super().__init__(argv)
+    
+        
+    def mouseMoveEvent(self, event):
+        global test
+        event.ignore()
+        return False
+        #font = app.font()
+        #font.setPointSize(font.pointSize() + 1)
+        #app.setFont(font)
+
+        # if QtGui.QApplication.keyboardModifiers() == Qt.ControlModifier:
+        #     font = app.font()
+        #     font.setPointSize(font.pointSize() + 1)
+        #     app.setFont(font)
+
+
+    
 class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -121,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         @self.button4.clicked.connect
         def list_tasks():
             """Task List."""
-            win = Task_List()
+            win = TaskList()
             win.show()
             list_of_task_lists.append(win)
             
@@ -555,7 +576,8 @@ GROUP BY
         self.task_space_balanced.setText(self.task_balanced.space)
         self.task_space_balanced.setText(self.task_balanced.space)
         
-class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
+
+class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -569,6 +591,7 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
         clone_as_sub = menu.addAction("als Subtask", self.clone_as_sub)
         clone_as_sup = menu.addAction("als Supertask", self.clone_as_sup)
         self.button9.setMenu(menu)
+        #self.shift_modifier = False
         
         item = QtWidgets.QTableWidgetItem()
         item.setFlags(Qt.ItemIsUserCheckable)
@@ -578,20 +601,29 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
             self.button5.setEnabled(False)
 
         self.build_task_list()
+        
+        self.statusBar = QtWidgets.QStatusBar(self)
+        self.statusBar.setObjectName("statusBar")
+        self.layout.addWidget(self.statusBar)
+        self.set_buttons()
         self.update()
         
-        @self.task_list.clicked.connect
-        def task_list_click():
-            return  # TODO focus on sub/supertask
-            print("adsf")
+        @self.task_list.cellDoubleClicked.connect
+        def task_list_doubleclicked(row, column):
+            task = Task(self.task_list.item(row, 0).data(Qt.UserRole))
+            text, okPressed = QtWidgets.QInputDialog.getMultiLineText(self, 
+                    "Bearbeite Beschreibung...",
+                    "Aufgabe beschreiben",
+                    f"{task.do}")
+            if okPressed and text != '':
+                submit_sql(f"""
+UPDATE tasks
+SET do = '{text}'
+WHERE id == {task.id}
+""")
         
         @self.button1.clicked.connect
         def draft_undraft():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            except IndexError:
-                return
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein anderer Task bearbeitet.")
@@ -600,22 +632,23 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.exec_()
                 return
 
-                    # set not as draft
-            submit_sql(f"""
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
+                return
+
+            for x in X:
+                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+                submit_sql(f"""
     UPDATE tasks
-    SET draft = {not task.is_draft}
+    SET draft = {not self.shift_modifier}
     WHERE id == {task.id}
     """)
-            self.task_list.removeRow(x)
-            self.update()
+            consider_tasks()
+            self.build_task_list()
 
         @self.button2.clicked.connect
-        def done_undone():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            except IndexError:
-                return
+        def done_undone():           
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein anderer Task bearbeitet.")
@@ -623,24 +656,25 @@ class Task_List(QtWidgets.QDialog, task_list.Ui_Dialog):
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
                 return
+            
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
+                return
 
-            submit_sql(f"""
+            for x in X:
+                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+                submit_sql(f"""
 UPDATE tasks
-SET done = {not task.is_done}
+SET done = {not self.shift_modifier}
 WHERE id == {task.id}
 """)
-            self.task_list.removeRow(x)
-            self.update()
             consider_tasks()
+            self.build_task_list()
+
 
         @self.button3.clicked.connect
         def active_inactive():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            except IndexError:
-                q("indexerror?")
-                return
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein anderer Task bearbeitet.")
@@ -648,16 +682,22 @@ WHERE id == {task.id}
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
                 return
-
-            submit_sql(f"""
+            
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
+                return
+            
+            for x in X:
+                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+                submit_sql(f"""
     UPDATE tasks
-    SET inactive = {not task.is_inactive}
+    SET inactive = {not self.shift_modifier}
     WHERE id == {task.id}
     """)
-            
-            self.task_list.removeRow(x)
-            self.update()
-            consider_tasks()
+            consider_tasks()            
+            self.build_task_list()
+
             
         @self.button4.clicked.connect
         def edit_task():
@@ -669,10 +709,16 @@ WHERE id == {task.id}
                 mb.exec_()
                 return
 
-            try: 
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
                 return
+            elif len(X) > 1:
+                self.statusBar.showMessage("Es kann jeweils nur eine Aufgabe bearbeitet werden.", 5000)
+                return
+            else:
+                x = X[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
             
             task = Task(self.task_list.item(x,0).data(Qt.UserRole))
             
@@ -695,15 +741,18 @@ WHERE id == {task.id}
                 self.hide()
                 return
 
-            try:
-                x = self.task_list.selectedItems()[0].row()
-            except IndexError:
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
                 return
-
-            task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            self.hide()
-
-            win_running = Running(task, win_list=self)
+            elif len(X) > 1:
+                self.statusBar.showMessage("Es kann jeweils nur eine Aufgabe gestartet werden.", 5000)
+                return
+            else:
+                x = X[0].row()
+                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
+                self.hide()
+                win_running = Running(task, win_list=self)
 
         @self.button6.clicked.connect
         def create_task():
@@ -720,28 +769,28 @@ WHERE id == {task.id}
             
         @self.button7.clicked.connect
         def delete_undelete():
-            try:
-                x = self.task_list.selectedItems()[0].row()
-                task = Task(self.task_list.item(x, 0).data(Qt.UserRole))
-            except IndexError:
-                return
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
                 mb.setText("Es wird schon ein anderer Task bearbeitet.")
-                mb = QtWidgets.QMessageBox()
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
                 return
-
-            submit_sql(f"""
+            
+            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            
+            if not X:
+                return
+            
+            for x in X:
+                task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
+                submit_sql(f"""
 UPDATE tasks
-SET deleted = {not task.is_deleted}
+SET deleted = {not self.shift_modifier}
 WHERE id == {task.id}
-""")
-            self.task_list.removeRow(x)
-            self.update()
+""", debugging=True)
             consider_tasks()
+            self.build_task_list()
 
         @self.button8.clicked.connect
         def throw_coins():
@@ -774,16 +823,34 @@ WHERE id == {task.id}
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
             mb.exec_()
 
-        @self.status.buttonClicked.connect
+        @self.status.currentIndexChanged.connect
         def status_switched():
             self.build_task_list()
-
 
         @self.field_filter.textChanged.connect
         def field_filter_changed():
             self.arrange_list(filter_tasks(self.tasks, 
                                 self.field_filter.text().casefold()))
             self.update()
+
+    def set_buttons(self):
+        if self.shift_modifier:
+            self.button1.setText("set as reviewed")
+            self.button2.setText("set as not done")
+            self.button3.setText("set as active")
+            self.button7.setText("undelete")
+        else:
+            self.button1.setText("set as draft")
+            self.button2.setText("set as done")
+            self.button3.setText("set as inactive")
+            self.button7.setText("delete")
+
+
+    def keyPressEvent(self, event):
+        if event.modifiers() == QtCore.Qt.ShiftModifier:
+            self.shift_modifier ^= True
+        self.set_buttons()
+        super().keyPressEvent(event)
 
     def clone_as_is(self):
         if state() is S.editing:
@@ -841,37 +908,42 @@ WHERE id == {task.id}
         win.show()
 
     def build_task_list(self):
-        if self.status_draft.isChecked():
-            self.button1.setText("set ready")
-        else:
-            self.button1.setText("set as draft")
+        # TODO match \o/
+        if self.status.currentIndex() == 0:
+            query= submit_sql(f"""
+SELECT id FROM tasks
+WHERE
+done == FALSE AND
+deleted == FALSE AND
+draft == FALSE AND
+inactive == FALSE
+""")
+        if self.status.currentIndex() == 1:
+            query= submit_sql(f"""
+SELECT id FROM tasks 
+WHERE 
+draft == TRUE
+""")
+        if self.status.currentIndex() == 2:
+            query= submit_sql(f"""
+SELECT id FROM tasks 
+WHERE 
+inactive == TRUE
+""")
+        if self.status.currentIndex() == 3:
+            query= submit_sql(f"""
+SELECT id FROM tasks 
+WHERE 
+done == TRUE
+""")
+        if self.status.currentIndex() == 4:
+            query= submit_sql(f"""
+SELECT id FROM tasks 
+WHERE 
+deleted == TRUE
+""")
 
-        if self.status_done.isChecked():
-            self.button2.setText("set undone")
-        else:
-            self.button2.setText("set done")
-
-        if self.status_inactive.isChecked():
-            self.button3.setText("set active")
-        else:
-            self.button3.setText("set inactive")
-
-        if self.status_deleted.isChecked():
-            self.button7.setText("undelete")
-        else:
-            self.button7.setText("delete")
-
-        # ready == NOT ANY of the below
-        query= submit_sql(f"""
-        SELECT id FROM tasks 
-        WHERE 
-        done == {self.status_done.isChecked()} AND
-        deleted == {self.status_deleted.isChecked()} AND 
-        draft == {self.status_draft.isChecked()} AND
-        inactive == {self.status_inactive.isChecked()};
-        """)
-
-        self.tasks  = [Task(row(0)) for row in iter_over(query)]
+        self.tasks  = [Task(typed(row, 0, int)) for row in iter_over(query)]
         filter_text = self.field_filter.text().casefold()
         self.arrange_list(filter_tasks(self.tasks, filter_text))
         self.update()
@@ -886,39 +958,49 @@ WHERE id == {task.id}
 
         for i, task in enumerate(tasks):
             self.task_list.setRowCount(i+1)            
-            item = QtWidgets.QWidget()
-            chk_bx = QtWidgets.QCheckBox()
-            lay_out = QtWidgets.QHBoxLayout(item)
-            lay_out.addWidget(chk_bx)
-            lay_out.setAlignment(Qt.AlignCenter)
-            lay_out.setContentsMargins(0,0,0,0)
-            item.setLayout(lay_out)
-            self.task_list.setCellWidget(i, 0, item)
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(Qt.UserRole, task.id)
-            self.task_list.setItem(i, 0, item)
-            short = task.do if len(task.do) <= 80 else task.do[:80] + "[…]"
+            # item = QtWidgets.QWidget()
+            # chk_bx = QtWidgets.QCheckBox()
+            # lay_out = QtWidgets.QHBoxLayout(item)
+            # lay_out.addWidget(chk_bx)
+            # lay_out.setAlignment(Qt.AlignCenter)
+            # lay_out.setContentsMargins(0,0,0,0)
+            # item.setLayout(lay_out)
+            # self.task_list.setCellWidget(i, 0, item)
+            # item = QtWidgets.QTableWidgetItem()
+
+            # self.task_list.setItem(i, 0, item)
+            short = task.do if len(task.do) <= 80 else task.do.replace("\n", " ")[:80] + "[…]"
             item = QtWidgets.QTableWidgetItem(short)
             item.setToolTip(task.do)
-            self.task_list.setItem(i, 1, item)
-
-            #item.setTextAlignment(QtCore.Qt.AlignCenter)
+            item.setData(Qt.UserRole, task.id)
+            self.task_list.setItem(i, 0, item)
             item = QtWidgets.QTableWidgetItem(task.space)
-            self.task_list.setItem(i, 2, item)
+            self.task_list.setItem(i, 1, item)
             item = QtWidgets.QTableWidgetItem(str(task.level))
-            self.task_list.setItem(i, 3, item)
+            self.task_list.setItem(i, 2, item)
             item = QtWidgets.QTableWidgetItem(str(task.priority))
-            self.task_list.setItem(i, 4, item)
+            self.task_list.setItem(i, 3, item)
             item = QtWidgets.QTableWidgetItem(str(task.ilk.name))
-            self.task_list.setItem(i, 5, item)
+            self.task_list.setItem(i, 4, item)
             item = QtWidgets.QTableWidgetItem(
                 datetime.fromtimestamp(task.deadline).isoformat() 
                     if not isinf(task.deadline) else
                 "---")
-            self.task_list.setItem(i, 6, item)
+            self.task_list.setItem(i, 5, item)
             item = QtWidgets.QWidget()
             combo = QtWidgets.QComboBox()
-            for t in task.supertasks:
+            for t in filter(lambda t: not (t.is_inactive or t.is_deleted or t.is_draft), task.supertasks):
+                combo.addItem(t.do, t.id)
+            lay_out = QtWidgets.QHBoxLayout(item)
+            lay_out.addWidget(combo)
+            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setContentsMargins(0,0,0,0)
+            item.setLayout(lay_out)
+            self.task_list.setCellWidget(i, 6, item)
+            
+            item = QtWidgets.QWidget()
+            combo = QtWidgets.QComboBox()
+            for t in filter(lambda t: t.considered_open, task.subtasks):
                 combo.addItem(t.do, t.id)
             lay_out = QtWidgets.QHBoxLayout(item)
             lay_out.addWidget(combo)
@@ -927,16 +1009,21 @@ WHERE id == {task.id}
             item.setLayout(lay_out)
             self.task_list.setCellWidget(i, 7, item)
             
-            item = QtWidgets.QWidget()
-            combo = QtWidgets.QComboBox()
-            for t in task.subtasks:
-                combo.addItem(t.do, t.id)
-            lay_out = QtWidgets.QHBoxLayout(item)
-            lay_out.addWidget(combo)
-            lay_out.setAlignment(Qt.AlignCenter)
-            lay_out.setContentsMargins(0,0,0,0)
-            item.setLayout(lay_out)
-            self.task_list.setCellWidget(i, 8, item)
+            ok = QIcon(":/feather/extra/feathericons/check.svg")
+            
+            nok = QIcon(":/feather/extra/feathericons/x.svg")
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if task.is_draft else nok)
+            self.task_list.setItem(i, 8, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if task.is_done else nok)
+            self.task_list.setItem(i,9, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if task.is_inactive else nok)
+            self.task_list.setItem(i,10, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if task.is_deleted else nok)
+            self.task_list.setItem(i,11, item)
         
         if not tasks:
             self.task_list.clearContents()
@@ -962,7 +1049,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
                  cloning:bool=False, 
                  templating:bool=False, 
                 as_sup:bool=0, 
-                win_list:Task_List=None,
+                win_list:TaskList=None,
                 ):
         super().__init__()
         self.activateWindow()
@@ -2319,26 +2406,9 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         menu.triggered.connect(self.liste)
         
     def liste(self):
-        win = Task_List()
+        win = TaskList()
         list_of_task_lists.append(win)
         win.show()
-
-class Application(QtWidgets.QApplication):
-    def __init__(self, argv):
-        super().__init__(argv)
-    
-    def mouseMoveEvent(self, event):
-        global test
-        event.ignore()
-        return False
-        #font = app.font()
-        #font.setPointSize(font.pointSize() + 1)
-        #app.setFont(font)
-
-        # if QtGui.QApplication.keyboardModifiers() == Qt.ControlModifier:
-        #     font = app.font()
-        #     font.setPointSize(font.pointSize() + 1)
-        #     app.setFont(font)
 
 def consider_tasks():
     global considered_tasks
@@ -2404,7 +2474,7 @@ if __name__ == "__main__":
     considered_tasks = []
     consider_tasks()
     win_main.statusBar.showMessage("Bereit.", 10000)
-    list_of_task_lists: list[Task_List] = []
+    list_of_task_lists: list[TaskList] = []
     tasks = []
     win_what = None
     win_new = None
