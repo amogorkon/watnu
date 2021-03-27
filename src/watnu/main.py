@@ -4,6 +4,7 @@ Run with python main.py and watch the Magik happen!
 """
 import sys
 import webbrowser
+from bisect import bisect_right
 from collections import defaultdict, namedtuple
 from datetime import datetime, timedelta
 from enum import Enum
@@ -34,6 +35,7 @@ from algo import (balance, check_task_conditions, constraints_met,
 from classes import EVERY, ILK, Every, Task, iter_over, submit_sql, typed
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
+from lib.utils import timed
 from telegram import tell_telegram
 from ui import (about, attributions, character, choose_constraints,
                 choose_deadline, choose_repeats, choose_skills, companions,
@@ -149,8 +151,6 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         @self.button5.clicked.connect
         def whatnow():
             """Watnu?!"""
-            global win_what
-            win_what = What_Now()
             if win_what.lets_check_whats_next():
                 win_what.show()
                 self.hide()
@@ -160,9 +160,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
             """Add new Task."""
             if state() is S.editing:
                 mb = QtWidgets.QMessageBox()
-                mb.setText(
-"Es wird schon ein Task bearbeitet."
-                )
+                mb.setText("Es wird schon ein Task bearbeitet.")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
                 mb.exec_()
@@ -462,6 +460,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
             win = Task_Finished(self.task_timing)
             win.exec_()
 
+    @timed
     def lets_check_whats_next(self):
         global config, considered_tasks
         seed((config.coin^config.lucky_num) * config.count)
@@ -493,8 +492,6 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         win_main.show()
         self.sec_timer.stop()
         self.animation_timer.stop()
-        win_what = None
-
 
     def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
@@ -593,17 +590,17 @@ class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
         
         menu = QtWidgets.QToolBar()
         menu = QtWidgets.QMenu()
-        menu.addAction("erledigt", self.set_as_done)
-        menu.addAction("Entwurf", self.set_as_draft)
-        menu.addAction("inaktiv", self.set_as_inactive)
-        menu.addAction("gelöscht", self.set_as_deleted)
+        menu.addAction("erledigt", partial(self.set_as, "done", True))
+        menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+        menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+        menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
         self.button1.setMenu(menu)
         
         menu = QtWidgets.QMenu()
-        menu.addAction("erledigt", partial(self.set_as_done, False))
-        menu.addAction("Entwurf", partial(self.set_as_draft, False))
-        menu.addAction("inaktiv", partial(self.set_as_inactive, False))
-        menu.addAction("gelöscht", partial(self.set_as_deleted, False))
+        menu.addAction("erledigt", partial(self.set_as, "done", False))
+        menu.addAction("Entwurf", partial(self.set_as, "draft", False))
+        menu.addAction("inaktiv", partial(self.set_as, "inactive", False))
+        menu.addAction("gelöscht", partial(self.set_as, "deleted", False))
         self.button3.setMenu(menu)
         
         item = QtWidgets.QTableWidgetItem()
@@ -743,7 +740,7 @@ WHERE id == {task.id}
                                 self.field_filter.text().casefold()))
             self.update()
 
-    def set_as_inactive(set_flag=True):       
+    def set_as(self, property:str, set_flag): 
         X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
         
         if not X:
@@ -753,55 +750,10 @@ WHERE id == {task.id}
             task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
             submit_sql(f"""
 UPDATE tasks
-SET inactive = {set_flag}
+SET '{property}' = {set_flag}
 WHERE id == {task.id}
 """)
         consider_tasks()            
-        self.build_task_list()
-
-    def set_as_deleted(set_flag=True):       
-        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-        if not X:
-            return
-        
-        for x in X:
-            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-            submit_sql(f"""
-UPDATE tasks
-SET deleted = {set_flag}
-WHERE id == {task.id}
-""")
-        consider_tasks()
-        self.build_task_list()
-
-    def set_as_done(set_flag=True):      
-        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-        if not X:
-            return
-
-        for x in X:
-            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-            submit_sql(f"""
-UPDATE tasks
-SET done = {set_flag}
-WHERE id == {task.id}
-""")
-        consider_tasks()
-        self.build_task_list()
-
-    def set_as_draft(self, set_flag=True):
-        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-        if not X:
-            return
-
-        for x in X:
-            task = Task(self.task_list.item(x.row(), 0).data(Qt.UserRole))
-            submit_sql(f"""
-UPDATE tasks
-SET draft = {set_flag}
-WHERE id == {task.id}
-""")
-        consider_tasks()
         self.build_task_list()
 
     def clone_as_is(self):
@@ -859,6 +811,7 @@ WHERE id == {task.id}
         win = Editor(task, cloning=True, as_sup=1, win_list=self)
         win.show()
 
+    @timed
     def build_task_list(self):
         # TODO match \o/
         if self.status.currentIndex() == 0:
@@ -900,6 +853,7 @@ deleted == TRUE
         self.arrange_list(filter_tasks(self.tasks, filter_text))
         self.update()
 
+    @timed
     def arrange_list(self, tasks):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         q("arranging list", len(tasks), "tasks")
@@ -1581,7 +1535,7 @@ QProgressBar::chunk {
             if self.win_list:
                 self.win_list.raise_()
 
-            if not win_what.isHidden() and win_what:
+            if not win_what.isHidden():
                 win_what.raise_()
 
             progress.setValue(0)
@@ -1986,7 +1940,6 @@ Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den 
 
     def reject(self):
         super().reject()
-        return False
 
 class Character(QtWidgets.QDialog, character.Ui_Dialog):
     def __init__(self):
@@ -2088,6 +2041,12 @@ WHERE skill_id == {skill_id};
         def _():
             submit_sql(f"""
 DELETE FROM tasks WHERE deleted == TRUE;
+""")
+            submit_sql(f"""
+DELETE FROM sessions 
+WHERE NOT EXISTS(SELECT NULL
+FROM tasks
+WHERE sessions.task_id = tasks.id)
 """)
 
         @self.delete_skill.clicked.connect
@@ -2311,31 +2270,135 @@ class Statistics(QtWidgets.QDialog, statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-
+        query = submit_sql("""
+select max(id) from tasks
+                           """)
+        ok = QIcon("./extra/feathericons/check.svg")
+        nok = QIcon("./extra/feathericons/x.svg")
+        query.first()
+        self.total_num_tasks.setText(str(typed(query.value, 0, int, default=0)))
         query = submit_sql(f"""
 SELECT
-    primary_activity_id,
-    SUM(time_spent)
+    space_id, name
+FROM
+    spaces
+""")
+        for i, (space_id, name) in enumerate(((typed(row, 0, int), typed(row, 1, str)) for row in iter_over(query))):            
+            self.space_stats.setRowCount(i+1)
+            item = QtWidgets.QTableWidgetItem(name)
+            item.setData(Qt.UserRole, space_id)
+            self.space_stats.setItem(i, 0, item)
+
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
 FROM
     tasks
-GROUP BY
-    primary_activity_id
+WHERE
+    space_id == {space_id} AND done AND NOT deleted AND NOT inactive AND NOT draft
 """)
-        activities = {row(0): row(1) for row in iter_over(query)}
-        q(activities.items())
-        if not activities:
-            return
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.space_stats.setItem(i, 1, item)
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
+FROM
+    tasks
+WHERE
+    space_id == {space_id} AND NOT done AND NOT deleted AND NOT inactive AND NOT draft
+""")
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.space_stats.setItem(i, 2, item)
+            
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
+FROM
+    tasks
+WHERE
+    space_id == {space_id} AND NOT deleted AND NOT inactive AND NOT draft
+""")
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.space_stats.setItem(i, 3, item)
 
+
+        for i, (level_id, name) in enumerate(((-2, "MUST NOT"), (-1, "SHOULD NOT"), (0, "COULD"), (1, "SHOULD"), (2, "MUST"))):            
+            self.level_stats.setRowCount(i+1)
+            item = QtWidgets.QTableWidgetItem(name)
+            item.setData(Qt.UserRole, space_id)
+            self.level_stats.setItem(i, 0, item)
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
+FROM
+    tasks
+WHERE
+    level_id == {level_id} AND done AND NOT deleted AND NOT inactive AND NOT draft
+""")
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.level_stats.setItem(i, 1, item)
+            
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
+FROM
+    tasks
+WHERE
+    level_id == {level_id} AND NOT done AND NOT deleted AND NOT inactive AND NOT draft
+""")
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.level_stats.setItem(i, 2, item)
+        
+            inner_query = submit_sql(f"""
+SELECT
+    count(id)
+FROM
+    tasks
+WHERE
+    level_id == {level_id} AND NOT deleted AND NOT inactive AND NOT draft
+""")
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, default=0)))
+            self.level_stats.setItem(i, 3, item)
+        
         query = submit_sql(f"""
 SELECT
-    activity_id, name, adjust_time_spent
+session_id, task_id, start, stop, finished, pause_time
 FROM
-    activities
+sessions                           
 """)
 
-        for row in iter_over(query):
-            activities[row(0)] += row(2)
-        
+        for i, (session_id, task_id, start, stop, finished, pause_time) in enumerate((
+                    typed(row, 0, int),
+                    typed(row, 1, int),
+                    typed(row, 2, int),
+                    typed(row, 3, int),
+                    typed(row, 4, int), 
+                    typed(row, 5, int)) for row in iter_over(query)):
+
+            self.session_stats.setRowCount(i+1)
+            inner_query = submit_sql(f"""
+SELECT
+    do
+FROM
+    tasks
+WHERE
+    id == {task_id}
+""")
+            item = QtWidgets.QTableWidgetItem(typed(inner_query.value, 0, str))
+            item.setData(Qt.UserRole, session_id)
+            self.session_stats.setItem(i, 0, item)
+            item = QtWidgets.QTableWidgetItem(str(datetime.fromtimestamp(start)))
+            self.session_stats.setItem(i, 1, item)
+            item = QtWidgets.QTableWidgetItem(str(datetime.fromtimestamp(stop)))
+            self.session_stats.setItem(i, 2, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setIcon(ok if finished else nok)
+            self.session_stats.setItem(i, 3, item)
+            item = QtWidgets.QTableWidgetItem(f"{(stop - start)// 60:04}")
+            self.session_stats.setItem(i, 4, item)
+            item = QtWidgets.QTableWidgetItem(f"{pause_time // 60:04}")
+            self.session_stats.setItem(i, 5, item)
+
     def reject(self):
         super().reject()
         win_statistics = None
@@ -2361,7 +2424,8 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
         win = TaskList()
         list_of_task_lists.append(win)
         win.show()
-
+        
+@timed
 def consider_tasks():
     global considered_tasks
     query = submit_sql(f"""
@@ -2372,9 +2436,7 @@ def consider_tasks():
     considered_tasks = [Task(row(0)) for row in iter_over(query)]
 
 if __name__ == "__main__":
-    q(46546, sys.argv)
     path = Path(__file__).resolve().parents[0]
-    q(243234, path)
     # touch, just in case user killed the config or first start
     (path/"config.stay").touch()
     # overwriting the module with the instance for convenience
@@ -2422,13 +2484,14 @@ if __name__ == "__main__":
     win_main = MainWindow()
     win_main.setWindowIcon(icon)
     win_main.statusBar.show()
-    win_main.statusBar.showMessage("Willkommen zurück! Lese Aufgaben ein...", 10000)
+    
+    greet_time = ["N'Abend", "Guten Morgen", "Guten Tag", "Guten Nachmittag", "Guten Abend", "Guten Abend"][bisect_right([6,11,14,18,21,25], datetime.now().hour)]
+    win_main.statusBar.showMessage(f"{greet_time}, willkommen zurück!", 10000)
     considered_tasks = []
     consider_tasks()
-    win_main.statusBar.showMessage("Bereit.", 10000)
     list_of_task_lists: list[TaskList] = []
     tasks = []
-    win_what = None
+    win_what = What_Now()
     win_new = None
     win_character = None
     win_settings = None

@@ -168,7 +168,7 @@ class Q(object):
     class Stanza:
         """Abstract away indentation and line-wrapping."""
 
-        def __init__(self, indent=0, width=80 - 7):
+        def __init__(self, indent=0, width=280 - 7):
             self.chunks = [' '*indent]
             self.indent = indent
             self.column = indent

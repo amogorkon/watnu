@@ -14,10 +14,10 @@ import numpy as np
 from PyQt5.QtSql import QSqlQuery
 
 import q
+from lib.utils import ASPECT, aspectized
 
 last_sql_access = 0
 
-ASPECT = Flag("Aspect", "property_set property_get")
 ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
 class EVERY(Enum):
     undetermined = -1
@@ -40,16 +40,6 @@ def iter_over(query):
     while query.next():
         yield query.value
 
-def logged(func):
-    def wrapper(*args, **kwargs):
-        if type(func) is property:
-            q(args[0], "=>",  func.fget.__name__)
-            res = func.fget(*args, **kwargs)
-            q(args[0], func.fget.__name__, "=>", res)
-            return res
-        return func(*args, **kwargs)
-    return wrapper
-
 def cached(func):
     cache = {}  # (args[0] -> (last_called, result)
     
@@ -68,29 +58,22 @@ def cached(func):
             return res
     return wrapper
 
-def aspectized(decorator, aspect=ASPECT.property_get, pattern=None):
-    def wrapping (cls):
-        if ASPECT.property_get in aspect:
-            for name, attr in cls.__dict__.items():
-                if not name.startswith("__") and type(attr) is property:
-                    setattr(cls, name, property(decorator(attr), attr.fset))
-        return cls
-    return wrapping
-
 def typed(row, idx, kind: type, default=..., debugging=False):
     if config.debugging:
         debugging = True
     filename, line_number, function_name, lines, index = getframeinfo(currentframe().f_back)
+    filename = Path(filename).stem
     res = row(idx)
     if debugging:
-        q(res)
+        
+        q(filename, line_number, function_name, idx, kind, default, res)
     if default is not ...:
         if res == "" or res is None:
             return default
-        assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
+        assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
         return res
     else:
-        assert type(res) is kind, f"'{res}' ({type(res)}) is not {kind}! {Path(filename).stem, line_number, function_name}"
+        assert type(res) is kind, f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
     return res
 
 def submit_sql(statement, debugging=False):

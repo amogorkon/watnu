@@ -161,10 +161,6 @@ def skill_level(seconds):
 
 
 def constraints_met(constraints: np.array, now: datetime):
-    weekday = now.weekday()
-    hour, minute = now.time().hour, now.time().minute
-    idx = weekday * 144 + hour * 6 + minute // 10
     if constraints is None:
         return True
-    else:
-        return constraints[idx]
+    return constraints[now.weekday(), now.time().hour * 6 + now.time().minute // 10]

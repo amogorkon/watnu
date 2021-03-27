@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from pathlib import Path
 from shutil import copyfile, make_archive, rmtree
 from time import time
@@ -8,6 +9,15 @@ from main import __version__
 before = time()
 
 dst = Path("G:/Watnu/")
+
+print(Path(__file__).absolute().parents[0])
+sys.path.append(Path(__file__).absolute().parents[0])
+
+completed = subprocess.run(["pytest", "../../test"])
+if completed.returncode:
+    print("Tests failed, aborting.")
+    sys.exit()
+
 try:
     dst.mkdir(parents=True)
 except FileExistsError:
