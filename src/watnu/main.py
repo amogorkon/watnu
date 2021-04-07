@@ -166,8 +166,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                 mb.exec_()
                 return
             win = Editor()
-            win.activateWindow()
-            win.show()
+            win.exec_()
      
         @self.button1.clicked.connect
         def statistics():
@@ -2455,7 +2454,7 @@ if __name__ == "__main__":
     
     if config.first_start:
         import first_start
-        first_start.run(db, query, config)
+        first_start.run(db, config)
         config.first_start = False
         config.write()
     

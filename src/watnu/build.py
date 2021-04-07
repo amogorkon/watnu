@@ -13,7 +13,7 @@ dst = Path("G:/Watnu/")
 print(Path(__file__).absolute().parents[0])
 sys.path.append(Path(__file__).absolute().parents[0])
 
-completed = subprocess.run(["pytest", "../../test"])
+completed = subprocess.run(["pytest", "../../test", "-x", "-v"])
 if completed.returncode:
     print("Tests failed, aborting.")
     sys.exit()

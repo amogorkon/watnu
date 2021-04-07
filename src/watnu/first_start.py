@@ -2,7 +2,7 @@ from classes import submit_sql
 
 print("FIRST START")
 
-def run(db, query, config):
+def run(db, config):
 
     ### CREATE SQL TABLES ###
     # qsql can't handle multiple statements >:|
