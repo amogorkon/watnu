@@ -332,9 +332,7 @@ WHERE id={self.id}
         ;
         """
         )
-        if not query.isValid():
-            return 0
-        return typed(query.value, 0, int, default=0)
+        return typed(query.value, 0, int, default=0) if query.isValid() else 0
 
     @property
     def level(self) -> str:

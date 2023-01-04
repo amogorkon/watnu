@@ -193,17 +193,17 @@ def bounded_linear(low, high, *, c_m=1, no_m=0, inverse=False):
 
     if inverse:
         c_m, no_m = no_m, c_m
-    
+
     gradient = (c_m - no_m) / (high - low)
-    
+
     # special cases found by hypothesis
-    
+
     def g_0(x):
         return (c_m + no_m) / 2
-    
+
     if gradient == 0:
         return g_0
-    
+
     def g_inf(x):
         asymptode = (high + low) / 2
         if x < asymptode:
@@ -212,17 +212,16 @@ def bounded_linear(low, high, *, c_m=1, no_m=0, inverse=False):
             return c_m
         else:
             return (c_m + no_m) / 2
-    
+
     if isinf(gradient):
         return g_inf
-    
+
     def f(x):
         y = gradient * (x - low) + no_m
         if y < 0:
             return 0.
-        if y > 1:
-            return 1.
-        return y
+        return 1. if y > 1 else y
+
     return f
 
 
@@ -254,10 +253,8 @@ def S(low, high):
     def f(x):
         if x <= low:
             return 1
-        if low < x < high:
-            # factorized to avoid nan
-            return high / (high - low) - x / (high - low)
-        return 0
+        return high / (high - low) - x / (high - low) if low < x < high else 0
+
     return f
 
 
@@ -273,9 +270,7 @@ def rectangular(low:float, high:float, *, c_m:float=1, no_m:float=0) -> callable
     def f(x:float) -> float:
         if x < low:
             return no_m
-        if low <= x <= high:
-            return c_m
-        return no_m
+        return c_m if low <= x <= high else no_m
 
     return f
 
