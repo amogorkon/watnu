@@ -4,7 +4,7 @@ from math import isinf, sqrt
 from time import time
 
 import numpy as np
-from fuzzylogic.functions import bounded_sigmoid, sigmoid
+from lib.functions import bounded_sigmoid, sigmoid
 
 from classes import EVERY, ILK, Task, iter_over, submit_sql
 
@@ -50,21 +50,19 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
 
 
 def schedule(tasks: list) -> list:
-    filtered_by_infinity = filter(lambda t: 
-        not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
+    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
     sorted_by_last_checked = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
     sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
     return deque(sorted_by_deadline)
 
 
-def check_task_conditions(task, now: datetime, finished_sessions:list=None):
+def check_task_conditions(task, now: datetime, finished_sessions: list = None):
     if not task.is_done:
         return
-    
+
     if task.repeats is None:
         return
-    
-    
+
     every_x = task.repeats.x_every
     # ! that would be a nice place for pattern matching...
     then = datetime.fromtimestamp(task.last_finished)
@@ -73,55 +71,70 @@ def check_task_conditions(task, now: datetime, finished_sessions:list=None):
             task.is_done = False
 
     elif task.repeats is not None:
-        every_ilk, x_every, per_ilk, x_per = task.repeats
-        
-        now = datetime.timestamp(now)
-        
-        if every_ilk is EVERY.minute:
-            then_minute = task.last_finished // 60
-            now_minute = now // 60
-            if (now_minute - then_minute) % every_x == 0:
-                task.is_done = False
-        
-        if every_ilk is EVERY.hour:
-            then_hour = task.last_finished // (60 * 60)
-            now_hour = now // (60 * 60)
-            if (now_hour - then_hour) % every_x == 0:
-                task.is_done = False
-                
-        if every_ilk is EVERY.day:
-            then_day = task.last_finished // ( 60* 60*24)
-            now_day = now // (60*60*24)
-            if (now_day - then_day ) % every_x == 0:
-                task.is_done = False
-        
-        if every_ilk is EVERY.week:
-            then_week = task.last_finished // ( 60* 60 * 24 * 7)
-            now_week = now // (60 * 60*24* 7)
-            if (now_week - then_week) % every_x == 0:
-                task.is_done = False
+        _extracted_from_check_task_conditions_16(task, now, every_x)
 
-        if every_ilk is EVERY.year:
-            now_year = now // (60*60*24*365.25)
-            then_year = task.last_finished // (60 * 60 * 24*365.25)
-            if (now_year - then_year ) % every_x == 0:
-                task.is_done = False
-        
-        if per_ilk is not EVERY.undetermined:
-            td = timedelta(seconds={EVERY.minute: 60,
-                            EVERY.hour : 60*60,
-                            EVERY.day: 60*60*24,
-                            EVERY.week: 60*60*24*7,
-                            EVERY.year: 60*60*24*365.25
-                            }[per_ilk])
-            
-            now = datetime.fromtimestamp(now)
-            then = now - td  # TODO: refactor
-            query = submit_sql(f"""
+
+# TODO Rename this here and in `check_task_conditions`
+def _extracted_from_check_task_conditions_16(task, now, every_x):
+    every_ilk, x_every, per_ilk, x_per = task.repeats
+
+    now = datetime.timestamp(now)
+
+    if every_ilk is EVERY.minute:
+        then_minute = task.last_finished // 60
+        now_minute = now // 60
+        if (now_minute - then_minute) % every_x == 0:
+            task.is_done = False
+
+    if every_ilk is EVERY.hour:
+        then_hour = task.last_finished // (60 * 60)
+        now_hour = now // (60 * 60)
+        if (now_hour - then_hour) % every_x == 0:
+            task.is_done = False
+
+    if every_ilk is EVERY.day:
+        then_day = task.last_finished // (60 * 60 * 24)
+        now_day = now // (60 * 60 * 24)
+        if (now_day - then_day) % every_x == 0:
+            task.is_done = False
+
+    if every_ilk is EVERY.week:
+        _extracted_from__extracted_from_check_task_conditions_16_(
+            now, 7, task, every_x
+        )
+    if every_ilk is EVERY.year:
+        _extracted_from__extracted_from_check_task_conditions_16_(
+            now, 365.25, task, every_x
+        )
+    if per_ilk is not EVERY.undetermined:
+        td = timedelta(
+            seconds={
+                EVERY.minute: 60,
+                EVERY.hour: 60 * 60,
+                EVERY.day: 60 * 60 * 24,
+                EVERY.week: 60 * 60 * 24 * 7,
+                EVERY.year: 60 * 60 * 24 * 365.25,
+            }[per_ilk]
+        )
+
+        now = datetime.fromtimestamp(now)
+        then = now - td  # TODO: refactor
+        query = submit_sql(
+            f"""
 SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  
-""")
-            if len(list(iter_over(query))) < x_per:
-                task.is_done = False
+"""
+        )
+        if len(list(iter_over(query))) < x_per:
+            task.is_done = False
+
+
+# TODO Rename this here and in `check_task_conditions`
+def _extracted_from__extracted_from_check_task_conditions_16_(now, arg1, task, every_x):
+    now_week = now // (60 * 60 * 24 * arg1)
+    then_week = task.last_finished // (60 * 60 * 24 * arg1)
+    if (now_week - then_week) % every_x == 0:
+        task.is_done = False
+
 
 def filter_tasks(tasks, pattern):
     if pattern.isspace() or not pattern:

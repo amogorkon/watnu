@@ -28,8 +28,8 @@ class boolean:
         if isinstance(x, str):
             try:
                 self.x = bool(literal_eval(x))
-            except ValueError:
-                raise ConfigurationError(f"{x} is not a Value of True or False!")
+            except ValueError as e:
+                raise ConfigurationError(f"{x} is not a Value of True or False!") from e
         if isinstance(x, bool):
             self.x = x
 
@@ -46,9 +46,7 @@ class boolean:
 @attr.s(
     auto_attribs=True,
     on_setattr=attr.setters.convert,
-    field_transformer=lambda cls, fields: [
-        field.evolve(converter=field.type) for field in fields
-    ],
+    field_transformer=lambda cls, fields: [field.evolve(converter=field.type) for field in fields],
 )
 class Config:
     # "False" is a non-empty string -> True :|
@@ -67,8 +65,8 @@ class Config:
     tutorial_active: boolean = True
     run_sql_stuff: boolean = False
     icon: str = "./extra/feathericons/watnu1.png"
-    debugging:boolean = False
-    autostart:boolean = True
+    debugging: boolean = False
+    autostart: boolean = True
 
     def write(self):
         with open("config.stay", "w") as f:

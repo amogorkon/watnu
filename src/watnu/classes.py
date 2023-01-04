@@ -19,6 +19,8 @@ from lib.utils import ASPECT, aspectized
 last_sql_access = 0
 
 ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
+
+
 class EVERY(Enum):
     undetermined = -1
     minute = 1
@@ -28,11 +30,14 @@ class EVERY(Enum):
     month = 5
     year = 6
 
+
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
+
 
 def set_globals(c):
     global config
     config = c
+
 
 def iter_over(query):
     if query.isValid():
@@ -40,9 +45,10 @@ def iter_over(query):
     while query.next():
         yield query.value
 
+
 def cached(func):
     cache = {}  # (args[0] -> (last_called, result)
-    
+
     def wrapper(*args, **kwargs):
         global last_sql_access
         nonlocal cache
@@ -56,7 +62,9 @@ def cached(func):
             res = func.fget(*args, **kwargs)
             cache[args[0]] = time(), res
             return res
+
     return wrapper
+
 
 def typed(row, idx, kind: type, default=..., debugging=False):
     if config.debugging:
@@ -65,31 +73,32 @@ def typed(row, idx, kind: type, default=..., debugging=False):
     filename = Path(filename).stem
     res = row(idx)
     if debugging:
-        
+
         q(filename, line_number, function_name, idx, kind, default, res)
     if default is not ...:
         if res == "" or res is None:
             return default
-        assert type(res) is kind or res is None, f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
+        assert (
+            type(res) is kind or res is None
+        ), f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
         return res
     else:
-        assert type(res) is kind, f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
+        assert (
+            type(res) is kind
+        ), f"'{res}' ({type(res)}) is not {kind}! {filename, line_number, function_name}"
     return res
+
 
 def submit_sql(statement, debugging=False):
     if config.debugging:
         debugging = True
     query = QSqlQuery()
-    (filename, line_number, function_name, lines, index) = getframeinfo(
-            currentframe().f_back
-        )
+    (filename, line_number, function_name, lines, index) = getframeinfo(currentframe().f_back)
     if query.exec_(statement):
         if debugging:
             q("OK", statement)
     else:
-        q(
-            f"SQL failed {Path(filename).stem, line_number, function_name}: {statement}"
-        )
+        q(f"SQL failed {Path(filename).stem, line_number, function_name}: {statement}")
         q(query.lastError().text())
     query.first()
     if not query.isValid() and debugging:
@@ -97,7 +106,7 @@ def submit_sql(statement, debugging=False):
             f"SQL succeeded but Query is now invalid {Path(filename).stem, line_number, function_name}: {statement}"
         )
     global last_sql_access
-    last_sql_access = time() -1
+    last_sql_access = time() - 1
     return query
 
 
@@ -116,6 +125,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
 """
         )
         return sum(typed(row, 0, int) + typed(row, 1, int) for row in iter_over(query))
+
 
 @aspectized(cached, ASPECT.property_get)
 class Task(NamedTuple):
@@ -165,7 +175,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         """
         )
         if query.isValid():
-            return np.fromiter((int(x) for x in typed(query.value, 0, str)), int).reshape(7,144)
+            return np.fromiter((int(x) for x in typed(query.value, 0, str)), int).reshape(7, 144)
         else:
             return None
 
@@ -192,10 +202,11 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         query = submit_sql(
             f"""
         SELECT time_of_reference FROM deadlines WHERE task_id={self.id}
-        """)
+        """
+        )
         if query.isValid():  #  # !WTF QSqlQuery::value: not positioned on a valid record ?!
-        # the reason for aspectized and still couldn't figure out what makes this a special case
-            own_deadline = typed(query.value, 0, float, default=float("inf")) 
+            # the reason for aspectized and still couldn't figure out what makes this a special case
+            own_deadline = typed(query.value, 0, float, default=float("inf"))
         else:
             own_deadline = float("inf")
         query = submit_sql(
@@ -214,7 +225,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         """
         )
         return typed(query.value, 0, float)
-    
+
     @property
     def fear(self) -> float:
         query = submit_sql(
@@ -226,9 +237,11 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
 
     @property
     def ilk(self):
-        query = submit_sql(f"""
+        query = submit_sql(
+            f"""
 SELECT ilk FROM tasks WHERE id={self.id}
-                           """)
+                           """
+        )
         return ILK(typed(query.value, 0, int))
 
     @property
@@ -257,7 +270,7 @@ SELECT ilk FROM tasks WHERE id={self.id}
         """
         )
         return bool(typed(query.value, 0, int))
-    
+
     @property
     def is_done(self) -> bool:
         query = submit_sql(
@@ -382,17 +395,31 @@ WHERE id={self.id}
 
     @property
     def repeats(self):
-        query = submit_sql(f"""
+        query = submit_sql(
+            f"""
 SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
-                           """)
-        if not query.isValid():
-            return None
-        else:
-            return Every(EVERY(typed(query.value, 0, int,)),
-                        typed(query.value, 1, int), 
-                        EVERY(typed(query.value, 2, int)), 
-                        typed(query.value, 3, int,),
-                        )
+                           """
+        )
+        return (
+            Every(
+                EVERY(
+                    typed(
+                        query.value,
+                        0,
+                        int,
+                    )
+                ),
+                typed(query.value, 1, int),
+                EVERY(typed(query.value, 2, int)),
+                typed(
+                    query.value,
+                    3,
+                    int,
+                ),
+            )
+            if query.isValid()
+            else None
+        )
 
     @property
     def resources(self) -> Generator[str]:
@@ -448,7 +475,6 @@ WHERE tasks.id = {self.id}
         )
         return typed(query.value, 0, int, default=None)
 
-
     @property
     def secondary_activity_id(self) -> int:
         query = submit_sql(
@@ -467,7 +493,6 @@ WHERE tasks.id = {self.id}
         )
         return [Skill(typed(row, 0, int)) for row in iter_over(query)]
 
-
     @property
     def space_priority(self) -> float:
         if self.space_id:
@@ -479,19 +504,23 @@ WHERE tasks.id = {self.id}
             return typed(query.value, 0, float)
         else:
             return 0
-        
+
     @property
     def subtasks(self) -> "list[Task]":
-        query = submit_sql(f"""
+        query = submit_sql(
+            f"""
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
-            """)
+            """
+        )
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
-    
+
     @property
     def supertasks(self) -> "list[Task]":
-        query = submit_sql(f"""
+        query = submit_sql(
+            f"""
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
-        """)
+        """
+        )
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
@@ -518,9 +547,11 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     @property
     def template(self):
-        query = submit_sql(f"""
+        query = submit_sql(
+            f"""
 SELECT template FROM tasks WHERE id={self.id}
-""")
+"""
+        )
         return typed(query.value(), 0, int, default=None)
 
     def __eq__(self, other):
