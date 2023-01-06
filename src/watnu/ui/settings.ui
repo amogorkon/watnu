@@ -15,11 +15,16 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QTabWidget" name="toolbar">
+    <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
-     <widget class="QWidget" name="toolbarPage1">
+     <widget class="QWidget" name="tab_general">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tab_categories">
       <attribute name="title">
        <string>Categories</string>
       </attribute>
@@ -372,7 +377,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="toolbarPage2">
+     <widget class="QWidget" name="tab_config">
       <attribute name="title">
        <string>Config</string>
       </attribute>
@@ -393,7 +398,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_4">
+     <widget class="QWidget" name="tab_misc">
       <attribute name="title">
        <string>Misc</string>
       </attribute>
