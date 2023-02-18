@@ -4,14 +4,6 @@ from subprocess import run
 path = Path("./ui")
 
 for name in path.glob("*.ui"):
-    args = ["pyuic5", name, "-o", "ui/" + name.stem + ".py"]
-    print(args)
-    rc = run(args)
-
-path = Path(".")
-print("icons:")
-for name in path.glob("*.qrc"):
-    print(name)
-    args = ["pyrcc5", name, "-o", name.stem + "_rc.py"]
+    args = [r"C:\Users\micro\AppData\Local\Programs\Python\Python311\Scripts\pyuic6.exe", name, "-o", f"ui/{name.stem}.py"]
     print(args)
     rc = run(args)

@@ -54,6 +54,45 @@
       </widget>
      </item>
      <item>
+      <widget class="QComboBox" name="space">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+       <property name="currentText">
+        <string>alle Räume</string>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <property name="maxVisibleItems">
+        <number>12</number>
+       </property>
+       <item>
+        <property name="text">
+         <string>alle Räume</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
       <widget class="QComboBox" name="status">
        <property name="font">
         <font>

@@ -2,6 +2,7 @@
 
 Run with python main.py and watch the Magik happen!
 """
+import contextlib
 import sys
 import webbrowser
 from bisect import bisect_right
@@ -15,20 +16,11 @@ from pathlib import Path
 from random import choice, seed
 from time import time, time_ns
 
-import numpy as np
-from dateutil.relativedelta import relativedelta
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QDate, QDateTime, QEvent, QModelIndex, Qt, QTime, QTimer, QUrl, QVariant
-from PyQt5.QtGui import QColor, QIcon, QKeySequence
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QApplication, QMessageBox, QShortcut, QWidget
-from PyQt5.QtWinExtras import QWinTaskbarButton, QWinTaskbarProgress
-
 import classes
 import config
+import numpy as np
 import q
+import ui
 from algo import (
     balance,
     check_task_conditions,
@@ -38,31 +30,32 @@ from algo import (
     schedule,
     skill_level,
 )
+from beartype import beartype
 from classes import EVERY, ILK, Every, Task, iter_over, submit_sql, typed
+from dateutil.relativedelta import relativedelta
 from lib.fluxx import StateMachine
 from lib.stay import Decoder
 from lib.utils import timed
-from telegram import tell_telegram
-from ui import (
-    about,
-    attributions,
-    character,
-    choose_constraints,
-    choose_deadline,
-    choose_repeats,
-    choose_skills,
-    companions,
-    inventory,
-    landing,
-    main_window,
-    running_task,
-    settings,
-    statistics,
-    task_editor,
-    task_finished,
-    task_list,
-    what_now,
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import (
+    QCoreApplication,
+    QDate,
+    QDateTime,
+    QEvent,
+    QModelIndex,
+    Qt,
+    QTime,
+    QTimer,
+    QUrl,
+    QVariant,
+    QItemSelectionModel,
 )
+from PyQt6.QtGui import QColor, QIcon, QKeySequence, QShortcut
+from PyQt6.QtMultimedia import QMediaPlayer
+from PyQt6.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWidgets import QMessageBox, QWidget
+from telegram import tell_telegram
 
 __version__ = (0, 1, 2)
 __author__ = "Anselm Kiefner"
@@ -70,7 +63,7 @@ q("Python:", sys.version)
 q("Watnu Version:", __version__)
 q("Numpy:", np.__version__)
 
-_translate = QtCore.QCoreApplication.translate
+_translate = QCoreApplication.translate
 
 load = Decoder()
 
@@ -110,7 +103,7 @@ def write_session(task_id, start, stop, finished=False, pause_time=0):
 
 
 def breakpoint_():
-    from PyQt5.QtCore import pyqtRemoveInputHook
+    from PyQt6.QtCore import pyqtRemoveInputHook
 
     pyqtRemoveInputHook()
     sys.breakpointhook()
@@ -134,7 +127,7 @@ class Application(QtWidgets.QApplication):
         #     app.setFont(font)
 
 
-class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
+class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -142,7 +135,7 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         @self.about.triggered.connect
         def _():
             win = About()
-            win.exec_()
+            win.exec()
 
         @self.actionReadme.triggered.connect
         def _():
@@ -191,10 +184,10 @@ class MainWindow(QtWidgets.QMainWindow, main_window.Ui_MainWindow):
                 mb.setText("Es wird schon ein Task bearbeitet.")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
-                mb.exec_()
+                mb.exec()
                 return
             win = Editor()
-            win.exec_()
+            win.exec()
 
         @self.button1.clicked.connect
         def statistics():
@@ -283,11 +276,11 @@ VALUES ('{d["do"]}',
             self,
             "Window Close",
             "Are you sure you want to close the window?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-            QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No,
         )
 
-        if reply == QtWidgets.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             q(config.count)
             if config.autostart and False:  # TODO
                 import getpass
@@ -308,14 +301,14 @@ VALUES ('{d["do"]}',
             event.ignore()
 
 
-class About(QtWidgets.QDialog, about.Ui_Dialog):
+class About(QtWidgets.QDialog, ui.about.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.version.setText(str(__version__))
 
 
-class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
+class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -323,7 +316,9 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         self.task_timing = None
         self.task_balanced = None
         self.taskfont = self.task_desc_priority.property("font")
-        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint)
+        self.setWindowFlags(
+            Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.CustomizeWindowHint
+        )
         self.sec_timer = QTimer()
         self.sec_timer.start(1000)
         self.animation_timer = QTimer()
@@ -338,21 +333,21 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         def edit_priority():
             global list_of_task_lists
             win = Editor(self.task_priority, win_list=list_of_task_lists)
-            if win.exec_():
+            if win.exec():
                 self.lets_check_whats_next()
 
         @self.edit_timing.clicked.connect
         def edit_timing():
             global list_of_task_lists
             win = Editor(self.task_timing, win_list=list_of_task_lists)
-            if win.exec_():
+            if win.exec():
                 self.lets_check_whats_next()
 
         @self.edit_balanced.clicked.connect
         def edit_balanced():
             global list_of_task_lists
             win = Editor(self.task_balanced, win_list=list_of_task_lists)
-            if win.exec_():
+            if win.exec():
                 self.lets_check_whats_next()
 
         @self.sec_timer.timeout.connect
@@ -452,7 +447,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
                 )
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/fast-forward.svg"))
                 mb.setWindowTitle("Hmm..")
-                mb.exec_()
+                mb.exec()
 
         @self.go_balanced.clicked.connect
         def go_balanced_clicked():
@@ -492,17 +487,17 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
         @self.done_priority.clicked.connect
         def done_priority_clicked():
             win = Task_Finished(self.task_priority)
-            win.exec_()
+            win.exec()
 
         @self.done_balanced.clicked.connect
         def _done_balanced_clicked():
             win = Task_Finished(self.task_balanced)
-            win.exec_()
+            win.exec()
 
         @self.done_timing.clicked.connect
         def done_timing_clicked():
             win = Task_Finished(self.task_timing)
-            win.exec_()
+            win.exec()
 
     @timed
     def lets_check_whats_next(self):
@@ -524,7 +519,7 @@ class What_Now(QtWidgets.QDialog, what_now.Ui_Dialog):
             mb.setText("Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.")
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
-            mb.exec_()
+            mb.exec()
             self.hide()
             return False
 
@@ -626,12 +621,33 @@ GROUP BY
         self.task_space_balanced.setText(self.task_balanced.space)
 
 
-class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
+class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(
+            partial(self.set_as, "deleted", True)
+        )
+
         self.task_list.setStyleSheet("alternate-background-color: #bfffbf; background-color: #deffde;")
-        header = self.task_list.horizontalHeader()
+
+        query = submit_sql(
+            """
+        SELECT space_id, name FROM spaces;
+        """
+        )
+        for i, row in enumerate(iter_over(query)):
+            space_id = typed(row, 0, int)
+            space_name = typed(row, 1, str)
+            self.space.addItem(space_name, QVariant(space_id))
+
+        self.space.model().sort(0, Qt.SortOrder.AscendingOrder)
+
+        @self.space.currentIndexChanged.connect
+        def space_switched():
+            self.build_task_list()
+
         self.tasks = []
 
         menu = QtWidgets.QMenu()
@@ -656,7 +672,7 @@ class TaskList(QtWidgets.QDialog, task_list.Ui_Dialog):
         self.button3.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()
-        item.setFlags(Qt.ItemIsUserCheckable)
+        item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
         self.task_list.setVerticalHeaderItem(0, item)
 
         if state() is S.running:
@@ -691,7 +707,7 @@ WHERE id == {task.id}
                 mb.setText("Es wird schon ein Task bearbeitet.")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
-                mb.exec_()
+                mb.exec()
                 return
 
             X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
@@ -746,7 +762,7 @@ WHERE id == {task.id}
                 mb.setText("Es wird schon ein Task bearbeitet.")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
                 mb.setWindowTitle("Hmm..")
-                mb.exec_()
+                mb.exec()
                 return
 
             win = Editor(win_list=self)
@@ -781,7 +797,7 @@ WHERE id == {task.id}
             else:
                 mb.setText("Du hast Zahl geworfen!")
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
-            mb.exec_()
+            mb.exec()
 
         @self.status.currentIndexChanged.connect
         def status_switched():
@@ -816,7 +832,7 @@ WHERE id == {task.id}
             mb.setText("Es wird schon ein Task bearbeitet.")
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
-            mb.exec_()
+            mb.exec()
             return
 
         try:
@@ -834,7 +850,7 @@ WHERE id == {task.id}
             mb.setText("Es wird schon ein Task bearbeitet.")
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
-            mb.exec_()
+            mb.exec()
             return
 
         try:
@@ -852,7 +868,7 @@ WHERE id == {task.id}
             mb.setText("Es wird schon ein Task bearbeitet.")
             mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
             mb.setWindowTitle("Hmm..")
-            mb.exec_()
+            mb.exec()
             return
 
         try:
@@ -866,48 +882,53 @@ WHERE id == {task.id}
 
     @timed
     def build_task_list(self):
-        # TODO match \o/
+        selected_space = self.space.itemData(self.space.currentIndex())
         if self.status.currentIndex() == 0:
             query = submit_sql(
-                """
+                f"""
 SELECT id FROM tasks
 WHERE
 done == FALSE AND
 deleted == FALSE AND
 draft == FALSE AND
 inactive == FALSE
+{f"AND space_id == {selected_space}" if selected_space else ""}
 """
             )
         if self.status.currentIndex() == 1:
             query = submit_sql(
-                """
+                f"""
 SELECT id FROM tasks 
 WHERE 
 draft == TRUE
+{f"AND space_id == {selected_space}" if selected_space else ""}
 """
             )
         if self.status.currentIndex() == 2:
             query = submit_sql(
-                """
+                f"""
 SELECT id FROM tasks 
 WHERE 
 inactive == TRUE
+{f"AND space_id == {selected_space}" if selected_space else ""}
 """
             )
         if self.status.currentIndex() == 3:
             query = submit_sql(
-                """
+                f"""
 SELECT id FROM tasks 
 WHERE 
 done == TRUE
+{f"AND space_id == {selected_space}" if selected_space else ""}
 """
             )
         if self.status.currentIndex() == 4:
             query = submit_sql(
-                """
+                f"""
 SELECT id FROM tasks 
 WHERE 
 deleted == TRUE
+{f"AND space_id == {selected_space}" if selected_space else ""}
 """
             )
 
@@ -920,13 +941,15 @@ deleted == TRUE
     def arrange_list(self, tasks):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         q("arranging list", len(tasks), "tasks")
+        self.task_list.hide()
+        self.task_list.clear()
+
         self.task_list.setSortingEnabled(False)
 
         ok = QIcon("./extra/feathericons/check.svg")
         nok = QIcon("./extra/feathericons/x.svg")
-
+        self.task_list.setRowCount(len(tasks))
         for i, task in enumerate(tasks):
-            self.task_list.setRowCount(i + 1)
             # item = QtWidgets.QWidget()
             # chk_bx = QtWidgets.QCheckBox()
             # lay_out = QtWidgets.QHBoxLayout(item)
@@ -941,7 +964,7 @@ deleted == TRUE
             short = task.do if len(task.do) <= 80 else task.do.replace("\n", " ")[:80] + "[…]"
             item = QtWidgets.QTableWidgetItem(short)
             item.setToolTip(task.do)
-            item.setData(Qt.UserRole, task.id)
+            item.setData(Qt.ItemDataRole.UserRole, task.id)
             self.task_list.setItem(i, 0, item)
             item = QtWidgets.QTableWidgetItem(task.space)
             self.task_list.setItem(i, 1, item)
@@ -961,7 +984,7 @@ deleted == TRUE
                 combo.addItem(t.do, t.id)
             lay_out = QtWidgets.QHBoxLayout(item)
             lay_out.addWidget(combo)
-            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lay_out.setContentsMargins(0, 0, 0, 0)
             item.setLayout(lay_out)
             self.task_list.setCellWidget(i, 6, item)
@@ -972,14 +995,14 @@ deleted == TRUE
                 combo.addItem(t.do, t.id)
             lay_out = QtWidgets.QHBoxLayout(item)
             lay_out.addWidget(combo)
-            lay_out.setAlignment(Qt.AlignCenter)
+            lay_out.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lay_out.setContentsMargins(0, 0, 0, 0)
             item.setLayout(lay_out)
             self.task_list.setCellWidget(i, 7, item)
 
-            ok = QIcon(":/feather/extra/feathericons/check.svg")
+            ok = QIcon(":extra/feathericons/check.svg")
 
-            nok = QIcon(":/feather/extra/feathericons/x.svg")
+            nok = QIcon(":/extra/feathericons/x.svg")
             item = QtWidgets.QTableWidgetItem()
             item.setIcon(ok if task.is_draft else nok)
             self.task_list.setItem(i, 8, item)
@@ -998,6 +1021,7 @@ deleted == TRUE
             self.task_list.setRowCount(0)
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
+        self.task_list.show()
 
     def reject(self):
         super().reject()
@@ -1011,7 +1035,7 @@ deleted == TRUE
         list_of_task_lists.remove(self)
 
 
-class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
+class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
 
     def __init__(
@@ -1035,7 +1059,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         if templating:
             self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
 
-        self.setOption(QtWidgets.QWizard.HaveFinishButtonOnEarlyPages, True)
+        self.setOption(QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages, True)
         self.task: Task = task
         self.cloning = cloning
         self.templating = templating
@@ -1055,7 +1079,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         self.page_basics.registerField("task*", self.desc, "plainText", changedSignal=self.desc.textChanged)
         model = QSqlTableModel()
         model.setTable("levels")
-        model.setSort(0, Qt.DescendingOrder)
+        model.setSort(0, Qt.SortOrder.DescendingOrder)
         model.select()
         self.level.setModel(model)
         self.level.setModelColumn(1)
@@ -1063,7 +1087,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
         model = QSqlTableModel()
         model.setTable("spaces")
-        model.setSort(1, Qt.AscendingOrder)
+        model.setSort(1, Qt.SortOrder.AscendingOrder)
         model.select()
         self.space.setModel(model)
         self.space.setModelColumn(1)
@@ -1158,13 +1182,13 @@ WHERE url = '{text}'
         def subtasks_button():
             q("button1 clicked", self.task)
             dialog = Chooser(self, self.task, kind="subtasks")
-            dialog.exec_()
+            dialog.exec()
 
         @self.button2.clicked.connect
         def time_constraints_button():
             q("button2 clicked", self.task)
             dialog = Chooser(self, self.task, kind="constraints")
-            dialog.exec_()
+            dialog.exec()
 
         @self.button3.clicked.connect
         def _():
@@ -1178,7 +1202,7 @@ WHERE url = '{text}'
         def _():
             q("button5 clicked", self.task)
             dialog = Chooser(self, self.task, kind="deadline")
-            dialog.exec_()
+            dialog.exec()
 
         @self.button6.clicked.connect
         def _():
@@ -1188,19 +1212,19 @@ WHERE url = '{text}'
         def supertasks_button():
             q("button7 clicked", self.task)
             dialog = Chooser(self, self.task, kind="supertasks")
-            dialog.exec_()
+            dialog.exec()
 
         @self.button8.clicked.connect
         def _():
             q("button8 clicked", self.task)
             dialog = Chooser(self, self.task, kind="repeats")
-            dialog.exec_()
+            dialog.exec()
 
         @self.button9.clicked.connect
         def skills_button():
             q("button9 clicked", self.task)
             dialog = Chooser(self, self.task, kind="skills")
-            dialog.exec_()
+            dialog.exec()
 
         @self.space.currentIndexChanged.connect
         def _():
@@ -1409,7 +1433,7 @@ VALUES (
         state.flux_to(S.main)
 
 
-class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
+class Running(QtWidgets.QDialog, ui.running_task.Ui_Dialog):
     def __init__(self, task, win_list=None):
         super().__init__()
         self.setupUi(self)
@@ -1434,11 +1458,6 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         self.animation_timer.start(15)
         self.player = QMediaPlayer()
 
-        url = QUrl.fromLocalFile(r"./extra/alarm once.wav")
-        self.player.setMedia(QMediaContent(url))
-        self.player.setVolume(70)
-        self.player.play()
-
         self.ticks = 0  # time tracked in this session
         self.time_spent = 0  # the time previously tracked by machine
         self.time_spent = self.task.time_spent
@@ -1458,16 +1477,12 @@ class Running(QtWidgets.QDialog, running_task.Ui_Dialog):
         for win in list_of_task_lists:
             win.button5.setEnabled(False)
 
-        progress.show()
         if self.task.resources:
             self.open_resources.setEnabled(True)
             text = "; ".join(url for url, ID in self.task.resources)
             self.open_resources.setText(str(text))
 
         url = QUrl.fromLocalFile(r"./extra/tictoc.wav")
-        self.player.setMedia(QMediaContent(url))
-        self.player.setVolume(config.tictoc_volume)
-        self.player.play()
 
         self.task_space.setText(task.space)
 
@@ -1521,7 +1536,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             query.prepare(statement)
             query.bindValue(":notes", self.notes.document().toMarkdown())
             query.bindValue(":id", task.id)
-            if not query.exec_():
+            if not query.exec():
                 q("SQL failed:\n" + statement)
                 q(query.lastError().text())
             return
@@ -1553,7 +1568,6 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             if self.pomodoro < 0:
                 pomodoro_percent = int((1 - (-self.pomodoro / (35 * 60))) * 100)
                 self.pomodoro_bar.setProperty("value", pomodoro_percent)
-                progress.setValue(pomodoro_percent)
 
             if self.pomodoro == 0:
                 try:
@@ -1561,10 +1575,6 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
                 except Exception as e:
                     q(e)
                 url = QUrl.fromLocalFile(r"./extra/alarm twice.wav")
-                self.player.setMedia(QMediaContent(url))
-                self.player.setVolume(70)
-                self.player.play()
-                progress.setValue(0)
                 self.pause = True
                 self.pomodoro_bar.setStyleSheet(
                     """
@@ -1588,9 +1598,6 @@ QProgressBar::chunk {
                 self.pomodoro = -35 * 60
                 tell_telegram(f"Pause vorbei! Weiter gehts mit: {self.task.do}", config)
                 url = QUrl.fromLocalFile(r"./extra/alarm once.wav")
-                self.player.setMedia(QMediaContent(url))
-                self.player.setVolume(70)
-                self.player.play()
                 self.pomodoro_bar.reset()
                 self.pomodoro_bar.setStyleSheet(
                     """
@@ -1615,12 +1622,11 @@ QProgressBar::chunk {
             if not self.paused:
                 self.button2.setText("Unpause")
                 self.paused = True
-                progress.pause()
+
                 self.player.stop()
             else:
                 self.button2.setText("Pause")
                 self.paused = False
-                progress.resume()
                 self.player.play()
 
         @self.button3.clicked.connect
@@ -1654,8 +1660,6 @@ QProgressBar::chunk {
             if not win_what.isHidden():
                 win_what.raise_()
 
-            progress.setValue(0)
-
             state.flux_to(S.main)
 
         @self.button6.clicked.connect
@@ -1675,7 +1679,7 @@ QProgressBar::chunk {
             win = Task_Finished(
                 self.task, ticks=self.ticks, start=self.start_time, pause_time=self.pause_time
             )
-            if not win.exec_():
+            if not win.exec():
                 if timer_was_running:
                     self.timer.start()
                     self.player.play()
@@ -1687,7 +1691,6 @@ QProgressBar::chunk {
             if not win_what.isHidden() and win_what:
                 win_what.raise_()
 
-            progress.setValue(0)
             state.flux_to(S.main)
 
         @self.button9.clicked.connect
@@ -1699,7 +1702,7 @@ QProgressBar::chunk {
             if self.player.state() == 1:
                 icon = QtGui.QIcon()
                 icon.addPixmap(
-                    QtGui.QPixmap(":/feather/extra/feathericons/volume-2.svg"),
+                    QtGui.QPixmap(":/extra/feathericons/volume-2.svg"),
                     QtGui.QIcon.Normal,
                     QtGui.QIcon.Off,
                 )
@@ -1709,7 +1712,7 @@ QProgressBar::chunk {
                 self.player.play()
                 icon = QtGui.QIcon()
                 icon.addPixmap(
-                    QtGui.QPixmap(":/feather/extra/feathericons/volume-x.svg"),
+                    QtGui.QPixmap(":/extra/feathericons/volume-x.svg"),
                     QtGui.QIcon.Normal,
                     QtGui.QIcon.Off,
                 )
@@ -1735,7 +1738,7 @@ QProgressBar::chunk {
         state.flux_to(S.main)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.cancel()
         event.accept()
 
@@ -1810,13 +1813,13 @@ Und denk dran:
     def _extracted_from_start_task_29(self, mb):
         mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
         mb.setWindowTitle("Hmm..")
-        mb.exec_()
+        mb.exec()
 
 
 def Chooser(editor: Editor, task: Task, kind: str):
     """Returns the fitting instance of a Chooser."""
 
-    class SkillChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+    class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
         def __init__(self, editor, task=None):
             super().__init__()
             self.setupUi(self)
@@ -1835,7 +1838,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 for index in range(model.rowCount()):
                     if model.itemData(model.index(index, 0))[0] in task.skill_ids:
                         self.listView.selectionModel().select(
-                            model.index(index, 1), QtCore.QItemSelectionModel.Select
+                            model.index(index, 1), QItemSelectionModel.Select
                         )
 
         def accept(self):
@@ -1845,7 +1848,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 for idx in self.listView.selectedIndexes()
             ]
 
-    class SubTaskChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+    class SubTaskChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
         def __init__(self, editor, task=None):
             super().__init__()
             self.setupUi(self)
@@ -1864,7 +1867,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 for index in range(model.rowCount()):
                     if Task(model.itemData(model.index(index, 0))[0]) in task.subtasks:
                         self.listView.selectionModel().select(
-                            model.index(index, 1), QtCore.QItemSelectionModel.Select
+                            model.index(index, 1), QItemSelectionModel.Select
                         )
 
         def accept(self):
@@ -1872,7 +1875,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 self.listView.model().record(idx.row()).value("id") for idx in self.listView.selectedIndexes()
             ]
 
-    class SuperTaskChooser(QtWidgets.QDialog, choose_skills.Ui_Dialog):
+    class SuperTaskChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
         def __init__(self, editor, task=None):
             super().__init__()
             self.setupUi(self)
@@ -1891,7 +1894,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 for index in range(model.rowCount()):
                     if Task(model.itemData(model.index(index, 0))[0]) in task.supertasks:
                         self.listView.selectionModel().select(
-                            model.index(index, 1), QtCore.QItemSelectionModel.Select
+                            model.index(index, 1), QItemSelectionModel.Select
                         )
 
         def accept(self):
@@ -1899,7 +1902,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
                 self.listView.model().record(idx.row()).value("id") for idx in self.listView.selectedIndexes()
             ]
 
-    class Constraints(QtWidgets.QDialog, choose_constraints.Ui_Dialog):
+    class Constraints(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):
         def __init__(self, editor, task: Task = None):
             super().__init__()
             self.setupUi(self)
@@ -1933,12 +1936,12 @@ def Chooser(editor: Editor, task: Task, kind: str):
             A[[idx.column() * 144 + idx.row() for idx in self.table.selectedIndexes()]] = 1
             self.editor.constraints = A.reshape(7, 144)
 
-    class DeadlineChooser(QtWidgets.QDialog, choose_deadline.Ui_Dialog):
+    class DeadlineChooser(QtWidgets.QDialog, ui.choose_deadline.Ui_Dialog):
         def __init__(self, editor, task=None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
-            self.reference_date.setDate(QtCore.QDate().currentDate())
+            self.reference_date.setDate(QDate().currentDate())
 
             @self.enter_date.clicked.connect
             def enter_date():
@@ -1956,7 +1959,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
             super().accept()
             self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
-    class RepeatChooser(QtWidgets.QDialog, choose_repeats.Ui_Dialog):
+    class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
         def __init__(self, editor: Editor, task: Task = None):
             super().__init__()
             self.setupUi(self)
@@ -2001,7 +2004,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
     return cases[kind](editor, task)
 
 
-class Task_Finished(QtWidgets.QDialog, task_finished.Ui_Dialog):
+class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(self, task, ticks=0, start=None, old_skills=None, pause_time=0):
         super().__init__()
         self.setupUi(self)
@@ -2056,7 +2059,7 @@ YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
                 )
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/star.svg"))
                 mb.setWindowTitle("LEVEL UP")
-                mb.exec_()
+                mb.exec()
 
         for win in list_of_task_lists:
             win.button5.setEnabled(True)
@@ -2074,21 +2077,21 @@ Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den 
             mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
             mb.setDefaultButton(QMessageBox.Yes)
             # TODO check on edit if deadline and repeat is set for tradition
-            if mb.exec_():
+            if mb.exec():
                 win = Editor(task=self.task, templating=True)  # TODO templating!
-                win.exec_()
+                win.exec()
         return True
 
     def reject(self):
         super().reject()
 
 
-class Character(QtWidgets.QDialog, character.Ui_Dialog):
+class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
 
-        self.skills_table.sortByColumn(0, Qt.AscendingOrder)
+        self.skills_table.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         self.build_skill_table()
 
     def build_skill_table(self):
@@ -2117,8 +2120,8 @@ class Character(QtWidgets.QDialog, character.Ui_Dialog):
             self.skills_table.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(query.value(0))
             self.skills_table.setItem(i, 0, item)
-            item.setData(Qt.UserRole, skill)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
+            item.setData(Qt.ItemDataRole.UserRole, skill)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             item = QtWidgets.QTableWidgetItem(str(len(skills_trained_by[skill])))
             self.skills_table.setItem(i, 1, item)
             item = QtWidgets.QTableWidgetItem(
@@ -2130,7 +2133,7 @@ class Character(QtWidgets.QDialog, character.Ui_Dialog):
         self.update()
 
 
-class Settings(QtWidgets.QDialog, settings.Ui_Dialog):
+class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -2222,7 +2225,7 @@ WHERE sessions.task_id = tasks.id)
             mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
             mb.setDefaultButton(QMessageBox.No)
 
-            if mb.exec_() == QMessageBox.Yes:
+            if mb.exec() == QMessageBox.Yes:
                 submit_sql(
                     f"""
 DELETE FROM skills WHERE skill_id == {skill_id};
@@ -2263,7 +2266,7 @@ VALUES ('{text}')
             mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
             mb.setDefaultButton(QMessageBox.No)
 
-            if mb.exec_() == QMessageBox.Yes:
+            if mb.exec() == QMessageBox.Yes:
                 submit_sql(
                     f"""
 DELETE FROM spaces WHERE space_id == {space_id};
@@ -2386,7 +2389,7 @@ SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int)
             item = QtWidgets.QTableWidgetItem(name)
             self.spaces_table.setItem(i, 0, item)
             item.setData(Qt.UserRole, space_id)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
+            item.setTextAlignment(Qt.AlignCenter)
 
             inner_query = submit_sql(
                 f"""
@@ -2416,7 +2419,7 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
         win_settings = None
 
 
-class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
+class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -2431,7 +2434,7 @@ class Attributions(QtWidgets.QDialog, attributions.Ui_Dialog):
         win_attributions = None
 
 
-class Inventory(QtWidgets.QDialog, inventory.Ui_Dialog):
+class Inventory(QtWidgets.QDialog, ui.inventory.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -2441,7 +2444,7 @@ class Inventory(QtWidgets.QDialog, inventory.Ui_Dialog):
         win_inventory = None
 
 
-class Companions(QtWidgets.QDialog, companions.Ui_Dialog):
+class Companions(QtWidgets.QDialog, ui.companions.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -2451,7 +2454,7 @@ class Companions(QtWidgets.QDialog, companions.Ui_Dialog):
         win_companions = None
 
 
-class Statistics(QtWidgets.QDialog, statistics.Ui_Dialog):
+class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -2477,7 +2480,7 @@ FROM
         ):
             self.space_stats.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(name)
-            item.setData(Qt.UserRole, space_id)
+            item.setData(Qt.ItemDataRole.UserRole, space_id)
             self.space_stats.setItem(i, 0, item)
 
             inner_query = submit_sql(
@@ -2523,7 +2526,7 @@ WHERE
         ):
             self.level_stats.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(name)
-            item.setData(Qt.UserRole, space_id)
+            item.setData(Qt.ItemDataRole.UserRole, space_id)
             self.level_stats.setItem(i, 0, item)
             inner_query = submit_sql(
                 f"""
@@ -2597,7 +2600,7 @@ WHERE
 """
             )
             item = QtWidgets.QTableWidgetItem(typed(inner_query.value, 0, str))
-            item.setData(Qt.UserRole, session_id)
+            item.setData(Qt.ItemDataRole.UserRole, session_id)
             self.session_stats.setItem(i, 0, item)
             item = QtWidgets.QTableWidgetItem(str(datetime.fromtimestamp(start)))
             self.session_stats.setItem(i, 1, item)
@@ -2616,14 +2619,41 @@ WHERE
         win_statistics = None
 
 
-class Landing(QtWidgets.QWizard, landing.Ui_Wizard):
+class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
 
+        def def_db():
+            path, check = QtWidgets.QFileDialog.getOpenFileName(
+                self,
+                "Bitte wähle eine sqlite Datenbank aus",
+                "",
+                "*.sqlite",
+            )
+            if not check:
+                return
+            else:
+                self.db_file_name.setText(path)
+
+        self.pushButton.clicked.connect(def_db)
+        self.pushButton_2.clicked.connect(lambda: self.db_file_name.setText(""))
+
     def reject(self):
         super().reject()
         win_landing = None
+
+    def done(self, status):
+        if self.db_file_name.text():
+            config.database = self.db_file_name.text()
+        else:
+            config.database = "watnu.sqlite"
+        import first_start
+
+        global db
+        first_start.run(db, config)
+
+        super().done(status)
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -2653,21 +2683,28 @@ def consider_tasks():
     considered_tasks = [Task(row(0)) for row in iter_over(query)]
 
 
-import contextlib
-
 if __name__ == "__main__":
     path = Path(__file__).resolve().parents[0]
     # touch, just in case user killed the config or first start
     (path / "config.stay").touch()
     # overwriting the module with the instance for convenience
     config = config.read(path / "config.stay")
+    app = Application(sys.argv)
+    icon = QIcon(config.icon)
 
     seed((config.coin ^ config.lucky_num) * config.count)
 
-    db = QSqlDatabase.addDatabase("QSQLITE")
-    db.setDatabaseName(config.database)
     query = QSqlQuery()
     classes.set_globals(config)
+
+    db = QSqlDatabase.addDatabase("QSQLITE")
+
+    if config.tutorial_active:
+        win_landing = Landing()
+        concluded = win_landing.exec()
+        if concluded:
+            config.tutorial_active = False
+    db.setDatabaseName(config.database)
 
     if not db.open():
         q("Could not open DB!")
@@ -2694,12 +2731,10 @@ if __name__ == "__main__":
         2: config.activity_color_spirit,
     }
     with contextlib.suppress(ImportError):
-        from PyQt5.QtWinExtras import QtWin
+        from PyQt6.QtWinExtras import QtWin
 
         myappid = "AGK.watnu.0.1.1"
         QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
-    app = Application(sys.argv)
-    icon = QIcon(config.icon)
     win_main = MainWindow()
     win_main.setWindowIcon(icon)
     win_main.statusBar.show()
@@ -2744,23 +2779,12 @@ if __name__ == "__main__":
         mb.setText("Found an empty DB. Everything has been reset. Shutting down - please restart!")
         mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
         mb.setWindowTitle("Hmm..")
-        mb.exec_()
+        mb.exec()
         sys.exit()
 
     win_main.show()
-    if config.tutorial_active:
-        win_landing = Landing()
-        concluded = win_landing.exec_()
-        if concluded:
-            config.tutorial_active = False
 
-    button = QWinTaskbarButton()
-    button.setWindow(win_main.windowHandle())
-
-    button.setOverlayIcon(icon)
-    progress = button.progress()
-    progress.setRange(0, 100)
     tray = TrayIcon(icon, win_main)
     tray.show()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

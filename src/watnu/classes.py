@@ -8,13 +8,13 @@ from pathlib import Path
 from shlex import split
 from time import time
 from types import MethodType
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import numpy as np
-from PyQt5.QtSql import QSqlQuery
-
 import q
+from beartype import beartype
 from lib.utils import ASPECT, aspectized
+from PyQt6.QtSql import QSqlQuery
 
 last_sql_access = 0
 
@@ -66,7 +66,8 @@ def cached(func):
     return wrapper
 
 
-def typed(row, idx, kind: type, default=..., debugging=False):
+@beartype
+def typed(row, idx: int, kind: type, default=Any, debugging=False):
     if config.debugging:
         debugging = True
     filename, line_number, function_name, lines, index = getframeinfo(currentframe().f_back)
@@ -94,7 +95,7 @@ def submit_sql(statement, debugging=False):
         debugging = True
     query = QSqlQuery()
     (filename, line_number, function_name, lines, index) = getframeinfo(currentframe().f_back)
-    if query.exec_(statement):
+    if query.exec(statement):
         if debugging:
             q("OK", statement)
     else:

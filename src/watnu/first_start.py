@@ -2,12 +2,13 @@ from classes import submit_sql
 
 print("FIRST START")
 
+
 def run(db, config):
 
     ### CREATE SQL TABLES ###
     # qsql can't handle multiple statements >:|
 
-    statements = f"""
+    statements = """
 CREATE TABLE "activities" (
     "activity_id"	INTEGER NOT NULL UNIQUE,
     "name"	VARCHAR(255) NOT NULL UNIQUE,
@@ -144,24 +145,26 @@ CREATE TABLE "tasks" (
 
     ### Default Entries ###
 
-    for name, level_id in zip([
-                    "MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"],
-                    [-2,-1,0,1,2]):
-        submit_sql(f"""
+    for name, level_id in zip(["MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"], [-2, -1, 0, 1, 2]):
+        submit_sql(
+            f"""
         INSERT INTO levels (name, level_id)
         VALUES ('{name}', {level_id})
-        """)
+        """
+        )
 
-    for name, activity_id in zip(
-        ["BODY", "SPIRIT", "MIND"],
-        [0,1,2]):
-        submit_sql(f"""
+    for name, activity_id in zip(["BODY", "SPIRIT", "MIND"], [0, 1, 2]):
+        submit_sql(
+            f"""
         INSERT INTO activities (name, activity_id)
         VALUES ('{name}', {activity_id})
-        """)
+        """
+        )
 
     for s in ["Heim & Haus", "Arbeit", "Hobby"]:
-        submit_sql(f"""
+        submit_sql(
+            f"""
             INSERT INTO spaces (name)
             VALUES ('{s}')
-            """)
+            """
+        )
