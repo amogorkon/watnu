@@ -1,0 +1,10 @@
+
+UPDATE tasks 
+SET do = 'deep learning',
+    priority = 0.0,
+    level_id = 0,
+    primary_activity_id = 2,
+    secondary_activity_id = NULL,
+    space_id = 3,
+    ilk = 1
+WHERE id=118

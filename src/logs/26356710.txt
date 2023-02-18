@@ -1,0 +1,8 @@
+SQL failed ('first_start', 143, 'run'): 
+
+CREATE TABLE "task_uses_resource" (
+    "task_id"	INTEGER NOT NULL,
+    "resource_id"	INTEGER NOT NULL,
+    PRIMARY KEY("task_id","resource_id"),
+    FOREIGN KEY("task_id") REFERENCES "tasks"("id")
+) WITHOUT ROWID

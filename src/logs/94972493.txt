@@ -1,0 +1,4 @@
+SQL failed ('first_start', 158, 'run'): 
+        INSERT INTO activities (name, activity_id)
+        VALUES ('MIND', 2)
+        

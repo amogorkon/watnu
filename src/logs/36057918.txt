@@ -1,0 +1,4 @@
+SQL failed ('first_start', 164, 'run'): 
+            INSERT INTO spaces (name)
+            VALUES ('Arbeit')
+            

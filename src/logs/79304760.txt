@@ -1,0 +1,7 @@
+SQL failed ('first_start', 144, 'run'): 
+
+CREATE TABLE "skills" (
+    "skill_id"	INTEGER NOT NULL UNIQUE,
+    "name"	TEXT NOT NULL UNIQUE,
+    PRIMARY KEY("skill_id" AUTOINCREMENT)
+)

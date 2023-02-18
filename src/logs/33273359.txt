@@ -1,0 +1,4 @@
+SQL failed ('first_start', 150, 'run'): 
+        INSERT INTO levels (name, level_id)
+        VALUES ('MUST', 2)
+        

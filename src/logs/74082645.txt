@@ -1,0 +1,12 @@
+SQL failed ('first_start', 143, 'run'): 
+
+CREATE TABLE "spaces" (
+    "space_id"	INTEGER NOT NULL UNIQUE,
+    "name"	VARCHAR(255) NOT NULL UNIQUE,
+    "priority"	REAL DEFAULT 0,
+    "primary_activity_id"	INTEGER,
+    "secondary_activity_id"	INTEGER,
+    FOREIGN KEY("secondary_activity_id") REFERENCES "activities"("activity_id"),
+    FOREIGN KEY("primary_activity_id") REFERENCES "activities"("activity_id"),
+    PRIMARY KEY("space_id" AUTOINCREMENT)
+)
