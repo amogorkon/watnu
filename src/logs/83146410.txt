@@ -1,0 +1,5 @@
+SQL failed:
+
+            UPDATE tasks SET notes= :notes 
+            WHERE id=:id
+            

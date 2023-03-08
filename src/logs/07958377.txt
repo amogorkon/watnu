@@ -1,0 +1,3 @@
+SQL failed ('classes', 277, 'ilk'): 
+SELECT ilk FROM tasks WHERE id=Task(id=251)
+                           

@@ -1,0 +1,9 @@
+SQL failed ('classes', 476, 'resources'): 
+SELECT resources.url, resources.resource_id
+FROM resources
+INNER JOIN task_uses_resource
+ON resources.resource_id= task_uses_resource.resource_id
+INNER JOIN tasks
+ON task_uses_resource.task_id = tasks.id
+WHERE tasks.id = Task(id=251)
+        
