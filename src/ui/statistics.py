@@ -124,7 +124,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Statistiken"))
         self.general_stats.setTitle(_translate("Dialog", "Allgemeines"))
         self.label.setText(_translate("Dialog", "Gesamtanzahl aller zugefügten Aufgaben"))
         self.total_num_tasks.setText(_translate("Dialog", "TextLabel"))

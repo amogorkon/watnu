@@ -1,4 +1,3 @@
-SQL failed ('first_start', 157, 'run'): 
-        INSERT INTO activities (name, activity_id)
-        VALUES ('MIND', 2)
-        
+SQL failed ('main', 1415, 'accept'): 
+DELETE FROM repeats WHERE task_id = 65
+            

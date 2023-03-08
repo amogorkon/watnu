@@ -1,3 +1,18 @@
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt, QVariant
+from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtWidgets import QMessageBox
+
+_translate = QCoreApplication.translate
+
+
+import q
+import ui
+from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
+
+from .stuff import app, db, config, __version__
+
+
 class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
     def __init__(self):
         super().__init__()
@@ -56,7 +71,7 @@ WHERE skill_id == {skill_id};
         @self.clear_unused_resources.clicked.connect
         def _():
             q("sanitizing db..")
-            sanitize_db()
+            app.sanitize_db()
 
         @self.clear_all_deleted.clicked.connect
         def _():
@@ -281,4 +296,4 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
 
     def reject(self):
         super().reject()
-        win_settings = None
+        self.hide()

@@ -1,4 +1,19 @@
-def Chooser(editor: Editor, task: Task, kind: str):
+from datetime import datetime
+
+import numpy as np
+
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import (QDate, QDateTime,
+                          QItemSelectionModel, Qt)
+from PyQt6.QtSql import QSqlTableModel
+from dateutil.relativedelta import relativedelta
+
+import ui
+from classes import (EVERY, Every, Task)
+
+from .stuff import app, db, config, __version__
+
+def Chooser(editor: "ux.Editor", task: Task, kind: str):
     """Returns the fitting instance of a Chooser."""
 
     class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
@@ -142,7 +157,7 @@ def Chooser(editor: Editor, task: Task, kind: str):
             self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
     class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
-        def __init__(self, editor: Editor, task: Task = None):
+        def __init__(self, editor: ux.Editor, task: Task = None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
@@ -188,3 +203,5 @@ def Chooser(editor: Editor, task: Task, kind: str):
             return ConstraintChooser(editor, task)
         case "repeats":
             return RepeatChooser(editor, task)
+
+import ux

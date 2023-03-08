@@ -1,10 +1,3 @@
-SQL succeeded but Query is now invalid ('main', 1322, 'accept'): 
-UPDATE tasks 
-SET do = 'Rufname in config',
-    priority = 0.0,
-    level_id = 0,
-    primary_activity_id = 2,
-    secondary_activity_id = NULL,
-    space_id = 1,
-    ilk = 1
-WHERE id=181
+SQL failed ('classes', 437, 'required_by'): 
+        SELECT task_of_concern FROM task_requires_task WHERE required_task=Task(id=251)
+        

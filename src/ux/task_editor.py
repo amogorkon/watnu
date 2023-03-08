@@ -1,28 +1,19 @@
-from datetime import datetime
-from functools import partial
-from itertools import count
-from math import isinf
-from pathlib import Path
-from random import choice, seed
-from time import time, time_ns
+from collections import namedtuple
 
-import use
-from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QItemSelectionModel, Qt, QTimer, QUrl, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QMessageBox
+import numpy as np
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt, QVariant
+from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtSql import QSqlTableModel
+
+_translate = QCoreApplication.translate
 
 import q
 import ui
-import ux
-from algo import filter_tasks
-from classes import ILK, Task, cached_and_invalidated, iter_over, submit_sql, typed
+from classes import ILK, Task, iter_over, submit_sql
 
-config: object
-Editor: object
-app: object
-db: object
-state: object
+from .stuff import app, config, db
+
 
 class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
@@ -33,7 +24,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         cloning: bool = False,
         templating: bool = False,
         as_sup: bool = 0,
-        win_list: ux.task_list.TaskList = None,
         current_space: str = None,
         draft: bool = False,
     ):
@@ -41,8 +31,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.activateWindow()
         self.setupUi(self)
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
-
-        self.win_list = win_list
 
         if cloning:
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
@@ -126,7 +114,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.constraints = x if (x := self.task.constraints) is not None else np.zeros((7, 144))
         # new task - preset space by previous edit
         else:
-            self.space.setCurrentIndex(self.space.findText(current_space or last_edited_space))
+            self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
 
         @self.kind_of.buttonToggled.connect
         def kind_of_toggled():
@@ -171,13 +159,13 @@ WHERE url = '{text}'
         @self.button1.clicked.connect
         def subtasks_button():
             q("button1 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="subtasks")
+            dialog = ux.chooser.Chooser(self, self.task, kind="subtasks")
             dialog.exec()
 
         @self.button2.clicked.connect
         def time_constraints_button():
             q("button2 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="constraints")
+            dialog = ux.chooser.Chooser(self, self.task, kind="constraints")
             dialog.exec()
 
         @self.button3.clicked.connect
@@ -191,7 +179,7 @@ WHERE url = '{text}'
         @self.button5.clicked.connect
         def _():
             q("button5 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="deadline")
+            dialog = ux.chooser.Chooser(self, self.task, kind="deadline")
             dialog.exec()
 
         @self.button6.clicked.connect
@@ -201,19 +189,19 @@ WHERE url = '{text}'
         @self.button7.clicked.connect
         def supertasks_button():
             q("button7 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="supertasks")
+            dialog = ux.chooser.Chooser(self, self.task, kind="supertasks")
             dialog.exec()
 
         @self.button8.clicked.connect
         def _():
             q("button8 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="repeats")
+            dialog = ux.chooser.Chooser(self, self.task, kind="repeats")
             dialog.exec()
 
         @self.button9.clicked.connect
         def skills_button():
             q("button9 clicked", self.task)
-            dialog = Chooser(self, self.task, kind="skills")
+            dialog = ux.chooser.Chooser(self, self.task, kind="skills")
             dialog.exec()
 
         @self.space.currentIndexChanged.connect
@@ -414,10 +402,11 @@ VALUES (
                 debugging=True,
             )
 
-        global list_of_task_lists
-
-        for win in list_of_task_lists:
+        for win in app.list_of_task_lists:
             win.build_task_list()
 
     def reject(self):
         super().reject()
+
+
+import ux

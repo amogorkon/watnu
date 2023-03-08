@@ -1,8 +1,0 @@
-SQL failed ('first_start', 143, 'run'): 
-
-CREATE TABLE "task_requires_task" (
-      "task_of_concern"  INTEGER NOT NULL,
-       "required_task"  INTEGER NOT NULL CHECK (task_of_concern <> required_task),
-      FOREIGN KEY("task_of_concern") REFERENCES "tasks" ("id") ON DELETE CASCADE,
-      FOREIGN KEY("required_task") REFERENCES "tasks" ("id") ON DELETE CASCADE
-)

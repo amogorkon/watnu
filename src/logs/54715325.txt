@@ -1,4 +1,3 @@
-SQL failed ('first_start', 157, 'run'): 
-        INSERT INTO activities (name, activity_id)
-        VALUES ('BODY', 0)
-        
+SQL failed ('main', 1405, 'accept'): 
+DELETE FROM constraints WHERE task_id = 65
+            

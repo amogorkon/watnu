@@ -1,3 +1,16 @@
+from datetime import datetime
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon
+
+_translate = QCoreApplication.translate
+
+import ui
+from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
+
+from .stuff import app, db, config, __version__
+
+
 class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()

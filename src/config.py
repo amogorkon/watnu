@@ -1,14 +1,25 @@
 from ast import literal_eval
 
-import attr
-
+import use
 import q
-from lib.stay import Decoder, Encoder
+from pathlib import Path
 
-q("attrs:", attr.__version__)
 
-load = Decoder()
-dump = Encoder()
+attrs = use(
+    "attrs",
+    version="22.2.0",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "K䍨瞃尰抧衤臤㘧鋚醘㸕㫧摄䇖Ƙ䥤買賔",  # py3-any
+    },
+)
+
+
+import stay
+
+load = stay.Decoder()
+dump = stay.Encoder()
 
 
 class ConfigurationError(Exception):
@@ -21,6 +32,12 @@ def read(file):
         for D in load(f):
             pass
         return Config(**D)
+
+
+def write(config):
+    Path("config.stay").write_text(dump(attrs.asdict(config)))
+
+
 
 
 class boolean:
@@ -43,14 +60,16 @@ class boolean:
         return self.x
 
 
-@attr.s(
+#use.apply_aspect(attrs, use.woody_logger)  # BUG!
+
+@attrs.define(
     auto_attribs=True,
-    on_setattr=attr.setters.convert,
+    on_setattr=attrs.setters.convert,
     field_transformer=lambda cls, fields: [field.evolve(converter=field.type) for field in fields],
 )
 class Config:
-    # "False" is a non-empty string -> True :|
-    first_start: boolean = True  # TODO
+    # bool("False") is a non-empty string -> True :|
+    first_start: boolean = True
     database: str = "watnu.sqlite"
     coin: int = 0b1
     lucky_num: int = 1
@@ -67,11 +86,13 @@ class Config:
     icon: str = "./extra/feathericons/watnu1.png"
     debugging: boolean = False
     autostart: boolean = True
+    call_name: str = ""
+    last_selected_space: int = 0
 
     def write(self):
         with open("config.stay", "w") as f:
             try:
-                f.write(dump(attr.asdict(self)))
+                f.write(dump(attrs.asdict(self)))
             except Exception as e:
                 q("COULD NOT WRITE CONFIG!")
                 q(e)

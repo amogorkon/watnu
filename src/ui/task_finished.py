@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(400, 479)
+        Dialog.resize(440, 479)
         self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName("verticalLayout")
         self.groupBox = QtWidgets.QGroupBox(parent=Dialog)
@@ -33,6 +33,15 @@ class Ui_Dialog(object):
         self.groupBox_2.setObjectName("groupBox_2")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.groupBox_2)
         self.horizontalLayout.setObjectName("horizontalLayout")
+        self.days = QtWidgets.QSpinBox(parent=self.groupBox_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.days.sizePolicy().hasHeightForWidth())
+        self.days.setSizePolicy(sizePolicy)
+        self.days.setMaximum(10000)
+        self.days.setObjectName("days")
+        self.horizontalLayout.addWidget(self.days)
         self.hours = QtWidgets.QSpinBox(parent=self.groupBox_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
@@ -68,6 +77,6 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Aufgabe beendet"))
         self.groupBox.setTitle(_translate("Dialog", "Aufgabe abschließen"))
-        self.groupBox_2.setTitle(_translate("Dialog", "Zeit verbracht mit dieser Aufgabe [h] [min]"))
+        self.groupBox_2.setTitle(_translate("Dialog", "Zeit verbracht mit dieser Aufgabe [d] [h] [min]"))

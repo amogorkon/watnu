@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Wähle Wiederholungen</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -227,7 +227,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="per_ilk"/>
   <buttongroup name="every_ilk"/>
+  <buttongroup name="per_ilk"/>
  </buttongroups>
 </ui>

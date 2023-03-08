@@ -1,8 +1,10 @@
-SQL failed ('first_start', 144, 'run'): 
 
-CREATE TABLE "mantras" (
-    "mantra_id"	INTEGER NOT NULL UNIQUE,
-    "text"	TEXT NOT NULL UNIQUE,
-    "last_time"	INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY("mantra_id" AUTOINCREMENT)
-)
+UPDATE tasks 
+SET do = 'use.apply_aspect fucks up q()',
+    priority = 0.0,
+    level_id = 0,
+    primary_activity_id = 2,
+    secondary_activity_id = NULL,
+    space_id = 1,
+    ilk = 1
+WHERE id=287

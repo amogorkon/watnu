@@ -8,13 +8,9 @@ from PyQt6.QtWidgets import QMessageBox
 import ui
 from algo import skill_level
 from classes import ILK, Task, submit_sql
-from config import Config
-from ux import app, task_editor
 
-config: Config
-app: app.Application
-db: QSqlDatabase
-
+from .stuff import app, db, config
+from ux import task_editor
 
 class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(

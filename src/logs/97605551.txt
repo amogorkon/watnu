@@ -1,5 +1,0 @@
-SQL failed ('main', 2655, 'consider_tasks'): 
-        SELECT id FROM tasks
-        WHERE deleted != TRUE AND draft != TRUE AND inactive != TRUE
-        ;
-        

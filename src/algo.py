@@ -3,15 +3,29 @@ from datetime import datetime, timedelta
 from math import isinf, sqrt
 from time import time
 
-import numpy as np
-from lib.functions import bounded_sigmoid, sigmoid
+import use
+
+np = use(
+    "numpy",
+    version="1.24.1",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
+    },
+)
 
 from classes import EVERY, ILK, Task, iter_over, submit_sql
 
+fuzzy = use(
+    use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
+    modes=use.recklessness,
+)
+
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
-habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
+habit_weight = fuzzy.sigmoid(k=0.0002, L=1, x0=5000)
 # neglection weight can trump a fresh habit_weight at 3915, no matter how much time was put in - HOURS
-neglection_weight = bounded_sigmoid(0, 5380, inverse=True)
+neglection_weight = fuzzy.bounded_sigmoid(0, 5380, inverse=True)
 
 
 def weight(time_spent, last_checked, now) -> float:
@@ -56,7 +70,7 @@ def schedule(tasks: list) -> list:
     return deque(sorted_by_deadline)
 
 
-def check_task_conditions(task, now: datetime, finished_sessions: list = None):
+def check_task_conditions(task, now: datetime):
     if not task.is_done:
         return
 
@@ -64,18 +78,17 @@ def check_task_conditions(task, now: datetime, finished_sessions: list = None):
         return
 
     every_x = task.repeats.x_every
-    # ! that would be a nice place for pattern matching...
+    # TODO: that would be a nice place for pattern matching...
     then = datetime.fromtimestamp(task.last_finished)
     if task.ilk is ILK.habit:
         if now.date() > then.date():
             task.is_done = False
 
     elif task.repeats is not None:
-        _extracted_from_check_task_conditions_16(task, now, every_x)
+        reset_task(task, now, every_x)
 
 
-# TODO Rename this here and in `check_task_conditions`
-def _extracted_from_check_task_conditions_16(task, now, every_x):
+def reset_task(task, now, every_x):
     every_ilk, x_every, per_ilk, x_per = task.repeats
 
     now = datetime.timestamp(now)
@@ -99,13 +112,9 @@ def _extracted_from_check_task_conditions_16(task, now, every_x):
             task.is_done = False
 
     if every_ilk is EVERY.week:
-        _extracted_from__extracted_from_check_task_conditions_16_(
-            now, 7, task, every_x
-        )
+        reset_task_if_time_passed(now, 7, task, every_x)
     if every_ilk is EVERY.year:
-        _extracted_from__extracted_from_check_task_conditions_16_(
-            now, 365.25, task, every_x
-        )
+        reset_task_if_time_passed(now, 365.25, task, every_x)
     if per_ilk is not EVERY.undetermined:
         td = timedelta(
             seconds={
@@ -128,10 +137,9 @@ SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).t
             task.is_done = False
 
 
-# TODO Rename this here and in `check_task_conditions`
-def _extracted_from__extracted_from_check_task_conditions_16_(now, arg1, task, every_x):
-    now_week = now // (60 * 60 * 24 * arg1)
-    then_week = task.last_finished // (60 * 60 * 24 * arg1)
+def reset_task_if_time_passed(now, days, task, every_x):
+    now_week = now // (60 * 60 * 24 * days)
+    then_week = task.last_finished // (60 * 60 * 24 * days)
     if (now_week - then_week) % every_x == 0:
         task.is_done = False
 

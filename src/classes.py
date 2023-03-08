@@ -1,24 +1,33 @@
-import sys
 from collections import namedtuple
 from collections.abc import Generator
 from enum import Enum, Flag
-from functools import wraps
 from inspect import currentframe, getframeinfo
-from pathlib import Path
-from shlex import split
-from time import time
-from types import MethodType
+
 from typing import Any, NamedTuple
 
-import numpy as np
-import q
 from beartype import beartype
-from lib.utils import ASPECT, aspectized
 from PyQt6.QtSql import QSqlQuery
+
+import use
+np = use(
+    "numpy",
+    version="1.24.1",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
+    },
+)
+
+q = use(use.Path("q.py"))
+import q
+from lib.utils import ASPECT, aspectized
 
 last_sql_access = 0
 
 ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
+ACTIVITY = Enum("ACTIVITY", "body mind spirit")
+LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 
 
 class EVERY(Enum):
@@ -46,35 +55,40 @@ def iter_over(query):
         yield query.value
 
 
-def cached(func):
-    cache = {}  # (args[0] -> (last_called, result)
+from pathlib import Path
+from time import time
+
+
+def cached_and_invalidated(func):
+    last_called = 0
+    last_results = {}
 
     def wrapper(*args, **kwargs):
-        global last_sql_access
-        nonlocal cache
-        try:
-            if cache[args[0]][0] <= last_sql_access:
-                res = func.fget(*args, **kwargs)
-                cache[args[0]] = time(), res
-                return res
-            return cache[args[0]][1]
-        except KeyError:
-            res = func.fget(*args, **kwargs)
-            cache[args[0]] = time(), res
-            return res
+        nonlocal last_called, last_results
+        last_modified = Path(config.database).stat().st_mtime
+        if last_called > last_modified:
+            res = func(*args, **kwargs)
+            last_results[(args, tuple(kwargs.items()))] = res
+        else:
+            try:
+                res = last_results[(args, tuple(kwargs.items()))]
+            except KeyError:
+                res = func(*args, **kwargs)
+                last_results[(args, tuple(kwargs.items()))] = res
+
+        last_called = time()
+        return res
 
     return wrapper
 
 
-@beartype
-def typed(row, idx: int, kind: type, default=Any, debugging=False):
+def typed(row, idx: int, kind: type, default: Any = ..., debugging=False):
     if config.debugging:
         debugging = True
     filename, line_number, function_name, lines, index = getframeinfo(currentframe().f_back)
     filename = Path(filename).stem
     res = row(idx)
     if debugging:
-
         q(filename, line_number, function_name, idx, kind, default, res)
     if default is not ...:
         if res == "" or res is None:
@@ -115,6 +129,7 @@ class Skill(NamedTuple):
     id: int
 
     @property
+    @cached_and_invalidated
     def time_spent(self):
         query = submit_sql(
             f"""
@@ -128,11 +143,29 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         return sum(typed(row, 0, int) + typed(row, 1, int) for row in iter_over(query))
 
 
-@aspectized(cached, ASPECT.property_get)
 class Task(NamedTuple):
     id: int
 
+    def delete(self):
+        if not self.is_deleted:
+            submit_sql(
+            f"""
+        UPDATE tasks
+        SET 'deleted' = True
+        WHERE id == {self.id}
+        """
+        )
+        else:
+            submit_sql(
+                f"""
+                DELETE FROM tasks where id == {self.id}
+"""
+
+
+            )
+
     @property
+    @cached_and_invalidated
     def activity(self) -> str:
         if self.primary_activity_id is None:
             return ""
@@ -145,30 +178,34 @@ class Task(NamedTuple):
         return typed(query.value, 0, str, default="")
 
     @property
+    @cached_and_invalidated
     def adjust_time_spent(self) -> int:
         query = submit_sql(
             f"""
         SELECT adjust_time_spent FROM tasks WHERE id={self.id}
         """
         )
-        return typed(query.value, 0, int)
+        return typed(query.value, 0, int, 0)
 
     @adjust_time_spent.setter
     def adjust_time_spent(self, value) -> None:
-        query = submit_sql(
+        submit_sql(
             f"""
         UPDATE tasks SET adjust_time_spent={value} 
         WHERE id={self.id}
         """
         )
+        
 
     @property
+    @cached_and_invalidated
     def considered_open(self) -> bool:
         if self.is_deleted or self.is_draft or self.is_inactive or self.is_done:
             return False
         return not any(t.considered_open for t in self.requires)
 
     @property
+    @cached_and_invalidated
     def constraints(self) -> np.ndarray:
         query = submit_sql(
             f"""
@@ -181,6 +218,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
             return None
 
     @property
+    @cached_and_invalidated
     def do(self) -> str:
         query = submit_sql(
             f"""
@@ -190,6 +228,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return typed(query.value, 0, str)
 
     @property
+    @cached_and_invalidated
     def difficulty(self) -> float:
         query = submit_sql(
             f"""
@@ -199,6 +238,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return typed(query.value, 0, float)
 
     @property
+    @cached_and_invalidated
     def deadline(self) -> float:
         query = submit_sql(
             f"""
@@ -219,6 +259,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return min([t.deadline for t in self.required_by] + [own_deadline]) - workload
 
     @property
+    @cached_and_invalidated
     def embarassment(self) -> float:
         query = submit_sql(
             f"""
@@ -228,6 +269,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return typed(query.value, 0, float)
 
     @property
+    @cached_and_invalidated
     def fear(self) -> float:
         query = submit_sql(
             f"""
@@ -237,6 +279,7 @@ SELECT flags FROM constraints WHERE task_id = {self.id}
         return typed(query.value, 0, float)
 
     @property
+    @cached_and_invalidated
     def ilk(self):
         query = submit_sql(
             f"""
@@ -246,6 +289,7 @@ SELECT ilk FROM tasks WHERE id={self.id}
         return ILK(typed(query.value, 0, int))
 
     @property
+    @cached_and_invalidated
     def is_draft(self) -> bool:
         query = submit_sql(
             f"""
@@ -255,6 +299,7 @@ SELECT ilk FROM tasks WHERE id={self.id}
         return bool(typed(query.value, 0, int))
 
     @property
+    @cached_and_invalidated
     def is_inactive(self) -> bool:
         query = submit_sql(
             f"""
@@ -264,6 +309,7 @@ SELECT ilk FROM tasks WHERE id={self.id}
         return bool(typed(query.value, 0, int))
 
     @property
+    @cached_and_invalidated
     def is_deleted(self) -> bool:
         query = submit_sql(
             f"""
@@ -273,6 +319,7 @@ SELECT ilk FROM tasks WHERE id={self.id}
         return bool(typed(query.value, 0, int))
 
     @property
+    @cached_and_invalidated
     def is_done(self) -> bool:
         query = submit_sql(
             f"""
@@ -292,6 +339,7 @@ WHERE id={self.id}
         )
 
     @property
+    @cached_and_invalidated
     def level_id(self) -> int:
         query = submit_sql(
             f"""
@@ -303,6 +351,7 @@ WHERE id={self.id}
         return max([t.level_id for t in self.required_by] + [own_level])
 
     @property
+    @cached_and_invalidated
     def last_checked(self) -> int:
         query = submit_sql(
             f"""
@@ -322,6 +371,7 @@ WHERE id={self.id}
         return
 
     @property
+    @cached_and_invalidated
     def last_finished(self) -> int:
         query = submit_sql(
             f"""
@@ -336,6 +386,7 @@ WHERE id={self.id}
         return typed(query.value, 0, int, default=0) if query.isValid() else 0
 
     @property
+    @cached_and_invalidated
     def level(self) -> str:
         query = submit_sql(
             f"""
@@ -345,6 +396,7 @@ WHERE id={self.id}
         return typed(query.value, 0, str)
 
     @property
+    @cached_and_invalidated
     def notes(self) -> str:
         query = submit_sql(
             f"""
@@ -354,6 +406,7 @@ WHERE id={self.id}
         return typed(query.value, 0, str, default=None)
 
     @property
+    @cached_and_invalidated
     def priority(self) -> float:
         query = submit_sql(
             f"""
@@ -366,6 +419,7 @@ WHERE id={self.id}
         return own_priority + parent_priorities
 
     @property
+    @cached_and_invalidated
     def primary_activity_id(self) -> int:
         query = submit_sql(
             f"""
@@ -375,6 +429,7 @@ WHERE id={self.id}
         return typed(query.value, 0, int, default=None)
 
     @property
+    @cached_and_invalidated
     def requires(self) -> list:
         query = submit_sql(
             f"""
@@ -384,6 +439,7 @@ WHERE id={self.id}
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
+    @cached_and_invalidated
     def required_by(self):
         query = submit_sql(
             f"""
@@ -393,6 +449,7 @@ WHERE id={self.id}
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
+    @cached_and_invalidated
     def repeats(self):
         query = submit_sql(
             f"""
@@ -421,6 +478,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @property
+    @cached_and_invalidated
     def resources(self) -> Generator[str]:
         query = submit_sql(
             f"""
@@ -437,6 +495,7 @@ WHERE tasks.id = {self.id}
             yield typed(row, 0, str), typed(row, 1, int)
 
     @property
+    @cached_and_invalidated
     def secondary_activity(self) -> str:
         if not self.secondary_activity_id:
             return ""
@@ -448,6 +507,7 @@ WHERE tasks.id = {self.id}
         return typed(query.value, 0, str, default=None)
 
     @property
+    @cached_and_invalidated
     def space(self) -> str:
         query = submit_sql(
             f"""
@@ -457,6 +517,7 @@ WHERE tasks.id = {self.id}
         return typed(query.value, 0, str, default=None)
 
     @property
+    @cached_and_invalidated
     def skill_ids(self) -> list[int]:
         query = submit_sql(
             f"""
@@ -466,6 +527,7 @@ WHERE tasks.id = {self.id}
         return [typed(row, 0, int) for row in iter_over(query)]
 
     @property
+    @cached_and_invalidated
     def space_id(self) -> int:
         query = submit_sql(
             f"""
@@ -475,6 +537,7 @@ WHERE tasks.id = {self.id}
         return typed(query.value, 0, int, default=None)
 
     @property
+    @cached_and_invalidated
     def secondary_activity_id(self) -> int:
         query = submit_sql(
             f"""
@@ -484,6 +547,7 @@ WHERE tasks.id = {self.id}
         return typed(query.value, 0, int, default=None)
 
     @property
+    @cached_and_invalidated
     def skills(self) -> list[int]:
         query = submit_sql(
             f"""
@@ -505,6 +569,7 @@ WHERE tasks.id = {self.id}
             return 0
 
     @property
+    @cached_and_invalidated
     def subtasks(self) -> "list[Task]":
         query = submit_sql(
             f"""
@@ -514,6 +579,7 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
+    @cached_and_invalidated
     def supertasks(self) -> "list[Task]":
         query = submit_sql(
             f"""
@@ -523,28 +589,21 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return [Task(typed(row, 0, int)) for row in iter_over(query)]
 
     @property
+    @cached_and_invalidated
     def time_spent(self) -> int:
         query = submit_sql(
             f"""
-        SELECT time_spent FROM tasks WHERE id={self.id}
+        SELECT SUM(stop - start) FROM sessions where task_id={self.id}
         """
         )
-        return typed(query.value, 0, int)
-
-    @time_spent.setter
-    def time_spent(self, value) -> None:
-        submit_sql(
-            f"""
-        UPDATE tasks SET time_spent={int(value)} 
-        WHERE id={self.id}
-        """
-        )
+        return typed(query.value, 0, int, 0)
 
     @property
     def total_time_spent(self) -> int:
         return self.adjust_time_spent + self.time_spent
 
     @property
+    @cached_and_invalidated
     def template(self):
         query = submit_sql(
             f"""
@@ -557,6 +616,7 @@ SELECT template FROM tasks WHERE id={self.id}
         return self.id == other.id
 
     @property
+    @cached_and_invalidated
     def workload(self) -> int:
         query = submit_sql(
             f"""

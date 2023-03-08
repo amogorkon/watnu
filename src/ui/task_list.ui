@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Aufgaben</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -102,7 +102,7 @@
        </property>
        <item>
         <property name="text">
-         <string>bereit</string>
+         <string>offen</string>
         </property>
        </item>
        <item>
@@ -139,6 +139,9 @@
      </property>
      <property name="autoFillBackground">
       <bool>false</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true"/>
      </property>
      <property name="midLineWidth">
       <number>0</number>
@@ -221,17 +224,7 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Raum</string>
-      </property>
-      <property name="font">
-       <font>
+        <family>MS Reference Sans Serif</family>
         <weight>75</weight>
         <bold>true</bold>
        </font>
@@ -243,6 +236,7 @@
       </property>
       <property name="font">
        <font>
+        <family>MS Reference Sans Serif</family>
         <weight>75</weight>
         <bold>true</bold>
        </font>
@@ -254,17 +248,7 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Art</string>
-      </property>
-      <property name="font">
-       <font>
+        <family>MS Reference Sans Serif</family>
         <weight>75</weight>
         <bold>true</bold>
        </font>
@@ -276,40 +260,11 @@
       </property>
       <property name="font">
        <font>
+        <family>MS Reference Sans Serif</family>
         <weight>75</weight>
         <italic>false</italic>
         <bold>true</bold>
        </font>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string/>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string/>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Entwurf</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>erledigt</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>inaktiv</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>gelöscht</string>
       </property>
      </column>
     </widget>
@@ -436,7 +391,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>Raum...</string>
        </property>
        <property name="shortcut">
         <string>7</string>

@@ -1,6 +1,0 @@
-SQL failed ('first_start', 143, 'run'): 
-
-CREATE TABLE levels(
-    level_id INTEGER PRIMARY KEY UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL UNIQUE
-    )

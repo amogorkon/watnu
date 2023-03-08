@@ -27,6 +27,6 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Über Watnu"))
         self.label.setText(_translate("Dialog", "Watnu Version"))
         self.version.setText(_translate("Dialog", "TextLabel"))

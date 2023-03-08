@@ -1,31 +1,10 @@
-SQL failed ('first_start', 144, 'run'): 
-
-CREATE TABLE "tasks" (
-    "id"	INTEGER NOT NULL UNIQUE,
-    "do"	VARCHAR(280) NOT NULL,
-    "notes"	TEXT,
-    "space_id"	INTEGER,
-    "done"	INTEGER NOT NULL DEFAULT 0,
-    "draft"	INTEGER NOT NULL DEFAULT 0,
-    "inactive"	INTEGER NOT NULL DEFAULT 0,
-    "deleted"	INTEGER NOT NULL DEFAULT 0,
-    "priority"	REAL NOT NULL DEFAULT 0,
-    "level_id"	INTEGER NOT NULL DEFAULT 0,
-    "workload"	INTEGER,
-    "difficulty"	REAL DEFAULT 5,
-    "fear"	REAL DEFAULT 5,
-    "embarassment"	REAL DEFAULT 5,
-    "last_checked"	INTEGER DEFAULT 0,
-    "time_spent"	INTEGER DEFAULT 0,
-    "adjust_time_spent"	INTEGER DEFAULT 0,
-    "ilk"	INTEGER NOT NULL DEFAULT 1,
-    "primary_activity_id"	INTEGER,
-    "secondary_activity_id"	INTEGER,
-    "template"	INTEGER,
-    FOREIGN KEY("template") REFERENCES "tasks"("id"),
-    FOREIGN KEY("space_id") REFERENCES "spaces"("space_id") ON DELETE SET NULL,
-    FOREIGN KEY("level_id") REFERENCES "spaces"("level_id") ON DELETE SET NULL,
-    FOREIGN KEY("secondary_activity_id") REFERENCES "activities"("activity_id") ON DELETE SET NULL,
-    FOREIGN KEY("primary_activity_id") REFERENCES "activities"("activity_id") ON DELETE SET NULL,
-    PRIMARY KEY("id" AUTOINCREMENT)
-)
+SQL failed ('main', 1374, 'accept'): 
+UPDATE tasks 
+SET do = 'aspect workflow doesn't',
+    priority = 0.0,
+    level_id = 0,
+    primary_activity_id = NULL,
+    secondary_activity_id = NULL,
+    space_id = 16,
+    ilk = 1
+WHERE id=280

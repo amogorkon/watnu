@@ -1,8 +1,12 @@
-import main, classes
-from unittest.mock import Mock
+import use
 
-app = main.Application([])
-main.state = Mock()
-classes.config = Mock
-classes.config.debugging = False
-main.Editor(parent=app)
+app = "adsfadsf"
+db = 23
+config = (1,2,3)
+
+initial_globals = {"app": app, "db": db, "config":config}
+
+
+use(use.Path("ux/__init__.py"), initial_globals=initial_globals)
+
+from ux import test

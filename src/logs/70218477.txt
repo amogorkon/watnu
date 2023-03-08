@@ -1,4 +1,1 @@
-SQL failed ('first_start', 165, 'run'): 
-            INSERT INTO spaces (name)
-            VALUES ('Arbeit')
-            
+UNIQUE constraint failed: task_trains_skill.task_id, task_trains_skill.skill_id Unable to fetch row

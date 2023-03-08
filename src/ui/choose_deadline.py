@@ -82,7 +82,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Wähle Deadline"))
         self.label.setText(_translate("Dialog", "Bezugsdatum"))
         self.groupBox_3.setTitle(_translate("Dialog", "setze"))
         self.label_2.setText(_translate("Dialog", "Tage"))

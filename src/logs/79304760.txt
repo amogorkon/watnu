@@ -1,7 +1,10 @@
-SQL failed ('first_start', 144, 'run'): 
-
-CREATE TABLE "skills" (
-    "skill_id"	INTEGER NOT NULL UNIQUE,
-    "name"	TEXT NOT NULL UNIQUE,
-    PRIMARY KEY("skill_id" AUTOINCREMENT)
-)
+SQL succeeded but Query is now invalid ('main', 1374, 'accept'): 
+UPDATE tasks 
+SET do = 'aspect workflow doesn't',
+    priority = 0.0,
+    level_id = 0,
+    primary_activity_id = NULL,
+    secondary_activity_id = NULL,
+    space_id = 16,
+    ilk = 1
+WHERE id=280

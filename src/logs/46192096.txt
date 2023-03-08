@@ -1,9 +1,0 @@
-SQL failed ('first_start', 143, 'run'): 
-
-CREATE TABLE "task_trains_skill" (
-    "task_id"	INTEGER NOT NULL,
-    "skill_id"	INTEGER NOT NULL,
-    PRIMARY KEY("task_id","skill_id"),
-    FOREIGN KEY("task_id") REFERENCES "tasks" ON DELETE CASCADE,
-    FOREIGN KEY("skill_id") REFERENCES "skills" ON DELETE CASCADE
-) WITHOUT ROWID

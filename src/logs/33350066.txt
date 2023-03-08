@@ -1,5 +1,1 @@
-SQL failed ('main', 2677, 'consider_tasks'): 
-        SELECT id FROM tasks
-        WHERE deleted != TRUE AND draft != TRUE AND inactive != TRUE
-        ;
-        
+UNIQUE constraint failed: task_trains_skill.task_id, task_trains_skill.skill_id Unable to fetch row

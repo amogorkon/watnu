@@ -1,7 +1,0 @@
-SQL failed ('first_start', 143, 'run'): 
-
-CREATE TABLE "resources" (
-    "resource_id"	INTEGER NOT NULL UNIQUE,
-    "url"	TEXT NOT NULL UNIQUE,
-    PRIMARY KEY("resource_id" AUTOINCREMENT)
-)

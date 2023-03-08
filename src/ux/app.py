@@ -1,8 +1,6 @@
-from PyQt6 import QtWidgets
-
 import q
-import ui
-from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, submit_sql, typed
+from PyQt6 import QtWidgets
+from classes import Task, cached_and_invalidated, iter_over, submit_sql
 
 
 class Application(QtWidgets.QApplication):

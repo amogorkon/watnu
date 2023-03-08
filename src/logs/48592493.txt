@@ -1,4 +1,18 @@
-SQL failed ('first_start', 149, 'run'): 
-        INSERT INTO levels (name, level_id)
-        VALUES ('SHOULD NOT', -1)
-        
+SQL failed ('main', 1348, 'accept'): 
+INSERT INTO tasks 
+(do, 
+space_id, 
+primary_activity_id,
+secondary_activity_id,
+ilk,
+level_id
+)
+
+VALUES 
+('can't', 
+1,
+2,
+NULL,
+1,
+0
+);

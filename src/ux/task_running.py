@@ -1,3 +1,33 @@
+import webbrowser
+from collections import defaultdict
+from datetime import datetime
+from math import modf, sin
+from random import seed
+from time import time
+
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer
+from PyQt6.QtSql import QSqlDatabase
+
+import config
+import q
+import ui
+from algo import (
+    balance,
+    check_task_conditions,
+    constraints_met,
+    filter_tasks,
+    prioritize,
+    schedule,
+    skill_level,
+)
+from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, submit_sql, typed
+from config import Config
+from ux import app, task_editor, task_finished, task_running
+
+from .stuff import app, db, config, __version__
+
+
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
     def __init__(self, task):
         super().__init__()
@@ -56,9 +86,9 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         stop:0 black, 
         stop:1 white);
 background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {activity_color.get(self.task.primary_activity_id, "black")},
-        stop:{sin(T * 0.9) * 0.5 + 0.5} {activity_color.get(self.task.secondary_activity_id,
-                                                            activity_color.get(self.task.primary_activity_id, "black"))},
+        stop:0 {app.activity_color.get(self.task.primary_activity_id, "black")},
+        stop:{sin(T * 0.9) * 0.5 + 0.5} {app.activity_color.get(self.task.secondary_activity_id,
+                                                            app.activity_color.get(self.task.primary_activity_id, "black"))},
         stop:1 white);
 }}
 """
@@ -132,7 +162,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.task.last_checked = stop_time
             self.task.adjust_time_spent = self.session_adjust_time_spent
             self.hide()
-            write_session(
+            app.write_session(
                 self.task.id, self.start_time, stop_time, finished=False, pause_time=self.paused_ticks
             )
             app.win_main.show()
@@ -143,7 +173,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.button6.clicked.connect
         def _():
             self.paused = True
-            win = Editor(draft=True)
+            win = task_editor.Editor(draft=True)
             win.exec()
             self.paused = False
 
@@ -158,7 +188,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         def finish_task_button():
             if timer_was_running := self.timer.isActive():
                 self.timer.stop()
-            win = Task_Finished(self.task, start=self.start_time, pause_time=self.paused_ticks)
+            win = task_finished.Task_Finished(self.task, start=self.start_time, pause_time=self.paused_ticks)
             if not win.exec():
                 if timer_was_running:
                     self.timer.start()
@@ -274,107 +304,3 @@ Und denk dran:
             win.button5.setEnabled(True)
             win.timer.start(100)
             win.filter_timer.start(1000)
-
-
-class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
-    def __init__(
-        self,
-        task: Task,
-        start: float = None,
-        stop: float = None,
-        old_skills=None,
-        pause_time: int = 0,
-    ):
-        """
-        Window to finish a task.
-
-        Works either from Running or TaskList. Running will have a session open, so we need to close it, when the task really is finished.
-
-
-        Args:
-            task (Task): current task.
-            ticks (int, optional): . Defaults to 0.
-            start (int, optional): Time task was started current session. Defaults to None.
-            stop (int, optional): Time task was stopped current session. Defaults to None.
-            old_skills (_type_, optional): _description_. Defaults to None.
-            pause_time (int, optional): Pause time of the current session. Defaults to 0.
-        """
-        super().__init__()
-        self.setupUi(self)
-        self.task = task
-        self.start = start or time()
-        self.stop = stop or self.start
-        self.pause_time = pause_time
-        self.old_skills = old_skills or [
-            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
-        ]
-
-        self.task_desc.setText(task.do)
-        # let's ask the DB for previous sessions and add the current time
-        current_session_time = self.stop - self.start
-
-        self.total = task.time_spent + task.adjust_time_spent + current_session_time - self.pause_time
-        rst, days = modf(self.total / (60 * 60 * 24))
-        rst, hours = modf(self.total / (60 * 60))
-        rst, minutes = modf(rst * 60)
-
-        self.days.setValue(int(days))
-        self.hours.setValue(int(hours))
-        self.minutes.setValue(int(minutes))
-
-    def accept(self):
-        super().accept()
-        if self.task.ilk not in (ILK.habit, ILK.routine):  # ? is that right?
-            total = self.hours.value() * 60 * 60 + self.minutes.value() * 60 - self.pause_time
-        else:
-            total = (
-                self.task.time_spent
-                + self.task.adjust_time_spent
-                + self.hours.value() * 60 * 60
-                + self.minutes.value() * 60
-            )
-
-        submit_sql(
-            f"""
-    UPDATE tasks 
-    SET adjust_time_spent = {total - self.task.time_spent},     
-        done=TRUE
-    WHERE id={self.task.id};
-    """
-        )
-        write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
-
-        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.skills]
-
-        for x, y in zip(self.old_skills, new_skills):
-            if x[1] < y[1]:
-                mb = QtWidgets.QMessageBox()
-                mb.setText(
-                    """
-YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
-"""
-                )
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/star.svg"))
-                mb.setWindowTitle("LEVEL UP")
-                mb.exec()
-
-        for win in app.list_of_task_lists:
-            win.button5.setEnabled(True)
-            win.build_task_list()
-        app.win_what.lets_check_whats_next()
-
-        if self.task.ilk is ILK.tradition:
-            mb = QMessageBox()
-            mb.setText(
-                """
-Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den nächsten Stichtag erstellt werden?
-"""
-            )
-            mb.setInformativeText("Bitte bestätigen!")
-            mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-            mb.setDefaultButton(QMessageBox.Yes)
-            # TODO check on edit if deadline and repeat is set for tradition
-            if mb.exec():
-                win = Editor(task=self.task, draft=True)
-                win.exec()
-        return True

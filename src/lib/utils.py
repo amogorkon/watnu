@@ -7,6 +7,10 @@ import q
 
 list_len = []
 
+
+config = ...  # set in main.py
+
+
 def check_list(func):
     def decorator(self, *args, **kwargs):
         global list_len
@@ -16,6 +20,7 @@ def check_list(func):
             return func(self, *args, **kwargs)
         except TypeError:
             return func(*args, **kwargs)
+
     return decorator
 
 
@@ -27,26 +32,32 @@ def write_test():
             f.write(x)
             f.write("\n")
 
+
 ASPECT = Flag("Aspect", "property_set property_get")
 
+
 def aspectized(decorator, aspect=ASPECT.property_get, pattern=None):
-    def wrapping (cls):
+    def wrapping(cls):
         if ASPECT.property_get in aspect:
             for name, attr in cls.__dict__.items():
                 if not name.startswith("__") and type(attr) is property:
                     setattr(cls, name, property(decorator(attr), attr.fset))
         return cls
+
     return wrapping
+
 
 def logged(func):
     def wrapper(*args, **kwargs):
         if type(func) is property:
-            q(args[0], "=>",  func.fget.__name__)
+            q(args[0], "=>", func.fget.__name__)
             res = func.fget(*args, **kwargs)
             q(args[0], func.fget.__name__, "=>", res)
             return res
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def timed(func):
     def wrapper(*args, **kwargs):
@@ -54,7 +65,7 @@ def timed(func):
         res = func(*args, **kwargs)
         after = perf_counter()
         print(func.__name__, after - before, "seconds")
-        q(after-before, func, args, kwargs)
+        q(after - before, func, args, kwargs)
         return res
+
     return wrapper
-    

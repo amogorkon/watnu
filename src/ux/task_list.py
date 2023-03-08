@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from functools import partial
 from itertools import count
 from math import isinf
@@ -9,28 +8,23 @@ from time import time, time_ns
 
 import use
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QCoreApplication, QDate, QDateTime, QItemSelectionModel, Qt, QTimer, QUrl, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PyQt6.QtCore import Qt, QTimer, QVariant
+from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox
 
+import q
 import ui
-from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, submit_sql, typed
-from algo import (
-    balance,
-    check_task_conditions,
-    constraints_met,
-    filter_tasks,
-    prioritize,
-    schedule,
-    skill_level,
-)
+from ux import task_running, task_editor
+from algo import filter_tasks
+from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
+
+from .stuff import app, db, config
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        breakpoint()
         self.timer = QTimer()
         "Timer for polling if the db has changed and regenerate the list."
         self.timer.start(100)
@@ -137,9 +131,6 @@ VALUES ('{text}')
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
         self.task_list.setVerticalHeaderItem(0, item)
 
-        if state() is S.running:
-            self.button5.setEnabled(False)
-
         self.build_task_list()
 
         self.statusBar = QtWidgets.QStatusBar(self)
@@ -151,25 +142,11 @@ VALUES ('{text}')
         def task_list_doubleclicked(row, column):
             task = self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
 
-            if state() is S.running and task == win_running.task:
-                win_running.show()
-                win_running.activateWindow()
-                win_running.raise_()
-                return
-
-            win = Editor(task, win_list=self)
+            win = task_editor.Editor(task)
             win.show()
 
         @self.button4.clicked.connect
         def edit_task():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec()
-                return
-
             X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
 
             if not X:
@@ -183,25 +160,17 @@ VALUES ('{text}')
 
             task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
 
-            if state() is S.running and task == win_running.task:
-                win_running.show()
-                win_running.activateWindow()
-                win_running.raise_()
+            if app.win_running:
+                app.win_running.show()
+                app.win_running.activateWindow()
+                app.win_running.raise_()
                 return
 
-            win = Editor(task, win_list=self)
+            win = task_editor.Editor(task)
             win.show()
 
         @self.button5.clicked.connect
         def start_task():
-            global win_running
-            if state() is S.running:
-                win_running.show()
-                win_running.activateWindow()
-                win_running.raise_()
-                self.hide()
-                return
-
             X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
 
             if not X:
@@ -213,19 +182,11 @@ VALUES ('{text}')
                 x = X[0].row()
                 task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
                 self.hide()
-                win_running = Running(task, win_list=self)
+                win_running = task_running.Running(task)
 
         @self.button6.clicked.connect
         def create_task():
-            if state() is S.editing:
-                mb = QtWidgets.QMessageBox()
-                mb.setText("Es wird schon ein Task bearbeitet.")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec()
-                return
-
-            win = Editor(win_list=self, current_space=self.space.currentText())
+            win = task_editor.Editor(current_space=self.space.currentText())
             win.show()
 
         @self.button8.clicked.connect
@@ -274,7 +235,7 @@ VALUES ('{text}')
 
         @self.filter_timer.timeout.connect
         def filter_changed():
-            ui_functions.arrange_list(self, filter_tasks(self.tasks, self.field_filter.text().casefold()))
+            self.arrange_list(filter_tasks(self.tasks, self.field_filter.text().casefold()))
             self.update()
             self.filter_timer.stop()
 
@@ -300,31 +261,16 @@ WHERE id == {task.id}
         self.build_task_list()
 
     def clone_as_is(self):
-        if state() is S.editing:
-            mb = QtWidgets.QMessageBox()
-            mb.setText("Es wird schon ein Task bearbeitet.")
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
-            return
-
         try:
             x = self.task_list.selectedItems()[0].row()
         except IndexError:
             return
 
         task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = Editor(task, cloning=True, as_sup=0, win_list=self)
+        win = task_editor.Editor(task, cloning=True, as_sup=0)
         win.show()
 
     def clone_as_sub(self):
-        if state() is S.editing:
-            mb = QtWidgets.QMessageBox()
-            mb.setText("Es wird schon ein Task bearbeitet.")
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
-            return
 
         try:
             x = self.task_list.selectedItems()[0].row()
@@ -332,25 +278,17 @@ WHERE id == {task.id}
             return
 
         task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = Editor(task, cloning=True, as_sup=-1, win_list=self)
+        win = task_editor.Editor(task, cloning=True, as_sup=-1)
         win.show()
 
     def clone_as_sup(self):
-        if state() is S.editing:
-            mb = QtWidgets.QMessageBox()
-            mb.setText("Es wird schon ein Task bearbeitet.")
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
-            return
-
         try:
             x = self.task_list.selectedItems()[0].row()
         except IndexError:
             return
 
         task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = Editor(task, cloning=True, as_sup=1, win_list=self)
+        win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
     @cached_and_invalidated
@@ -409,21 +347,21 @@ deleted == TRUE
 
         self.tasks = [Task(typed(row, 0, int)) for row in iter_over(query)]
         filter_text = self.field_filter.text().casefold()
-        ui_functions.arrange_list(self, filter_tasks(self.tasks, filter_text))
+        self.arrange_list(filter_tasks(self.tasks, filter_text))
         self.update()
 
     def reject(self):
         super().reject()
-        if state() is S.running:
-            win_running.show()
-            win_running.raise_()
+        if app.win_running:
+            app.win_running.show()
+            app.win_running.raise_()
         else:
-            win_main.show()
-            win_main.raise_()
+            app.win_main.show()
+            app.win_main.raise_()
 
-        global list_of_task_lists
-        list_of_task_lists.remove(self)
+        app.list_of_task_lists.remove(self)
 
+    @use.tinny_profiler
     def arrange_list(self, tasks):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         self.task_list.hide()
@@ -434,7 +372,6 @@ deleted == TRUE
         ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
         family = QFontDatabase.applicationFontFamilies(ID)
         font = QFont(family)
-        breakpoint()
 
         for i, task in enumerate(tasks):
             short = (

@@ -10,6 +10,8 @@
 # OR CONDITIONS OF ANY KIND, either express or implied.  See the License for
 # specific language governing permissions and limitations under the License.
 
+# FILE MODIFIED BY Anselm Kiefner 2023
+
 """Quick and dirty debugging output for tired programmers.
 
 All output goes to /tmp/q, which you can watch with this shell command:
@@ -43,19 +45,21 @@ To start an interactive console at any point in your code, call q.d():
     import q; q.d()
 """
 
+
 from __future__ import print_function
 
+import contextlib
 import sys
 from pathlib import Path
 
-__author__ = 'Ka-Ping Yee <ping@zesty.ca>'
+__author__ = "Ka-Ping Yee <ping@zesty.ca>"
 
 # WARNING: Horrible abuse of sys.modules, __call__, __div__, __or__, inspect,
 # sys._getframe, and more!  q's behaviour changes depending on the text of the
 # source code near its call site.  Don't ever do this in real code!
 
 # These are reused below in both Q and Writer.
-ESCAPE_SEQUENCES = ['\x1b[0m'] + ['\x1b[3%dm' % i for i in range(1, 7)]
+ESCAPE_SEQUENCES = ["\x1b[0m"] + ["\x1b[3%dm" % i for i in range(1, 7)]
 
 if sys.version_info >= (3,):
     BASESTRING_TYPES = (str, bytes)
@@ -107,6 +111,7 @@ class Q(object):
 
     class FileWriter(object):
         """An object that appends to or overwrites a single file."""
+
         import sys
 
         # For portably converting strings between python2 and python3
@@ -115,24 +120,17 @@ class Q(object):
 
         def __init__(self, path):
             self.path = path
-            self.open = open
-            # App Engine's dev_appserver patches 'open' to simulate security
-            # restrictions in production; we circumvent this to write output.
-            if open.__name__ == 'FakeFile':  # dev_appserver's patched 'file'
-                self.open = open.__bases__[0]  # the original built-in 'file'
+            self.open = open.__bases__[0] if open.__name__ == "FakeFile" else open
 
         def write(self, mode, content):
-            if 'b' not in mode:
-                mode = '%sb' % mode
-            if (isinstance(content, self.BASESTRING_TYPES) and
-                    isinstance(content, self.TEXT_TYPES)):
-                content = content.encode('utf-8')
-            try:
+            if "b" not in mode:
+                mode = f"{mode}b"
+            if isinstance(content, self.BASESTRING_TYPES) and isinstance(content, self.TEXT_TYPES):
+                content = content.encode("utf-8")
+            with contextlib.suppress(IOError):
                 f = self.open(self.path, mode)
                 f.write(content)
                 f.close()
-            except IOError:
-                pass
 
     class Writer:
         """Abstract away the output pipe, timestamping, and color support."""
@@ -150,26 +148,26 @@ class Q(object):
         def write(self, chunks):
             """Writes out a list of strings as a single timestamped unit."""
             if not self.color:
-                chunks = [x for x in chunks if not x.startswith('\x1b')]
-            content = ''.join(chunks)
+                chunks = [x for x in chunks if not x.startswith("\x1b")]
+            content = "".join(chunks)
 
             now = self.time.time()
-            prefix = '%4.1fs ' % ((now - self.start_time) % 100)
-            indent = ' ' * len(prefix)
+            prefix = "%4.1fs " % ((now - self.start_time) % 100)
+            indent = " " * len(prefix)
             if self.color:
                 prefix = self.YELLOW + prefix + self.NORMAL
             if now - self.last_write >= self.gap_seconds:
-                prefix = '\n' + prefix
+                prefix = "\n" + prefix
             self.last_write = now
 
-            output = prefix + content.replace('\n', '\n' + indent)
-            self.file_writer.write('a', output + '\n')
+            output = prefix + content.replace("\n", "\n" + indent)
+            self.file_writer.write("a", output + "\n")
 
     class Stanza:
         """Abstract away indentation and line-wrapping."""
 
         def __init__(self, indent=0, width=280 - 7):
-            self.chunks = [' '*indent]
+            self.chunks = [" " * indent]
             self.indent = indent
             self.column = indent
             self.width = width
@@ -178,13 +176,12 @@ class Q(object):
             if len(self.chunks) > 1:
                 self.column = self.width
 
-        def add(self, items, sep='', wrap=True):
+        def add(self, items, sep="", wrap=True):
             """Adds a list of strings that are to be printed on one line."""
             items = list(map(str, items))
-            size = sum([len(x) for x in items if not x.startswith('\x1b')])
-            if (wrap and self.column > self.indent and
-                    self.column + len(sep) + size > self.width):
-                self.chunks.append(sep.rstrip() + '\n' + ' '*self.indent)
+            size = sum(len(x) for x in items if not x.startswith("\x1b"))
+            if wrap and self.column > self.indent and self.column + len(sep) + size > self.width:
+                self.chunks.append(sep.rstrip() + "\n" + " " * self.indent)
                 self.column = self.indent
             else:
                 self.chunks.append(sep)
@@ -198,31 +195,30 @@ class Q(object):
         # in_console tracks whether we're in an interactive console.
         # We use it to display the caller as "<console>" instead of "<module>".
         self.in_console = False
-        
+
         from datetime import datetime
+
         self.writer.write(
-f"""==========================
+            f"""==========================
 {datetime.now()}
 ==========================
-""")
+"""
+        )
+
     def unindent(self, lines):
         """Removes any indentation that is common to all of the given lines."""
-        indent = min(
-            len(self.re.match(r'^ *', line).group()) for line in lines)
+        indent = min(len(self.re.match(r"^ *", line).group()) for line in lines)
         return [line[indent:].rstrip() for line in lines]
 
     def safe_repr(self, value):
-        # TODO: Use colour to distinguish '...' elision from actual '...'
-        # TODO: Show a nicer repr for SRE.Match objects.
-        # TODO: Show a nicer repr for big multiline strings.
         result = self.TEXT_REPR.repr(value)
         if isinstance(value, self.BASESTRING_TYPES) and len(value) > 80:
             # If the string is big, save it to a file for later examination.
-            if isinstance(value,  self.TEXT_TYPES):
-                value = value.encode('utf-8')
-            path = self.OUTPUT_PATH.parents[0] / ('%08d.txt' % self.random.randrange(1e8))
-            self.FileWriter(path).write('w', value)
-            result += ' (file://' + str(path) + ')'
+            if isinstance(value, self.TEXT_TYPES):
+                value = value.encode("utf-8")
+            path = self.OUTPUT_PATH.parents[0] / ("%08d.txt" % self.random.randrange(1e8))
+            self.FileWriter(path).write("w", value)
+            result += f" (file://{str(path)})"
         return result
 
     def get_call_exprs(self, line):
@@ -239,38 +235,38 @@ f"""==========================
                     # In Python 3.4 the col_offset is calculated wrong. See
                     # https://bugs.python.org/issue21295
                     if isinstance(arg, self.ast.Attribute) and (
-                            (3, 4, 0) <= self.sys.version_info <= (3, 4, 3)):
+                        (3, 4, 0) <= self.sys.version_info <= (3, 4, 3)
+                    ):
                         offsets.append(arg.col_offset - len(arg.value.id) - 1)
                     else:
                         offsets.append(arg.col_offset)
                 if node.keywords:
-                    line = line[:node.keywords[0].value.col_offset]
-                    line = self.re.sub(r'\w+\s*=\s*$', '', line)
+                    line = line[: node.keywords[0].value.col_offset]
+                    line = self.re.sub(r"\w+\s*=\s*$", "", line)
                 else:
-                    line = self.re.sub(r'\s*\)\s*$', '', line)
+                    line = self.re.sub(r"\s*\)\s*$", "", line)
                 offsets.append(len(line))
                 args = []
                 for i in range(len(node.args)):
-                    args.append(line[offsets[i]:offsets[i + 1]].rstrip(', '))
+                    args.append(line[offsets[i] : offsets[i + 1]].rstrip(", "))
                 return args
 
     def show(self, func_name, values, labels=None):
         """Prints out nice representations of the given values."""
         s = self.Stanza(self.indent)
-        if func_name == '<module>' and self.in_console:
-            func_name = '<console>'
-        s.add([func_name + ': '])
+        if func_name == "<module>" and self.in_console:
+            func_name = "<console>"
+        s.add([f"{func_name}: "])
         reprs = map(self.safe_repr, values)
+        sep = ""
         if labels:
-            sep = ''
             for label, repr in zip(labels, reprs):
-                s.add([label + '=', self.CYAN, repr, self.NORMAL], sep)
-                sep = ', '
+                s.add([f"{label}=", self.CYAN, repr, self.NORMAL], sep)
+                sep = ", "
         else:
-            sep = ''
             for repr in reprs:
                 s.add([self.CYAN, repr, self.NORMAL], sep)
-                sep = ', '
+                sep = ", "
         self.writer.write(s.chunks)
 
     def trace(self, func):
@@ -279,17 +275,16 @@ f"""==========================
         def wrapper(*args, **kwargs):
             # Print out the call to the function with its arguments.
             s = self.Stanza(self.indent)
-            s.add([self.GREEN, func.__name__, self.NORMAL, '('])
+            s.add([self.GREEN, func.__name__, self.NORMAL, "("])
             s.indent += 4
-            sep = ''
+            sep = ""
             for arg in args:
                 s.add([self.CYAN, self.safe_repr(arg), self.NORMAL], sep)
-                sep = ', '
+                sep = ", "
             for name, value in sorted(kwargs.items()):
-                s.add([name + '=', self.CYAN, self.safe_repr(value),
-                       self.NORMAL], sep)
-                sep = ', '
-            s.add(')', wrap=False)
+                s.add([f"{name}=", self.CYAN, self.safe_repr(value), self.NORMAL], sep)
+                sep = ", "
+            s.add(")", wrap=False)
             self.writer.write(s.chunks)
 
             # Call the function.
@@ -302,27 +297,32 @@ f"""==========================
                 etype, evalue, etb = self.sys.exc_info()
                 info = self.inspect.getframeinfo(etb.tb_next, context=3)
                 s = self.Stanza(self.indent)
-                s.add([self.RED, '!> ', self.safe_repr(evalue), self.NORMAL])
-                s.add(['at ', info.filename, ':', info.lineno], ' ')
+                s.add([self.RED, "!> ", self.safe_repr(evalue), self.NORMAL])
+                s.add(["at ", info.filename, ":", info.lineno], " ")
                 lines = self.unindent(info.code_context)
                 firstlineno = info.lineno - info.index
-                fmt = '%' + str(len(str(firstlineno + len(lines)))) + 'd'
+                fmt = f"%{len(str(firstlineno + len(lines)))}d"
                 for i, line in enumerate(lines):
                     s.newline()
-                    s.add([
-                        i == info.index and self.MAGENTA or '',
-                        fmt % (i + firstlineno),
-                        i == info.index and '> ' or ': ', line, self.NORMAL])
+                    s.add(
+                        [
+                            i == info.index and self.MAGENTA or "",
+                            fmt % (i + firstlineno),
+                            i == info.index and "> " or ": ",
+                            line,
+                            self.NORMAL,
+                        ]
+                    )
                 self.writer.write(s.chunks)
                 raise
 
             # Display the return value.
             self.indent -= 2
             s = self.Stanza(self.indent)
-            s.add([self.GREEN, '-> ', self.CYAN, self.safe_repr(result),
-                   self.NORMAL])
+            s.add([self.GREEN, "-> ", self.CYAN, self.safe_repr(result), self.NORMAL])
             self.writer.write(s.chunks)
             return result
+
         return self.functools.update_wrapper(wrapper, func)
 
     def __call__(self, *args):
@@ -330,22 +330,17 @@ f"""==========================
         function; otherwise immediately prints out the arguments."""
         info = self.inspect.getframeinfo(self.sys._getframe(1), context=9)
 
-        # info.index is the index of the line containing the end of the call
-        # expression, so this gets a few lines up to the end of the expression.
-        lines = ['']
-        if info.code_context:
-            lines = info.code_context[:info.index + 1]
-
+        lines = info.code_context[: info.index + 1] if info.code_context else [""]
         # If we see "@q" on a single line, behave like a trace decorator.
         for line in lines:
-            if line.strip() in ('@q', '@q()') and args:
+            if line.strip() in ("@q", "@q()") and args:
                 return self.trace(args[0])
 
         # Otherwise, search for the beginning of the call expression; once it
         # parses, use the expressions in the call to label the debugging
         # output.
         for i in range(1, len(lines) + 1):
-            labels = self.get_call_exprs(''.join(lines[-i:]).replace('\n', ''))
+            labels = self.get_call_exprs("".join(lines[-i:]).replace("\n", ""))
             if labels:
                 break
         self.show(info.function, args, labels)
@@ -356,37 +351,38 @@ f"""==========================
         info = self.inspect.getframeinfo(self.sys._getframe(1))
         self.show(info.function, [arg])
         return arg
+
     # Compat for Python 2 without from future import __division__ turned on
     __div__ = __truediv__
 
     __or__ = __div__  # a loose-binding operator
     q = __call__  # backward compatibility with @q.q
     t = trace  # backward compatibility with @q.t
-    __name__ = 'Q'  # App Engine's import hook dies if this isn't present
+    __name__ = "Q"  # App Engine's import hook dies if this isn't present
 
     def d(self, depth=1):
         """Launches an interactive console at the point where it's called."""
         info = self.inspect.getframeinfo(self.sys._getframe(1))
-        s = self.Stanza(self.indent)
-        s.add([info.function + ': '])
-        s.add([self.MAGENTA, 'Interactive console opened', self.NORMAL])
-        self.writer.write(s.chunks)
-
+        self.actually_log(info, "Interactive console opened")
         frame = self.sys._getframe(depth)
         env = frame.f_globals.copy()
         env.update(frame.f_locals)
         self.indent += 2
         self.in_console = True
-        self.code.interact(
-            'Python console opened by q.d() in ' + info.function, local=env)
+        self.code.interact(f"Python console opened by q.d() in {info.function}", local=env)
         self.in_console = False
         self.indent -= 2
 
-        s = self.Stanza(self.indent)
-        s.add([info.function + ': '])
-        s.add([self.MAGENTA, 'Interactive console closed', self.NORMAL])
-        self.writer.write(s.chunks)
+        self.actually_log(info, "Interactive console closed")
+
+    def actually_log(self, info, msg):
+        result = self.Stanza(self.indent)
+        result.add([f"{info.function}: "])
+        result.add([self.MAGENTA, msg, self.NORMAL])
+        self.writer.write(result.chunks)
+
+        return result
 
 
 # Install the Q() object in sys.modules so that "import q" gives a callable q.
-sys.modules['q'] = Q()
+sys.modules["q"] = Q()

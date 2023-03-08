@@ -1,3 +1,23 @@
+import webbrowser
+from collections import defaultdict
+from pathlib import Path
+
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication
+
+_translate = QCoreApplication.translate
+
+import stay
+
+load = stay.Decoder()
+
+import q
+import ui
+from classes import submit_sql
+
+from .stuff import app, db, config, __version__
+import ux
+
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -5,7 +25,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.about.triggered.connect
         def _():
-            win = About()
+            win = ux.About()
             win.exec()
 
         @self.actionReadme.triggered.connect
@@ -14,8 +34,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.attributions.triggered.connect
         def _():
-            app.win_attributions = Attributions()
-            win_attributions.show()
+            app.win_attributions.show()
 
         @self.button7.clicked.connect
         def _():
@@ -23,7 +42,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button8.clicked.connect
         def companions():
-            app.win_companions = Companions()
             app.win_companions.show()
 
         @self.button9.clicked.connect
@@ -34,7 +52,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         @self.button4.clicked.connect
         def list_tasks():
             """Task List."""
-            win = TaskList()
+            win = ux.task_list.TaskList()
             win.show()
             app.list_of_task_lists.append(win)
 
@@ -48,17 +66,17 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         @self.button6.clicked.connect
         def add_new_task():
             """Add new Task."""
-            win = Editor()
+            win = ux.task_editor.Editor()
             win.exec()
 
         @self.button1.clicked.connect
         def statistics():
-            app.win_statistics = Statistics()
+            app.win_statistics = ux.statistics.Statistics()
             app.win_statistics.show()
 
         @self.button2.clicked.connect
         def character():
-            app.win_character = Character()
+            app.win_character = ux.character.Character()
             app.win_character.show()
 
         @self.button3.clicked.connect
@@ -89,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         @self.actionImport.triggered.connect
         def actionImport():
             win = QtWidgets.QDialog()
-            options = QtWidgets.QFileDialog.Options()
+            options = QtWidgets.QFileDialog().options()
             # options |= QtWidgets.QFileDialog.DontUseNativeDialog
             filename, _ = QtWidgets.QFileDialog.getOpenFileName(
                 win,
@@ -141,6 +159,7 @@ VALUES ('{d["do"]}',
 
                 try:
                     link = rf"C:\Users\{getpass.getuser()}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\Start Watnu.bat"
+                    import sys
                     target = Path(sys.executable)
                     with open(Path(link), "w+") as file:
                         file.write(rf'start "" {target}')
@@ -148,7 +167,7 @@ VALUES ('{d["do"]}',
                     q(e, link, target)
 
             config.write()
-            tray.setVisible(False)
+            app.tray.setVisible(False)
             event.accept()
         else:
             event.ignore()

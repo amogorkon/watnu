@@ -110,7 +110,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Wähle Wiederholungen"))
         self.groupBox.setTitle(_translate("Dialog", "Wiederhole diese Aufgabe "))
         self.label.setText(_translate("Dialog", "-mal pro.."))
         self.every_minute.setText(_translate("Dialog", "Minute"))

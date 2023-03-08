@@ -1,6 +1,15 @@
-from classes import submit_sql
-
 print("FIRST START")
+
+
+from PyQt6.QtSql import QSqlDatabase
+
+
+from classes import submit_sql
+import config
+
+
+db = QSqlDatabase
+config = config.Config
 
 
 def run(db, config):
@@ -114,6 +123,7 @@ CREATE TABLE "tasks" (
     "do"	VARCHAR(280) NOT NULL,
     "notes"	TEXT,
     "space_id"	INTEGER,
+    "created_at"	TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "done"	INTEGER NOT NULL DEFAULT 0,
     "draft"	INTEGER NOT NULL DEFAULT 0,
     "inactive"	INTEGER NOT NULL DEFAULT 0,
@@ -125,7 +135,6 @@ CREATE TABLE "tasks" (
     "fear"	REAL DEFAULT 5,
     "embarassment"	REAL DEFAULT 5,
     "last_checked"	INTEGER DEFAULT 0,
-    "time_spent"	INTEGER DEFAULT 0,
     "adjust_time_spent"	INTEGER DEFAULT 0,
     "ilk"	INTEGER NOT NULL DEFAULT 1,
     "primary_activity_id"	INTEGER,
@@ -162,7 +171,7 @@ CREATE TABLE "tasks" (
         )
 
     for s in ["Heim & Haus", "Arbeit", "Hobby"]:
-        submit_sql(
+        db.submit_sql(
             f"""
             INSERT INTO spaces (name)
             VALUES ('{s}')

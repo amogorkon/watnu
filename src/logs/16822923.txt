@@ -1,4 +1,3 @@
-SQL failed ('first_start', 157, 'run'): 
-        INSERT INTO activities (name, activity_id)
-        VALUES ('SPIRIT', 1)
-        
+SQL failed ('main', 1410, 'accept'): 
+DELETE FROM deadlines WHERE task_id = 65
+            

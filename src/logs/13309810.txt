@@ -1,10 +1,18 @@
-SQL succeeded but Query is now invalid ('main', 1328, 'accept'): 
-UPDATE tasks 
-SET do = 'ersetze DB.mantras durch mantras.list',
-    priority = 0.0,
-    level_id = 0,
-    primary_activity_id = 2,
-    secondary_activity_id = NULL,
-    space_id = 1,
-    ilk = 1
-WHERE id=260
+SQL failed ('main', 1344, 'accept'): 
+INSERT INTO tasks 
+(do, 
+space_id, 
+primary_activity_id,
+secondary_activity_id,
+ilk,
+level_id
+)
+
+VALUES 
+('kann Raum nicht ändern??', 
+1,
+2,
+NULL,
+1,
+0
+);

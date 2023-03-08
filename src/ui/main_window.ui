@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>watnu</string>
+   <string>Watnu‽</string>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>false</bool>
@@ -53,8 +53,8 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="../icons.qrc">
-          <normaloff>:/feather/extra/feathericons/file-plus.svg</normaloff>:/feather/extra/feathericons/file-plus.svg</iconset>
+         <iconset>
+          <normaloff>../extra/feathericons/file-plus.svg</normaloff>../extra/feathericons/file-plus.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -91,8 +91,8 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="../icons.qrc">
-          <normaloff>:/feather/extra/feathericons/list.svg</normaloff>:/feather/extra/feathericons/list.svg</iconset>
+         <iconset>
+          <normaloff>../extra/feathericons/list.svg</normaloff>../extra/feathericons/list.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -132,8 +132,8 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="../icons.qrc">
-          <normaloff>:/feather/extra/feathericons/play-circle.svg</normaloff>:/feather/extra/feathericons/play-circle.svg</iconset>
+         <iconset>
+          <normaloff>../extra/feathericons/play-circle.svg</normaloff>../extra/feathericons/play-circle.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -257,8 +257,8 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="../icons.qrc">
-          <normaloff>:/feather/extra/feathericons/message-square.svg</normaloff>:/feather/extra/feathericons/message-square.svg</iconset>
+         <iconset>
+          <normaloff>../extra/feathericons/message-square.svg</normaloff>../extra/feathericons/message-square.svg</iconset>
         </property>
         <property name="iconSize">
          <size>

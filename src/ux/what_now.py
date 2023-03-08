@@ -1,3 +1,28 @@
+from collections import defaultdict
+from datetime import datetime
+from math import modf, sin
+from random import seed
+from time import time
+
+import config
+import ui
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer
+from algo import (
+    balance,
+    check_task_conditions,
+    constraints_met,
+    prioritize,
+    schedule,
+)
+from classes import cached_and_invalidated, iter_over, submit_sql, typed
+from ux import task_editor, task_finished, task_running
+
+from .stuff import app, config
+
+_translate = QCoreApplication.translate
+
+
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
@@ -26,21 +51,21 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         @self.edit_priority.clicked.connect
         def edit_priority():
-            win = Editor(self.task_priority)
+            win = task_editor.Editor(self.task_priority)
             app.list_of_editors.append(win)
             if win.exec():
                 self.lets_check_whats_next()
 
         @self.edit_timing.clicked.connect
         def edit_timing():
-            win = Editor(self.task_timing)
+            win = task_editor.Editor(self.task_timing)
             app.list_of_editors.append(win)
             if win.exec():
                 self.lets_check_whats_next()
 
         @self.edit_balanced.clicked.connect
         def edit_balanced():
-            win = Editor(self.task_balanced)
+            win = task_editor.Editor(self.task_balanced)
             app.list_of_editors.append(win)
             if win.exec():
                 self.lets_check_whats_next()
@@ -74,9 +99,9 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 stop:0 black, 
                 stop:1 white);
         background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-                stop:0 {activity_color.get(self.task_timing.primary_activity_id, "black")}, 
-                stop:{sin(T * 0.1) * 0.5 + 0.5} {activity_color.get(self.task_timing.secondary_activity_id,
-                                                                    activity_color.get(
+                stop:0 {app.activity_color.get(self.task_timing.primary_activity_id, "black")}, 
+                stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_timing.secondary_activity_id,
+                                                                    app.activity_color.get(
                                                                         self.task_timing.primary_activity_id, "black"))},
                 stop:1 white);
         }}
@@ -92,9 +117,9 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             stop:0 black, 
             stop:1 white);
     background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-            stop:0 {activity_color.get(self.task_priority.primary_activity_id, "black")},
-            stop:{sin(T * 0.1) * 0.5 + 0.5} {activity_color.get(self.task_priority.secondary_activity_id,
-                                                                activity_color.get(self.task_priority.primary_activity_id, "black"))},
+            stop:0 {app.activity_color.get(self.task_priority.primary_activity_id, "black")},
+            stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_priority.secondary_activity_id,
+                                                                app.activity_color.get(self.task_priority.primary_activity_id, "black"))},
             stop:1 white);
     }}
     """
@@ -109,9 +134,9 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             stop:0 black, 
             stop:1 white);
     background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-            stop:0 {activity_color.get(self.task_balanced.primary_activity_id, "black")},
-            stop:{sin(T * 0.1) * 0.5 + 0.5} {activity_color.get(self.task_balanced.secondary_activity_id,
-                                                                activity_color.get(self.task_balanced.primary_activity_id, "black"))},
+            stop:0 {app.activity_color.get(self.task_balanced.primary_activity_id, "black")},
+            stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_balanced.secondary_activity_id,
+                                                                app.activity_color.get(self.task_balanced.primary_activity_id, "black"))},
             stop:1 white);
     }}
     """
@@ -122,7 +147,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         @self.go_priority.clicked.connect
         def go_priority_clicked():
             self.hide()
-            app.win_running = Running(self.task_priority)
+            app.win_running = task_running.Running(self.task_priority)
 
         @self.skip_priority.clicked.connect
         def skip_priority_clicked():
@@ -146,7 +171,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         @self.go_balanced.clicked.connect
         def go_balanced_clicked():
             self.hide()
-            app.win_running = Running(self.task_balanced)
+            app.win_running = task_running.Running(self.task_balanced)
 
         @self.skip_balanced.clicked.connect
         def skip_balanced_clicked():
@@ -161,7 +186,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         @self.go_timing.clicked.connect
         def go_timing_clicked():
             self.hide()
-            app.win_running = Running(self.task_timing)
+            app.win_running = task_running.Running.Running(self.task_timing)
 
         @self.skip_timing.clicked.connect
         def skip_timing_clicked():
@@ -178,17 +203,17 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         @self.done_priority.clicked.connect
         def done_priority_clicked():
-            win = Task_Finished(self.task_priority)
+            win = task_finished.Task_Finished(self.task_priority)
             win.exec()
 
         @self.done_balanced.clicked.connect
         def _done_balanced_clicked():
-            win = Task_Finished(self.task_balanced)
+            win = task_finished.Task_Finished(self.task_balanced)
             win.exec()
 
         @self.done_timing.clicked.connect
         def done_timing_clicked():
-            win = Task_Finished(self.task_timing)
+            win = task_finished.Task_Finished(self.task_timing)
             win.exec()
 
     def lets_check_whats_next(self):
@@ -199,11 +224,13 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         now = datetime.now()
 
-        for t in considered_tasks():
+        for t in app.considered_tasks():
             check_task_conditions(t, now=now)
 
         self.tasks = list(
-            filter(lambda t: t.considered_open and constraints_met(t.constraints, now), considered_tasks())
+            filter(
+                lambda t: t.considered_open and constraints_met(t.constraints, now), app.considered_tasks()
+            )
         )
 
         if not self.tasks:

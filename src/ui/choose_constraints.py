@@ -103,7 +103,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Wähle Zeiten"))
         item = self.table.horizontalHeaderItem(0)
         item.setText(_translate("Dialog", "Mo"))
         item = self.table.horizontalHeaderItem(1)
