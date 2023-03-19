@@ -1,0 +1,10 @@
+SQL succeeded but Query is now invalid ('task_editor', 303, 'accept'): 
+UPDATE tasks 
+SET do = 'Editor: Fertig heißt "kein Draft"!',
+    priority = 0.0,
+    level_id = 0,
+    primary_activity_id = NULL,
+    secondary_activity_id = NULL,
+    space_id = 1,
+    ilk = 1
+WHERE id=364

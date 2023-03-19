@@ -1,0 +1,3 @@
+SQL failed ('classes', 508, 'space'): 
+        SELECT name FROM spaces WHERE space_id=None;
+        

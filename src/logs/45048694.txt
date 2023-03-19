@@ -1,0 +1,4 @@
+SQL failed ('task_editor', 386, 'accept'): 
+INSERT INTO task_uses_resource
+(task_id, resource_id)
+VALUES (385, None);
