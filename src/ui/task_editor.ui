@@ -17,13 +17,13 @@
    <bool>true</bool>
   </property>
   <property name="modal">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <property name="wizardStyle">
    <enum>QWizard::ModernStyle</enum>
   </property>
   <property name="options">
-   <set>QWizard::CancelButtonOnLeft|QWizard::HaveFinishButtonOnEarlyPages|QWizard::IgnoreSubTitles|QWizard::NoBackButtonOnStartPage</set>
+   <set>QWizard::CancelButtonOnLeft|QWizard::HaveCustomButton1|QWizard::HaveFinishButtonOnEarlyPages|QWizard::HaveHelpButton|QWizard::IgnoreSubTitles|QWizard::NoBackButtonOnStartPage</set>
   </property>
   <widget class="QWizardPage" name="page_basics">
    <property name="title">
@@ -387,64 +387,173 @@
         </layout>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_9">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <property name="title">
-          <string/>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
          </property>
-         <property name="flat">
-          <bool>false</bool>
+        </spacer>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="rightMargin">
+          <number>10</number>
          </property>
-         <layout class="QFormLayout" name="formLayout_2">
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_11">
-            <property name="text">
-             <string>Angst</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QSlider" name="fear">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QLabel" name="label_12">
-            <property name="text">
-             <string>Schwierigkeit</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QSlider" name="difficulty">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="0">
-           <widget class="QLabel" name="label_13">
-            <property name="text">
-             <string>Peinlichkeit bei nicht-Erledigung</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="1">
-           <widget class="QSlider" name="embarassment">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+         <item>
+          <widget class="QGroupBox" name="groupBox_9">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string/>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_4">
+                <property name="rightMargin">
+                 <number>10</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_7">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Angst</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDial" name="fear">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="invertedAppearance">
+                   <bool>false</bool>
+                  </property>
+                  <property name="invertedControls">
+                   <bool>false</bool>
+                  </property>
+                  <property name="wrapping">
+                   <bool>false</bool>
+                  </property>
+                  <property name="notchesVisible">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_5">
+                <property name="rightMargin">
+                 <number>10</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_8">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Schwierigkeit</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDial" name="difficulty">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="notchesVisible">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_6">
+                <property name="rightMargin">
+                 <number>10</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_9">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>Peinlichkeit bei Nicht-Erledigung</string>
+                  </property>
+                  <property name="text">
+                   <string>Peinlichkeit</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDial" name="embarassment">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="notchesVisible">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -457,7 +566,7 @@
       <item row="0" column="0">
        <widget class="QPushButton" name="button7">
         <property name="text">
-         <string>ist Teil von...</string>
+         <string>hat Deadline mit Dringlichkeit...</string>
         </property>
         <property name="shortcut">
          <string>7</string>
@@ -496,26 +605,13 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="button6">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="shortcut">
-         <string>6</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
-         <string/>
+         <string>organisiere Aufgaben</string>
         </property>
         <property name="shortcut">
          <string>3</string>
@@ -524,8 +620,11 @@
       </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="button4">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
-         <string>manage Tags/Gruppen...</string>
+         <string>Aufgabe löschen</string>
         </property>
         <property name="shortcut">
          <string>4</string>
@@ -535,7 +634,7 @@
       <item row="3" column="0">
        <widget class="QPushButton" name="button1">
         <property name="text">
-         <string>besteht aus...</string>
+         <string>setze Aufgabe als...</string>
         </property>
         <property name="shortcut">
          <string>1</string>
@@ -545,7 +644,7 @@
       <item row="1" column="1">
        <widget class="QPushButton" name="button5">
         <property name="text">
-         <string>hat Deadline mit Dringlichkeit...</string>
+         <string>beende Bearbeitung und starte Aufgabe</string>
         </property>
         <property name="shortcut">
          <string>5</string>
@@ -562,6 +661,19 @@
         </property>
         <property name="shortcut">
          <string>8</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="button6">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>erstelle neue Aufgabe...</string>
+        </property>
+        <property name="shortcut">
+         <string>6</string>
         </property>
        </widget>
       </item>

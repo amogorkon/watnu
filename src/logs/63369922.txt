@@ -1,8 +1,0 @@
-SQL failed ('first_start', 144, 'run'): 
-
-CREATE TABLE "mantras" (
-    "mantra_id"	INTEGER NOT NULL UNIQUE,
-    "text"	TEXT NOT NULL UNIQUE,
-    "last_time"	INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY("mantra_id" AUTOINCREMENT)
-)

@@ -1,26 +1,34 @@
+import sqlite3
 from collections import defaultdict
 from datetime import datetime
 from math import modf, sin
 from random import seed
 from time import time
 
-import config
-import ui
+import use
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
-from algo import (
+
+import config
+import ui
+from classes import type_check_result
+from logic import (
     balance,
     check_task_conditions,
+    consider_tasks,
     constraints_met,
+    pipes,
     prioritize,
     schedule,
+    tasks,
 )
-from classes import cached_and_invalidated, iter_over, submit_sql, typed
 from ux import task_editor, task_finished, task_running
 
 from .stuff import app, config
 
 _translate = QCoreApplication.translate
+
+con = sqlite3.connect(config.db_path)
 
 
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
@@ -43,11 +51,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.balanced_tasks = None
         self.priority_tasks = None
         self.timing_tasks = None
-
-        for L in app.list_of_task_lists:
-            L.timer.stop()
-            L.filter_timer.stop()
-            L.hide()
 
         @self.edit_priority.clicked.connect
         def edit_priority():
@@ -160,13 +163,11 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_space_priority.setText(self.task_priority.space)
 
             if old_task == self.task_priority:
-                mb = QtWidgets.QMessageBox()
-                mb.setText(
-                    "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!"
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Hmm..",
+                    "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!",
                 )
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/fast-forward.svg"))
-                mb.setWindowTitle("Hmm..")
-                mb.exec()
 
         @self.go_balanced.clicked.connect
         def go_balanced_clicked():
@@ -203,19 +204,18 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         @self.done_priority.clicked.connect
         def done_priority_clicked():
-            win = task_finished.Task_Finished(self.task_priority)
-            win.exec()
+            task_finished.Task_Finished(self.task_priority).exec()
 
         @self.done_balanced.clicked.connect
         def _done_balanced_clicked():
-            win = task_finished.Task_Finished(self.task_balanced)
-            win.exec()
+            task_finished.Task_Finished(self.task_balanced).exec()
 
         @self.done_timing.clicked.connect
         def done_timing_clicked():
-            win = task_finished.Task_Finished(self.task_timing)
-            win.exec()
+            task_finished.Task_Finished(self.task_timing).exec()
 
+    @use.woody_logger
+    @pipes
     def lets_check_whats_next(self):
         seed((config.coin ^ config.lucky_num) * config.count)
         config.count += 1
@@ -224,21 +224,18 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         now = datetime.now()
 
-        for t in app.considered_tasks():
-            check_task_conditions(t, now=now)
-
-        self.tasks = list(
-            filter(
-                lambda t: t.considered_open and constraints_met(t.constraints, now), app.considered_tasks()
-            )
+        self.tasks = (
+            tasks(con)
+            >> check_task_conditions(now=now)
+            >> consider_tasks
+            >> filter(constraints_met(now))
+            >> list
         )
 
         if not self.tasks:
-            mb = QtWidgets.QMessageBox()
-            mb.setText("Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.")
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
+            QtWidgets.QMessageBox.information(
+                self, "Hmm..", "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte."
+            )
             self.hide()
             return False
 
@@ -257,6 +254,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             L.filter_timer.start(1000)
             L.show()
 
+    @use.woody_logger
     def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
         self.task_priority = self.priority_tasks[0]
@@ -264,6 +262,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.task_desc_priority.adjustSize()
         self.task_space_priority.setText(self.task_priority.space)
 
+    @use.woody_logger
     def set_timing_task(self):
         try:
             self.timing_tasks = schedule(self.tasks)
@@ -291,10 +290,10 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         self.task_desc_timing.adjustSize()
 
-    @cached_and_invalidated
+    @use.woody_logger
     def set_task_balanced(self):
         activity_time_spent = defaultdict(lambda: 0)
-        query = submit_sql(
+        query = con.execute(
             """
 SELECT
     activity_id,
@@ -303,10 +302,10 @@ FROM activities
 WHERE activity_id not NULL
 """
         )
-        for row in iter_over(query):
-            activity_time_spent[typed(row, 0, int, default=None)] = typed(row, 1, int)
+        for row in query.fetchall():
+            activity_time_spent[type_check_result(row, 0, int, default=None)] = type_check_result(row, 1, int)
 
-        query = submit_sql(
+        query = con.execute(
             """
 SELECT
     primary_activity_id,
@@ -318,9 +317,9 @@ GROUP BY
 """
         )
 
-        for row in iter_over(query):
-            activity_time_spent[typed(row, 0, int, default=None)] += typed(row, 1, int)
-        query = submit_sql(
+        for row in query.fetchall():
+            activity_time_spent[type_check_result(row, 0, int, default=0)] += type_check_result(row, 1, int)
+        query = con.execute(
             """
 SELECT
     secondary_activity_id,
@@ -331,8 +330,10 @@ GROUP BY
     secondary_activity_id;
 """
         )
-        for row in iter_over(query):
-            activity_time_spent[typed(row, 0, int, default=None)] += int(typed(row, 1, int) * 0.382)
+        for row in query.fetchall():
+            activity_time_spent[type_check_result(row, 0, int, default=0)] += int(
+                type_check_result(row, 1, int, default=0) * 0.382
+            )
         activity_time_spent[None] = max(activity_time_spent.values())
 
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
@@ -343,3 +344,10 @@ GROUP BY
         self.task_space_balanced.setText(self.task_balanced.space)
         self.task_space_balanced.setText(self.task_balanced.space)
         self.task_space_balanced.setText(self.task_balanced.space)
+
+    def showEvent(self, event):
+        for L in app.list_of_task_lists:
+            L.timer.stop()
+            L.filter_timer.stop()
+            L.hide()
+        super().showEvent(event)

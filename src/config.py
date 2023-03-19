@@ -1,9 +1,7 @@
 from ast import literal_eval
-
-import use
-import q
 from pathlib import Path
 
+import use
 
 attrs = use(
     "attrs",
@@ -16,7 +14,12 @@ attrs = use(
 )
 
 
-import stay
+stay = use(
+    use.URL("https://raw.githubusercontent.com/amogorkon/stay/master/src/stay/stay.py"),
+    hash_algo=use.Hash.sha256,
+    hash_value="47e11e8de6b07f24c95233fba1e7281c385b049f771f74c5647a837b51bd7ff4",
+    import_as="stay",
+)
 
 load = stay.Decoder()
 dump = stay.Encoder()
@@ -36,8 +39,6 @@ def read(file):
 
 def write(config):
     Path("config.stay").write_text(dump(attrs.asdict(config)))
-
-
 
 
 class boolean:
@@ -60,7 +61,8 @@ class boolean:
         return self.x
 
 
-#use.apply_aspect(attrs, use.woody_logger)  # BUG!
+# use.apply_aspect(attrs, use.woody_logger)  # BUG!
+
 
 @attrs.define(
     auto_attribs=True,
@@ -70,7 +72,8 @@ class boolean:
 class Config:
     # bool("False") is a non-empty string -> True :|
     first_start: boolean = True
-    database: str = "watnu.sqlite"
+    db_path: str = "watnu.sqlite"
+    mantras: Path = "mantras.stay"
     coin: int = 0b1
     lucky_num: int = 1
     count: int = 1

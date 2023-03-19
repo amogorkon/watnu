@@ -1,3 +1,0 @@
-SQL failed ('classes', 511, 'space'): 
-        SELECT name FROM spaces WHERE space_id=None;
-        

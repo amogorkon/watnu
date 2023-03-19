@@ -1,3 +1,0 @@
-SQL failed ('main', 1400, 'accept'): 
-DELETE FROM task_trains_skill WHERE task_id = 65
-    

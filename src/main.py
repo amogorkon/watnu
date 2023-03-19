@@ -2,29 +2,25 @@
 
 Run with py main.py and watch the Magik happen!
 """
+import ctypes
+import sqlite3
 import sys
-import webbrowser
-from bisect import bisect_right
-from collections import defaultdict, namedtuple
-from datetime import datetime
-from enum import Enum
-from functools import partial
-from itertools import count
-from math import isinf, modf, sin
 from pathlib import Path
-from random import choice, seed
-from time import time, time_ns
+from random import seed
 
 import use
-from dateutil.relativedelta import relativedelta
-from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QCoreApplication, QDate, QDateTime, QItemSelectionModel, Qt, QTimer, QUrl, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtSql import QSqlDatabase, QSqlTableModel
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtGui import QIcon
+from PyQt6.QtSql import QSqlDatabase
 
-np = use(
+# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+
+use(use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q")
+import q
+
+use(
     "numpy",
     version="1.24.1",
     modes=use.auto_install,
@@ -33,6 +29,7 @@ np = use(
         "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
     },
 )
+
 use(
     "beartype",
     version="0.12.0",
@@ -62,23 +59,15 @@ load = stay.Decoder()
 
 import classes
 import config
-import q
-import ui
-from algo import (
-    balance,
-    check_task_conditions,
-    constraints_met,
-    filter_tasks,
-    prioritize,
-    schedule,
-    skill_level,
-)
-from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, submit_sql, typed
 
-__version__ = (0, 2, 2)
+__version__ = use.Version("0.2.2")
 __author__ = "Anselm Kiefner"
+breakpoint()
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
+
+myappid = f"kiefnerit.watnu.{__version__}"
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 _translate = QCoreApplication.translate
 
@@ -93,14 +82,11 @@ def breakpoint_():
 class TrayIcon(QtWidgets.QSystemTrayIcon):
     def __init__(self, icon, parent):
         super().__init__(icon, parent)
-        menu = QtWidgets.QMenu()
-        self.setContextMenu(menu)
-        menu.triggered.connect(self.liste)
 
-    def liste(self):
-        win = task_list.TaskList()
-        app.list_of_task_lists.append(win)
-        win.show()
+        @self.activated.connect
+        def activated():
+            app.win_main.show()
+            app.win_main.raise_()
 
 
 if __name__ == "__main__":
@@ -109,13 +95,16 @@ if __name__ == "__main__":
     (path / "config.stay").touch()
     # overwriting the module with the instance for convenience
     config = config.read(path / "config.stay")
+    con = sqlite3.connect(config.db_path)
+    classes.set_globals(config)
+
     from ux import app
 
     app = app.Application(sys.argv)
     app.icon = QIcon(config.icon)
+    app.setWindowIcon(app.icon)
 
     seed((config.coin ^ config.lucky_num) * config.count)
-    classes.set_globals(config)
 
     db = QSqlDatabase.addDatabase("QSQLITE")
 
@@ -132,7 +121,7 @@ if __name__ == "__main__":
         concluded = win_landing.exec()
         if concluded:
             config.tutorial_active = False
-    db.setDatabaseName(config.database)
+    db.setDatabaseName(config.db_path)
 
     if not db.open():
         q("Could not open DB!")
@@ -148,52 +137,20 @@ if __name__ == "__main__":
         config.run_sql_stuff = False
         config.write()
         # just in case..
-        dbpath = path / config.database
-        backup = path / f"{config.database}.bak"
+        dbpath = path / config.db_path
+        backup = path / f"{config.db_path}.bak"
         backup.write_bytes(dbpath.read_bytes())  # nice way to copy a file
-        import sql_stuff
 
     app.list_of_task_lists: list["task_list.TaskList"] = []
     "Multiple TaskLists can be open at the same time."
     app.list_of_editors: list["task_editor.Editor"] = []
     "Multiple Editors can be open at the same time."
-    all_tasks = []
-    "All tasks from the DB loaded here."
 
     use(use.Path("ux/stuff.py"), initial_globals=initial_globals, import_as="ux.stuff")
 
-    from ux import (
-        attributions,
-        character,
-        companions,
-        inventory,
-        main_window,
-        settings,
-        task_editor,
-        task_list,
-        what_now,
-    )
+    from ux import task_editor, task_list
 
-    app.win_main = main_window.MainWindow()
-    app.win_main.setWindowIcon(app.icon)
-    app.win_main.statusBar.show()
-
-    greet_time = ["N'Abend", "Guten Morgen", "Guten Tag", "Guten Nachmittag", "Guten Abend", "Guten Abend"][
-        bisect_right([6, 11, 14, 18, 21, 25], datetime.now().hour)
-    ]
-    config.call_name = ""  # TODO converter in config.py?
-    app.win_main.statusBar.showMessage(
-        f"{greet_time}, willkommen zurück{f', {config.call_name}' if config.call_name else ''}!", 10000
-    )
-    app.win_what = what_now.What_Now()
-    app.win_character = character.Character()
-    app.win_settings = settings.Settings()
-    app.win_running = None
-    app.win_attributions = attributions.Attributions()
-    app.win_companions = companions.Companions()
-    app.win_inventory = inventory.Inventory()
-
-    app.last_edited_space: str = None
+    app.setUp(config)
 
     app.activity_color = {
         0: config.activity_color_body,
@@ -204,11 +161,11 @@ if __name__ == "__main__":
     if not db.tables():
         config.first_start = True
         config.write()
-        mb = QtWidgets.QMessageBox()
-        mb.setText("Found an empty DB. Everything has been reset. Shutting down - please restart!")
-        mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-        mb.setWindowTitle("Hmm..")
-        mb.exec()
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Restart required",
+            "Found an empty DB. Everything has been reset. Shutting down - please restart!",
+        )
         app.tray.hide()
         sys.exit()
 

@@ -12,8 +12,7 @@ import ui
 from classes import (EVERY, Every, Task)
 
 from .stuff import app, db, config, __version__
-
-def Chooser(editor: "ux.Editor", task: Task, kind: str):
+def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
     """Returns the fitting instance of a Chooser."""
 
     class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
@@ -157,7 +156,7 @@ def Chooser(editor: "ux.Editor", task: Task, kind: str):
             self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
     class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
-        def __init__(self, editor: ux.Editor, task: Task = None):
+        def __init__(self, editor: task_editor.Editor, task: Task = None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
@@ -204,4 +203,4 @@ def Chooser(editor: "ux.Editor", task: Task, kind: str):
         case "repeats":
             return RepeatChooser(editor, task)
 
-import ux
+from ux import task_editor

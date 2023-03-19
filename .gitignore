@@ -8,7 +8,7 @@ src/watnu/extra/
 src/watnu/*.TODO
 src/watnu.sqlite
 src/CODE*
-src/log
+src/logs/*
 box
 *sqlite
 config.stay

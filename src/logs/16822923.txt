@@ -1,3 +1,0 @@
-SQL failed ('main', 1410, 'accept'): 
-DELETE FROM deadlines WHERE task_id = 65
-            

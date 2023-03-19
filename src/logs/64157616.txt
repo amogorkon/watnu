@@ -1,3 +1,0 @@
-SQL failed ('main', 1415, 'accept'): 
-DELETE FROM repeats WHERE task_id = 65
-            

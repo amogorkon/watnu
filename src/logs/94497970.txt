@@ -1,3 +1,0 @@
-SQL failed ('classes', 437, 'required_by'): 
-        SELECT task_of_concern FROM task_requires_task WHERE required_task=Task(id=251)
-        

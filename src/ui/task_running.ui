@@ -353,7 +353,7 @@
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>erstelle neue Aufgabe (Entwurf)</string>
+        <string>erstelle neue Aufgabe</string>
        </property>
        <property name="shortcut">
         <string>6</string>

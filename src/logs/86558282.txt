@@ -1,3 +1,0 @@
-SQL failed ('classes', 404, 'priority'): 
-        SELECT priority FROM tasks WHERE id=Task(id=8)
-        

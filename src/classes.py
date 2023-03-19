@@ -1,14 +1,16 @@
 from collections import namedtuple
 from collections.abc import Generator
 from enum import Enum, Flag
+from functools import wraps
 from inspect import currentframe, getframeinfo
-
+from pathlib import Path
+from time import time
 from typing import Any, NamedTuple
 
+import use
 from beartype import beartype
 from PyQt6.QtSql import QSqlQuery
 
-import use
 np = use(
     "numpy",
     version="1.24.1",
@@ -19,9 +21,9 @@ np = use(
     },
 )
 
-q = use(use.Path("q.py"))
 import q
-from lib.utils import ASPECT, aspectized
+
+use(use.Path("lib/utils.py"), import_as="lib.utils")
 
 last_sql_access = 0
 
@@ -55,17 +57,14 @@ def iter_over(query):
         yield query.value
 
 
-from pathlib import Path
-from time import time
-
-
 def cached_and_invalidated(func):
     last_called = 0
     last_results = {}
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         nonlocal last_called, last_results
-        last_modified = Path(config.database).stat().st_mtime
+        last_modified = Path(config.db_path).stat().st_mtime
         if last_called > last_modified:
             res = func(*args, **kwargs)
             last_results[(args, tuple(kwargs.items()))] = res
@@ -80,6 +79,18 @@ def cached_and_invalidated(func):
         return res
 
     return wrapper
+
+
+def type_check_result(row: tuple, idx: int, kind: type, default=None, debugging=False):
+    if debugging and row is None:
+        breakpoint()
+
+    res = row[idx]
+    if isinstance(res, kind):
+        return res
+    if default is not None:
+        return default
+    raise ValueError(f"Expected {kind} but got {type(res)}")
 
 
 def typed(row, idx: int, kind: type, default: Any = ..., debugging=False):
@@ -149,19 +160,17 @@ class Task(NamedTuple):
     def delete(self):
         if not self.is_deleted:
             submit_sql(
-            f"""
+                f"""
         UPDATE tasks
         SET 'deleted' = True
         WHERE id == {self.id}
         """
-        )
+            )
         else:
             submit_sql(
                 f"""
                 DELETE FROM tasks where id == {self.id}
 """
-
-
             )
 
     @property
@@ -195,7 +204,6 @@ class Task(NamedTuple):
         WHERE id={self.id}
         """
         )
-        
 
     @property
     @cached_and_invalidated
@@ -624,3 +632,51 @@ SELECT template FROM tasks WHERE id={self.id}
         """
         )
         return typed(query.value, 0, int, default=None)
+
+
+class Task2:
+    __slots__ = (
+        "id",
+        "do",
+        "deleted",
+        "draft",
+        "inactive",
+        "done",
+        "primary_activity_id",
+        "secondary_activity_id",
+        "space_id",
+        "priority",
+        "level_id",
+        "adjust_time_spent",
+        "difficulty",
+        "fear",
+        "embarassment",
+        "last_checked",
+        "workload",
+        "ilk",
+        "notes",
+    )
+
+    def __init__(
+        self,
+            ID, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarassment, last_checked, workload, ilk,
+    ):
+        self.id = ID
+        self.do = do
+        self.deleted = deleted
+        self.draft = draft
+        self.inactive = inactive
+        self.done = done
+        self.primary_activity_id = primary_activity_id
+        self.secondary_activity_id = secondary_activity_id
+        self.space_id = space_id
+        self.priority = priority
+        self.level_id = level_id
+        self.adjust_time_spent = adjust_time_spent
+        self.difficulty = difficulty
+        self.fear = fear
+        self.embarassment = embarassment
+        self.last_checked = last_checked
+        self.workload = workload
+        self.ilk = ilk
+        self.notes = notes

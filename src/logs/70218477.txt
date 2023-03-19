@@ -1,1 +1,0 @@
-UNIQUE constraint failed: task_trains_skill.task_id, task_trains_skill.skill_id Unable to fetch row

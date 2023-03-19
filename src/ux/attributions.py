@@ -22,6 +22,7 @@ class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
         self.browser.setHtml(html)
         self.verticalLayout.addWidget(self.browser)
 
+
     def reject(self):
         super().reject()
         win_attributions = None

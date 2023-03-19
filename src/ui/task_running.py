@@ -13,9 +13,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(627, 540)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
@@ -23,9 +21,7 @@ class Ui_Dialog(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName("verticalLayout")
         self.groupBox = QtWidgets.QGroupBox(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(10)
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
@@ -48,9 +44,7 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.LCD_days)
         self.LCD_hours = QtWidgets.QLCDNumber(parent=self.groupBox)
         self.LCD_hours.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.LCD_hours.sizePolicy().hasHeightForWidth())
@@ -80,9 +74,7 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.LCD_seconds)
         self.verticalLayout.addWidget(self.groupBox)
         self.tabWidget = QtWidgets.QTabWidget(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
@@ -106,9 +98,7 @@ class Ui_Dialog(object):
         self.horizontalLayout_3.setContentsMargins(9, -1, -1, -1)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.task_space = QtWidgets.QLabel(parent=self.frame)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Minimum
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.task_space.sizePolicy().hasHeightForWidth())
@@ -127,9 +117,7 @@ class Ui_Dialog(object):
         self.horizontalLayout_2.addWidget(self.frame)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.desc = QtWidgets.QTextEdit(parent=self.common)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(10)
         sizePolicy.setHeightForWidth(self.desc.sizePolicy().hasHeightForWidth())
@@ -137,18 +125,14 @@ class Ui_Dialog(object):
         self.desc.setLineWidth(1)
         self.desc.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.desc.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.desc.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
-        )
+        self.desc.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
         self.desc.setUndoRedoEnabled(False)
         self.desc.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.FixedColumnWidth)
         self.desc.setLineWrapColumnOrWidth(95)
         self.desc.setReadOnly(True)
         self.desc.setObjectName("desc")
         self.verticalLayout_2.addWidget(self.desc)
-        spacerItem = QtWidgets.QSpacerItem(
-            20, 20, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding
-        )
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_2.addItem(spacerItem)
         self.open_resources = QtWidgets.QPushButton(parent=self.common)
         self.open_resources.setEnabled(False)
@@ -156,9 +140,7 @@ class Ui_Dialog(object):
         self.open_resources.setObjectName("open_resources")
         self.verticalLayout_2.addWidget(self.open_resources)
         self.notes = QtWidgets.QTextEdit(parent=self.common)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.MinimumExpanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(10)
         sizePolicy.setHeightForWidth(self.notes.sizePolicy().hasHeightForWidth())
@@ -167,20 +149,10 @@ class Ui_Dialog(object):
         self.notes.setAutoFormatting(QtWidgets.QTextEdit.AutoFormattingFlag.AutoAll)
         self.notes.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.FixedColumnWidth)
         self.notes.setLineWrapColumnOrWidth(95)
-        self.notes.setTextInteractionFlags(
-            QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard
-            | QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse
-            | QtCore.Qt.TextInteractionFlag.TextBrowserInteraction
-            | QtCore.Qt.TextInteractionFlag.TextEditable
-            | QtCore.Qt.TextInteractionFlag.TextEditorInteraction
-            | QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard
-            | QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self.notes.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse|QtCore.Qt.TextInteractionFlag.TextBrowserInteraction|QtCore.Qt.TextInteractionFlag.TextEditable|QtCore.Qt.TextInteractionFlag.TextEditorInteraction|QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard|QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
         self.notes.setObjectName("notes")
         self.verticalLayout_2.addWidget(self.notes)
-        spacerItem1 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_2.addItem(spacerItem1)
         self.tabWidget.addTab(self.common, "")
         self.verticalLayout.addWidget(self.tabWidget)
@@ -252,7 +224,7 @@ class Ui_Dialog(object):
         self.button5.setShortcut(_translate("Dialog", "5"))
         self.button8.setText(_translate("Dialog", "Aufgabe beendet"))
         self.button8.setShortcut(_translate("Dialog", "8"))
-        self.button6.setText(_translate("Dialog", "erstelle neue Aufgabe (Entwurf)"))
+        self.button6.setText(_translate("Dialog", "erstelle neue Aufgabe"))
         self.button6.setShortcut(_translate("Dialog", "6"))
         self.button4.setShortcut(_translate("Dialog", "4"))
         self.button2.setText(_translate("Dialog", "Pause"))

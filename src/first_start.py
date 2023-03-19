@@ -1,18 +1,12 @@
 print("FIRST START")
 
-
+import use
 from PyQt6.QtSql import QSqlDatabase
 
-
-from classes import submit_sql
-import config
+submit_sql = use(use.Path("classes.py")).submit_sql
 
 
-db = QSqlDatabase
-config = config.Config
-
-
-def run(db, config):
+def run(db: QSqlDatabase) -> None:
 
     ### CREATE SQL TABLES ###
     # qsql can't handle multiple statements >:|

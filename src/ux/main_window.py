@@ -14,9 +14,10 @@ load = stay.Decoder()
 import q
 import ui
 from classes import submit_sql
+from ux import about, attributions, task_editor, task_list
 
-from .stuff import app, db, config, __version__
-import ux
+from .stuff import __version__, app, config, db
+
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def __init__(self):
@@ -25,8 +26,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.about.triggered.connect
         def _():
-            win = ux.About()
-            win.exec()
+            about.About().exec()
 
         @self.actionReadme.triggered.connect
         def _():
@@ -34,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.attributions.triggered.connect
         def _():
-            app.win_attributions.show()
+            attributions.Attributions().exec()
 
         @self.button7.clicked.connect
         def _():
@@ -52,31 +52,35 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         @self.button4.clicked.connect
         def list_tasks():
             """Task List."""
-            win = ux.task_list.TaskList()
+            win = task_list.TaskList()
             win.show()
             app.list_of_task_lists.append(win)
 
         @self.button5.clicked.connect
         def whatnow():
             """Watnu?!"""
-            if app.win_what.lets_check_whats_next():
-                app.win_what.show()
-                self.hide()
+            self.statusBar.clearMessage()
+            self.statusBar.showMessage(
+                "Ermittle was als nächstes dran ist... das könnte eine Weile dauern...", 5000
+            )
+            self.repaint()
+            app.win_what.lets_check_whats_next()
+            app.win_what.show()
+            self.hide()
 
         @self.button6.clicked.connect
         def add_new_task():
             """Add new Task."""
-            win = ux.task_editor.Editor()
-            win.exec()
+            win = task_editor.Editor()
+            win.show()
+            app.list_of_editors.append(win)
 
         @self.button1.clicked.connect
         def statistics():
-            app.win_statistics = ux.statistics.Statistics()
             app.win_statistics.show()
 
         @self.button2.clicked.connect
         def character():
-            app.win_character = ux.character.Character()
             app.win_character.show()
 
         @self.button3.clicked.connect
@@ -108,7 +112,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def actionImport():
             win = QtWidgets.QDialog()
             options = QtWidgets.QFileDialog().options()
-            # options |= QtWidgets.QFileDialog.DontUseNativeDialog
             filename, _ = QtWidgets.QFileDialog.getOpenFileName(
                 win,
                 "Bitte wähle eine .todo Datei zum Importieren",
@@ -144,30 +147,33 @@ VALUES ('{d["do"]}',
                         )
 
     def closeEvent(self, event):
-        reply = QtWidgets.QMessageBox.question(
+        if app.win_running:
+            app.win_running.show()
+            app.win_running.raise_()
+            return
+
+        match QtWidgets.QMessageBox.question(
             self,
-            "Window Close",
-            "Are you sure you want to close the window?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No,
-        )
+            "Watnu beenden?",
+            "Bist du sicher, dass du Watnu beenden willst?",
+        ):
+            case QtWidgets.QMessageBox.StandardButton.Yes:
+                event.accept()
+                self.cleanup()
 
-        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            q(config.count)
-            if config.autostart and False:  # TODO
-                import getpass
+            case QtWidgets.QMessageBox.StandardButton.No:
+                event.ignore()
 
-                try:
-                    link = rf"C:\Users\{getpass.getuser()}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\Start Watnu.bat"
-                    import sys
-                    target = Path(sys.executable)
-                    with open(Path(link), "w+") as file:
-                        file.write(rf'start "" {target}')
-                except Exception as e:
-                    q(e, link, target)
-
-            config.write()
-            app.tray.setVisible(False)
-            event.accept()
-        else:
-            event.ignore()
+    def cleanup(self):
+        app.tray.setVisible(False)
+        app.win_what.close()
+        app.win_settings.close()
+        app.win_character.close()
+        app.win_companions.close()
+        app.win_inventory.close()
+        app.win_statistics.close()
+        for win in app.list_of_task_lists:
+            win.close()
+        for win in app.list_of_editors:
+            win.close()
+        config.write()

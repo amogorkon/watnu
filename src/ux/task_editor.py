@@ -1,21 +1,23 @@
 from collections import namedtuple
+from functools import partial
 
 import numpy as np
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QVariant
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlTableModel
+from PyQt6.QtWidgets import QWizard
 
 _translate = QCoreApplication.translate
 
 import q
-import ui
 from classes import ILK, Task, iter_over, submit_sql
+from ui import task_editor
 
 from .stuff import app, config, db
 
 
-class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
+class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
 
     def __init__(
@@ -28,8 +30,31 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         draft: bool = False,
     ):
         super().__init__()
-        self.activateWindow()
         self.setupUi(self)
+
+        self.task = task
+        self.cloning = cloning
+        self.templating = templating
+        self.as_sup = as_sup
+        self.current_space = current_space
+        self.draft = draft
+
+        if not task:
+            query = submit_sql("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
+            self.task = Task(query.lastInsertId())
+            self.draft = True
+        else:
+            self.task = task
+
+        self.setButtonText(QWizard.WizardButton.CustomButton1, "Entwurf speichern")
+        if not self.draft:
+            self.button(QWizard.WizardButton.CustomButton1).setEnabled(False)
+
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
+
+        self.activateWindow()
+
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         if cloning:
@@ -38,8 +63,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         if templating:
             self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
 
-        self.setOption(QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages, True)
-        self.task: Task = task
         self.cloning = cloning
         self.templating = templating
         self.subtasks: list[int] = []
@@ -73,6 +96,42 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.deadline = float("inf")
         self.repeats: namedtuple = None
 
+        menu = QtWidgets.QMenu()
+        menu.addAction("ohne Vorlage", self.create_task)
+        menu.addAction("als Klon von dieser Aufgabe", self.clone)
+        self.button6.setMenu(menu)
+
+        def set_as_draft():
+            self.set_as("draft", True)
+            self.button(QWizard.WizardButton.CustomButton1).setEnabled(True)
+
+        def set_as_not_draft():
+            self.set_as("draft", False)
+            self.button(QWizard.WizardButton.CustomButton1).setEnabled(False)
+
+        menu = QtWidgets.QMenu()
+        if self.task.is_done:
+            menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
+        else:
+            menu.addAction("erledigt", partial(self.set_as, "done", True))
+
+        if self.task.is_draft:
+            menu.addAction("kein Entwurf", set_as_not_draft)
+        else:
+            menu.addAction("Entwurf", set_as_draft)
+
+        if self.task.is_deleted:
+            menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+        else:
+            menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+
+        if not self.task.is_inactive:
+            menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+        else:
+            menu.addAction("aktiv", partial(self.set_as, "inactive", False))
+
+        self.button1.setMenu(menu)
+
         query = submit_sql(
             """
         SELECT activity_id, name FROM activities;
@@ -94,15 +153,16 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
             self.desc.document().setPlainText(task.do)
 
-            if task.ilk is ILK.habit:
-                self.is_habit.setChecked(True)
-            if task.ilk is ILK.tradition:
-                self.is_tradition.setChecked(True)
-            if task.ilk is ILK.routine:
-                self.is_routine.setChecked(True)
+            match task.ilk:
+                case ILK.habit:
+                    self.is_habit.setChecked(True)
+                case ILK.tradition:
+                    self.is_tradition.setChecked(True)
+                    self.button8.setEnabled(True)
+                case ILK.routine:
+                    self.is_routine.setChecked(True)
+                    self.button8.setEnabled(True)
 
-            if task.ilk in (ILK.tradition, ILK.routine):
-                self.button8.setEnabled(True)
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
             self.level.setCurrentIndex(self.level.findText(self.task.level))
@@ -157,52 +217,41 @@ WHERE url = '{text}'
             self.resources.removeItem(self.resources.currentIndex())
 
         @self.button1.clicked.connect
-        def subtasks_button():
-            q("button1 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="subtasks")
-            dialog.exec()
+        def set_status():
+            pass
 
         @self.button2.clicked.connect
         def time_constraints_button():
-            q("button2 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="constraints")
-            dialog.exec()
+            chooser.Chooser(self, self.task, kind="constraints").exec()
 
         @self.button3.clicked.connect
-        def _():
-            q("button3 clicked", self.task)
+        def organise():
+            pass
 
         @self.button4.clicked.connect
         def _():
-            q("button4 clicked", self.task)
+            pass
 
         @self.button5.clicked.connect
-        def _():
-            q("button5 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="deadline")
-            dialog.exec()
+        def start_button():
+            self.accept()
+            task_running.Running(self.task)
 
         @self.button6.clicked.connect
         def _():
-            q("button6 clicked", self.task)
+            pass
 
         @self.button7.clicked.connect
-        def supertasks_button():
-            q("button7 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="supertasks")
-            dialog.exec()
+        def deadline():
+            chooser.Chooser(self, self.task, kind="deadline").exec()
 
         @self.button8.clicked.connect
-        def _():
-            q("button8 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="repeats")
-            dialog.exec()
+        def repeats_button():
+            chooser.Chooser(self, self.task, kind="repeats").exec()
 
         @self.button9.clicked.connect
         def skills_button():
-            q("button9 clicked", self.task)
-            dialog = ux.chooser.Chooser(self, self.task, kind="skills")
-            dialog.exec()
+            chooser.Chooser(self, self.task, kind="skills").exec()
 
         @self.space.currentIndexChanged.connect
         def _():
@@ -231,16 +280,15 @@ WHERE space_id = {space_id}
     def accept(self):
         # TODO check sanity for traditions and routines
         super().accept()
-        global last_edited_space
 
         do = self.desc.toPlainText()
-        priority: float = self.priority.value()
-        space_id: int = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
+        priority = self.priority.value()
+        space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
 
-        last_edited_space = self.space.currentText()
+        app.last_edited_space = self.space.currentText()
         primary_activity_id = x if (x := self.activity.currentData()) is not None else "NULL"
         secondary_activity_id = x if (x := self.secondary_activity.currentData()) is not None else "NULL"
-        level_id: int = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
+        level_id = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
 
         task_type = ILK.task
         if self.is_habit.isChecked():
@@ -250,38 +298,10 @@ WHERE space_id = {space_id}
         if self.is_tradition.isChecked():
             task_type = ILK.tradition
 
-        task_id: int
+        task_id = self.task.id
 
-        # it really is a new task
-        if not self.task or self.cloning or self.templating:
-            query = submit_sql(
-                f"""
-INSERT INTO tasks 
-(do, 
-space_id, 
-primary_activity_id,
-secondary_activity_id,
-ilk,
-level_id
-)
-
-VALUES 
-('{do}', 
-{x if (x := space_id) is not None else 0},
-{primary_activity_id},
-{secondary_activity_id},
-{task_type.value},
-{level_id}
-);
-"""
-            )
-
-            task_id = query.lastInsertId()
-
-        else:
-            task_id = self.task.id
-            submit_sql(
-                f"""
+        submit_sql(
+            f"""
 UPDATE tasks 
 SET do = '{do}',
     priority = {priority},
@@ -290,46 +310,47 @@ SET do = '{do}',
     secondary_activity_id = {secondary_activity_id},
     space_id = {space_id},
     ilk = {task_type.value}
+    draft = FALSE
 WHERE id={task_id}
 """,
-                debugging=True,
-            )
-            # need to clean up first
-            submit_sql(
-                f"""
+            debugging=True,
+        )
+        # need to clean up first
+        submit_sql(
+            f"""
 DELETE FROM task_requires_task WHERE task_of_concern == {task_id}
-    """
-            )
-            submit_sql(
-                f"""
+"""
+        )
+        submit_sql(
+            f"""
 DELETE FROM task_requires_task WHERE required_task == {task_id}
 """
-            )
-            submit_sql(
-                f"""
+        )
+        submit_sql(
+            f"""
 DELETE FROM task_uses_resource WHERE task_id = {task_id}
-    """
-            )
-            submit_sql(
-                f"""
+"""
+        )
+        submit_sql(
+            f"""
 DELETE FROM task_trains_skill WHERE task_id = {task_id}
-    """
-            )
-            submit_sql(
-                f"""
+"""
+        )
+        submit_sql(
+            f"""
 DELETE FROM constraints WHERE task_id = {task_id}
-            """
-            )
-            submit_sql(
-                f"""
+        """
+        )
+        submit_sql(
+            f"""
 DELETE FROM deadlines WHERE task_id = {task_id}
-            """
-            )
-            submit_sql(
-                f"""
+        """
+        )
+        submit_sql(
+            f"""
 DELETE FROM repeats WHERE task_id = {task_id}
-            """
-            )
+        """
+        )
 
         # enter fresh, no matter whether new or old
 
@@ -407,6 +428,46 @@ VALUES (
 
     def reject(self):
         super().reject()
+        if self.task.do == "" and self.task.notes == "":
+            submit_sql(
+                f"""
+                DELETE FROM tasks where id == {self.task.id}
+"""
+            )
+
+    def create_task(self):
+        win = Editor()
+        app.list_of_editors.append(win)
+        win.show()
+
+    def clone(self):
+        win = Editor()
+        win.supertasks = self.supertasks
+        win.subtasks = self.subtasks
+        win.desc.document().setPlainText(self.desc.document().toRawText())
+        win.notes.document().setPlainText(self.notes.document().toRawText())
+        win.space.setCurrentIndex(self.space.currentIndex())
+        win.level.setCurrentIndex(self.level.currentIndex())
+        win.constraints = self.constraints
+        win.deadline = self.deadline
+        win.repeats = self.repeats
+        win.skill_ids = self.skill_ids
+        win.priority.setValue(self.priority.value())
+
+        app.list_of_editors.append(win)
+        win.show()
+
+    def set_as(self, status: str, set_flag):
+        if status == "done" and set_flag:
+            task_finished.Task_Finished(self.task).exec()
+        else:
+            submit_sql(
+                f"""
+UPDATE tasks
+SET '{property}' = {set_flag}
+WHERE id == {self.task.id}
+"""
+            )
 
 
-import ux
+from ux import chooser, task_finished, task_running

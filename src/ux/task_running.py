@@ -2,7 +2,7 @@ import webbrowser
 from collections import defaultdict
 from datetime import datetime
 from math import modf, sin
-from random import seed
+from random import choice, seed
 from time import time
 
 from PyQt6 import QtGui, QtWidgets
@@ -12,7 +12,7 @@ from PyQt6.QtSql import QSqlDatabase
 import config
 import q
 import ui
-from algo import (
+from logic import (
     balance,
     check_task_conditions,
     constraints_met,
@@ -25,11 +25,18 @@ from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, 
 from config import Config
 from ux import app, task_editor, task_finished, task_running
 
-from .stuff import app, db, config, __version__
+from .stuff import __version__, app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
     def __init__(self, task):
+        if app.win_running is not None:
+            app.win_running.show()
+            app.win_running.raise_()
+            return
+        else:
+            app.win_running = self
+
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(
@@ -244,8 +251,9 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         then = datetime.fromtimestamp(last_started)
 
         if now.date() != then.date():
-            mb = QtWidgets.QMessageBox()
-            mb.setText(
+            QtWidgets.QMessageBox.information(
+                self,
+                "Checkliste",
                 """
 Checkliste für optimale Produktivität:
 - Raumtemperatur bei 21°C?
@@ -255,49 +263,21 @@ Checkliste für optimale Produktivität:
 - Ausgeruht? Geist fokusiert?
 - Körper in Schwung?
 - Das Richtige auf den Ohren?
-"""
+""",
             )
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
-        query = submit_sql(
-            """
-        SELECT text, mantra_id
-        FROM mantras
-        ORDER BY last_time ASC;
-        """
-        )
+        mantra = choice(config.mantras.read_text(encoding="utf8").splitlines())
 
-        mantra_id = None
-
-        if not query.next():
-            mantra = None
-        else:
-            mantra, mantra_id = query.value(0), query.value(1)
-
-        td = now - then
-
-        mb = QtWidgets.QMessageBox()
-        mb.setText(
+        QtWidgets.QMessageBox.information(
+            self,
+            "Gesundheitshinweis",
             f"""
-Gesundheitshinweis:
 Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
-Und denk dran: 
-{mantra or "Always look on the bright side of life!"}
-"""
-        )
 
-        if mantra:
-            submit_sql(
-                f"""
-    UPDATE mantras
-    SET last_time = {int(time())}
-    WHERE mantra_id = {mantra_id}
-    """
-            )
-            mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/alert-triangle.svg"))
-            mb.setWindowTitle("Hmm..")
-            mb.exec()
+
+
+{mantra or "Always look on the bright side of life!"}
+""",
+        )
 
     def finished(self):
         for win in app.list_of_task_lists:

@@ -6,11 +6,12 @@ from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox
 
 import ui
-from algo import skill_level
+from logic import skill_level
 from classes import ILK, Task, submit_sql
-
-from .stuff import app, db, config
 from ux import task_editor
+
+from .stuff import app, config, db
+
 
 class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(
@@ -84,33 +85,30 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
 
         for x, y in zip(self.old_skills, new_skills):
             if x[1] < y[1]:
-                mb = QtWidgets.QMessageBox()
-                mb.setText(
+
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "⭐ LEVEL UP!⭐",
                     """
 YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
-"""
+""",
                 )
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/star.svg"))
-                mb.setWindowTitle("LEVEL UP")
-                mb.exec()
 
         for win in app.list_of_task_lists:
             win.button5.setEnabled(True)
             win.build_task_list()
-        app.win_what.lets_check_whats_next()
 
         if self.task.ilk is ILK.tradition:
-            mb = QMessageBox()
-            mb.setText(
+            match QMessageBox(
+                self,
+                "Bitte bestätigen!",
                 """
 Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den nächsten Stichtag erstellt werden?
-"""
-            )
-            mb.setInformativeText("Bitte bestätigen!")
-            mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-            mb.setDefaultButton(QMessageBox.Yes)
-            # TODO check on edit if deadline and repeat is set for tradition
-            if mb.exec():
-                win = task_editor.Editor(task=self.task, draft=True)
-                win.exec()
+""",
+            ):
+                case QMessageBox.StandardButton.Yes:
+                    # TODO check on edit if deadline and repeat is set for tradition
+                    win = task_editor.Editor(task=self.task, draft=True)
+                    app.list_of_editors.append(win)
+                    win.exec()
         return True

@@ -1,3 +1,0 @@
-SQL failed ('main', 1405, 'accept'): 
-DELETE FROM constraints WHERE task_id = 65
-            

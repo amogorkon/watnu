@@ -10,7 +10,7 @@ import q
 import ui
 from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
 
-from .stuff import app, db, config, __version__
+from .stuff import __version__, app, config, db
 
 
 class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
@@ -99,20 +99,15 @@ WHERE sessions.task_id = tasks.id)
             skill_id = self.skills_table.item(x, 1).data(Qt.ItemDataRole.UserRole)
             name = self.skills_table.item(x, 1).text()
 
-            mb = QMessageBox()
-            mb.setText(f"Wirklich Fähigkeit '{name}' löschen?")
-            mb.setInformativeText("Bitte bestätigen!")
-            mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-            mb.setDefaultButton(QMessageBox.No)
-
-            if mb.exec() == QMessageBox.Yes:
-                submit_sql(
-                    f"""
-DELETE FROM skills WHERE skill_id == {skill_id};
-"""
-                )
-                self.skills_table.removeRow(x)
-                self.update()
+            match QMessageBox.question(self, "Bitte bestätigen!", f"Wirklich Fähigkeit '{name}' löschen?"):
+                case QMessageBox.StandardButton.Yes:
+                    submit_sql(
+                        f"""
+    DELETE FROM skills WHERE skill_id == {skill_id};
+    """
+                    )
+                    self.skills_table.removeRow(x)
+                    self.update()
 
         # SPACES
 
@@ -140,20 +135,15 @@ VALUES ('{text}')
             space_id = self.spaces_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
             name = self.spaces_table.item(x, 0).text()
 
-            mb = QMessageBox()
-            mb.setText(f"Wirklich Space '{name}' löschen?")
-            mb.setInformativeText("Bitte bestätigen!")
-            mb.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-            mb.setDefaultButton(QMessageBox.No)
-
-            if mb.exec() == QMessageBox.Yes:
-                submit_sql(
-                    f"""
-DELETE FROM spaces WHERE space_id == {space_id};
-"""
-                )
-                self.spaces_table.removeRow(x)
-                self.update()
+            match QMessageBox.question(self, "Bitte bestätigen!", f"Wirklich Space '{name}' löschen?"):
+                case QMessageBox.StandardButton.Yes:
+                    submit_sql(
+                        f"""
+    DELETE FROM spaces WHERE space_id == {space_id};
+    """
+                    )
+                    self.spaces_table.removeRow(x)
+                    self.update()
 
         @self.spaces_table.itemSelectionChanged.connect
         def _():
@@ -297,3 +287,5 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
     def reject(self):
         super().reject()
         self.hide()
+        app.win_main.show()
+        app.win_main.raise_()

@@ -244,20 +244,21 @@ from functools import cache, wraps
 
 
 def flagged_cache(func):
-    last_res = None
+    last_res = ...
 
     @wraps(func)
     def wrapper(
         *args,
-        db_modified=False,
         **kwargs,
     ):
         nonlocal last_res
-        if db_modified:
+        if kwargs.get("db_modified", False) or last_res is ...:
             last_res = func(*args, **kwargs)
             return last_res
         else:
             return last_res
+
+    return wrapper
 
 
 @use.woody_logger
@@ -268,9 +269,8 @@ def tasks(con, /, *, db_modified: bool) -> list[Task2]:
         SELECT id, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarassment, last_checked, workload, ilk FROM tasks;
     """
     )
-    app.db_modified = False
 
-    return list(
+    return [
         Task2(
             ID,
             do,
@@ -293,8 +293,11 @@ def tasks(con, /, *, db_modified: bool) -> list[Task2]:
             ilk,
         )
         for ID, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarassment, last_checked, workload, ilk in query.fetchall()
-    )
+    ]
 
 
-def consider_tasks(tasks: Iterable[Task2]) -> Iterable[Task2]:
+def consider_tasks(tasks: list[Task2]) -> Iterable[Task2]:
     return filter(lambda t: not t.deleted and not t.draft and not t.inactive, tasks)
+
+
+

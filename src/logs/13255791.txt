@@ -1,4 +1,0 @@
-SQL failed ('first_start', 165, 'run'): 
-            INSERT INTO spaces (name)
-            VALUES ('Hobby')
-            

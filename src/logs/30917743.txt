@@ -1,6 +1,0 @@
-SQL failed ('main', 1442, 'accept'): 
-INSERT INTO task_trains_skill
-(task_id, skill_id)
-VALUES (
-65, 2
-    );

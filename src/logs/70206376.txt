@@ -1,4 +1,0 @@
-SQL failed ('task_editor', 466, 'set_as'): 
-UPDATE tasks
-SET '<class 'property'>' = False
-WHERE id == 344

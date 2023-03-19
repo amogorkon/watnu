@@ -1,4 +1,0 @@
-SQL failed ('first_start', 149, 'run'): 
-        INSERT INTO levels (name, level_id)
-        VALUES ('COULD', 0)
-        

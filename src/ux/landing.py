@@ -5,7 +5,9 @@ _translate = QCoreApplication.translate
 
 import ui
 
-from .stuff import app, db, config, __version__
+from .stuff import __version__, app, config, db
+
+
 class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
     def __init__(self):
         super().__init__()
@@ -27,7 +29,7 @@ class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
         self.pushButton_2.clicked.connect(lambda: self.db_file_name.setText(""))
 
     def done(self, status):
-        config.database = self.db_file_name.text() or "watnu.sqlite"
+        config.db_path = self.db_file_name.text() or "watnu.sqlite"
         import first_start
 
         first_start.run(db, config)

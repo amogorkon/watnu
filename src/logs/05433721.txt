@@ -1,9 +1,0 @@
-SQL failed ('first_start', 144, 'run'): 
-
-CREATE TABLE "deadlines" (
-    "deadline_id"	INTEGER NOT NULL UNIQUE,
-    "task_id"	INTEGER NOT NULL,
-    "time_of_reference"	REAL NOT NULL,
-    PRIMARY KEY("deadline_id" AUTOINCREMENT),
-    FOREIGN KEY("task_id") REFERENCES "tasks"("id") ON DELETE CASCADE
-)
