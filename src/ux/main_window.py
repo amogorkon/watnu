@@ -1,3 +1,4 @@
+import sqlite3
 import webbrowser
 from collections import defaultdict
 from pathlib import Path
@@ -12,11 +13,13 @@ import stay
 load = stay.Decoder()
 
 import q
+
 import ui
-from classes import submit_sql
 from ux import about, attributions, task_editor, task_list
 
 from .stuff import __version__, app, config, db
+
+db: sqlite3.Connection
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
@@ -129,14 +132,14 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
                             q(f"Tried to load a task with nothing to 'do': {d.items()}.")
                             continue
 
-                        submit_sql(
+                        db.execute(
                             f"""
 INSERT OR IGNORE INTO spaces (name)
 VALUES ('{d["space"]}')
 """
                         )
 
-                        submit_sql(
+                        db.execute(
                             f"""
 INSERT INTO tasks (do, space_id, done)
 VALUES ('{d["do"]}',

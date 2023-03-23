@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime
 from functools import partial
 from itertools import count
@@ -6,19 +7,21 @@ from pathlib import Path
 from random import choice, seed
 from time import time, time_ns
 
+import q
 import use
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
-import q
 import ui
-from logic import filter_tasks
-from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
+from classes import Task2, cached_and_invalidated, typed
+from logic import filter_tasks, get_tasks
 from ux import task_editor, task_finished, task_running
 
 from .stuff import app, config, db
+
+db: sqlite3.Connection
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
@@ -31,6 +34,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         "Timer for polling if the db has changed and regenerate the list."
         self.timer.start(100)
         self.last_generated = 0
+        self.tasks: list[Task2] = []
 
         @self.timer.timeout.connect
         def db_changed_check():
@@ -53,7 +57,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                     case _:
                         return
             for x in selected:
-                task: Task = x.data(Qt.ItemDataRole.UserRole)
+                task: Task2 = x.data(Qt.ItemDataRole.UserRole)
                 task.delete()
             self.build_task_list()
 
@@ -63,12 +67,12 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         def build_space_list():
             self.space.clear()
-            query = submit_sql(
+            query = db.execute(
                 """
             SELECT space_id, name FROM spaces;
             """
             )
-            for row in iter_over(query):
+            for row in query.fetchall():
                 space_id = typed(row, 0, int)
                 space_name = typed(row, 1, str)
                 self.space.addItem(space_name, QVariant(space_id))
@@ -83,8 +87,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             self.build_task_list()
             config.last_selected_space = self.space.currentIndex()
             config.write()
-
-        self.tasks = []
 
         menu = QtWidgets.QMenu()
         menu.addAction("genau so", self.clone_as_is)
@@ -106,7 +108,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.EchoMode.Normal, ""
             )
             if okPressed and text != "":
-                submit_sql(
+                db.execute(
                     f"""
 INSERT OR IGNORE INTO spaces (name)
 VALUES ('{text}')
@@ -128,7 +130,7 @@ VALUES ('{text}')
                     f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
                 ):
                     case QtWidgets.QMessageBox.StandardButton.Yes:
-                        submit_sql(
+                        db.execute(
                             f"""
 DELETE FROM spaces where name=='{space_name}'
 """
@@ -285,7 +287,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.filter_timer.timeout.connect
         def filter_changed():
-            self.arrange_list(filter_tasks(self.tasks, self.field_filter.text().casefold()))
+            self.arrange_list(list(filter_tasks(self.tasks, self.field_filter.text().casefold())))
             self.update()
             self.filter_timer.stop()
 
@@ -298,7 +300,7 @@ DELETE FROM spaces where name=='{space_name}'
         for x in X:
             task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
 
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE tasks
 SET 'deleted' = False, 'done' = False, 'draft' = False, 'inactive' = False
@@ -313,11 +315,11 @@ WHERE id == {task.id}
             return
 
         for x in X:
-            task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
+            task: Task2 = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
             if property == "done" and set_flag:
                 task_finished.Task_Finished(task).exec()
             else:
-                submit_sql(
+                db.execute(
                     f"""
 UPDATE tasks
 SET '{property}' = {set_flag}
@@ -357,63 +359,49 @@ WHERE id == {task.id}
         win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
-    @cached_and_invalidated
-    def build_task_list(self):
+    def build_task_list(self, db_modified=False):
         self.last_generated = time()
 
         selected_space = self.space.itemData(self.space.currentIndex())
-        if self.status.currentIndex() == 0:
-            query = submit_sql(
-                f"""
-SELECT id FROM tasks
-WHERE
-done == FALSE AND
-deleted == FALSE AND
-draft == FALSE AND
-inactive == FALSE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-            )
-        if self.status.currentIndex() == 1:
-            query = submit_sql(
-                f"""
-SELECT id FROM tasks 
-WHERE 
-draft == TRUE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-            )
-        if self.status.currentIndex() == 2:
-            query = submit_sql(
-                f"""
-SELECT id FROM tasks 
-WHERE 
-inactive == TRUE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-            )
-        if self.status.currentIndex() == 3:
-            query = submit_sql(
-                f"""
-SELECT id FROM tasks 
-WHERE 
-done == TRUE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-            )
-        if self.status.currentIndex() == 4:
-            query = submit_sql(
-                f"""
-SELECT id FROM tasks 
-WHERE 
-deleted == TRUE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-            )
 
-        self.tasks = [Task(typed(row, 0, int)) for row in iter_over(query)]
-        filter_text = self.field_filter.text().casefold()
-        self.arrange_list(filter_tasks(self.tasks, filter_text))
+        match self.status.currentIndex():
+            # open
+            case 0:
+                tasks = filter(
+                    lambda t: not t.done
+                    and not t.draft
+                    and not t.inactive
+                    and not t.deleted
+                    and (t.space_id == selected_space if selected_space else True),
+                    get_tasks(db),
+                )
+            # draft
+            case 1:
+                tasks = filter(
+                    lambda t: t.draft and (t.space_id == selected_space if selected_space else True),
+                    get_tasks(db),
+                )
+            # inactive
+            case 2:
+                tasks = filter(
+                    lambda t: t.inactive and (t.space_id == selected_space if selected_space else True),
+                    get_tasks(db),
+                )
+            # done
+            case 3:
+                tasks = filter(
+                    lambda t: t.done and (t.space_id == selected_space if selected_space else True),
+                    get_tasks(db),
+                )
+            # deleted
+            case 4:
+                tasks = filter(
+                    lambda t: t.deleted and (t.space_id == selected_space if selected_space else True),
+                    get_tasks(db),
+                )
+
+        self.tasks = list(filter_tasks(tasks, self.field_filter.text().casefold()))
+        self.arrange_list(self.tasks)
         self.update()
 
     def reject(self):
@@ -428,7 +416,7 @@ deleted == TRUE
         app.list_of_task_lists.remove(self)
 
     @use.woody_logger
-    def arrange_list(self, tasks):
+    def arrange_list(self, tasks: list[Task2]):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         self.task_list.hide()
         self.task_list.clear()
@@ -454,7 +442,7 @@ deleted == TRUE
                     desc = lines[0] + ("" if len(lines) == 1 else " […]")
                     item = QtWidgets.QTableWidgetItem(desc)
                     item.setFont(font)
-                    item.setToolTip(task.space)
+                    item.setToolTip(task.get_space())
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     self.task_list.setItem(i, 0, item)
 

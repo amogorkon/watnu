@@ -1,24 +1,22 @@
-from PyQt6.QtSql import QSqlQuery
-from classes import iter_over
-from classes import submit_sql
+import sqlite3
 
-query = submit_sql(
-    f"""
+from config import Config
+
+config: Config
+db: sqlite3.Connection
+
+query = db.execute(
+    """
 SELECT id, deadline FROM tasks
 WHERE deadline != "Infinity";
 """
 )
 
-for row in iter_over(query):
-    deadline_query = submit_sql(
+for task_id, deadline in query.fetchall():
+    deadline_query = db.execute(
         f"""
 INSERT OR IGNORE INTO deadlines
 (task_id, time_of_reference)
-VALUES ({row(0)}, {row(1)})
+VALUES ({task_id}, {deadline})
 		"""
     )
-
-
-import sys
-
-sys.exit()

@@ -1,3 +1,4 @@
+import sqlite3
 from collections import namedtuple
 from functools import partial
 
@@ -11,18 +12,24 @@ from PyQt6.QtWidgets import QWizard
 _translate = QCoreApplication.translate
 
 import q
-from classes import ILK, Task, iter_over, submit_sql
+from beartype import beartype
+
+from classes import ILK, Task2
+from logic import retrieve_task_by_id
 from ui import task_editor
 
 from .stuff import app, config, db
 
+db: sqlite3.Connection
 
+
+@beartype
 class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
 
     def __init__(
         self,
-        task: Task = None,
+        task: Task2 = None,
         cloning: bool = False,
         templating: bool = False,
         as_sup: bool = 0,
@@ -40,8 +47,8 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         self.draft = draft
 
         if not task:
-            query = submit_sql("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
-            self.task = Task(query.lastInsertId())
+            query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
+            self.task = retrieve_task_by_id(db, query.lastrowid)
             self.draft = True
         else:
             self.task = task
@@ -110,41 +117,41 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
             self.button(QWizard.WizardButton.CustomButton1).setEnabled(False)
 
         menu = QtWidgets.QMenu()
-        if self.task.is_done:
+        if self.task.done:
             menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
         else:
             menu.addAction("erledigt", partial(self.set_as, "done", True))
 
-        if self.task.is_draft:
+        if self.task.draft:
             menu.addAction("kein Entwurf", set_as_not_draft)
         else:
             menu.addAction("Entwurf", set_as_draft)
 
-        if self.task.is_deleted:
+        if self.task.deleted:
             menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
         else:
             menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
 
-        if not self.task.is_inactive:
+        if not self.task.inactive:
             menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
         else:
             menu.addAction("aktiv", partial(self.set_as, "inactive", False))
 
         self.button1.setMenu(menu)
 
-        query = submit_sql(
+        query = db.execute(
             """
         SELECT activity_id, name FROM activities;
         """
         )
 
-        for i, row in enumerate(iter_over(query)):
-            self.activity.addItem(row(1), QVariant(row(0)))
-            self.secondary_activity.addItem(row(1), QVariant(row(0)))
+        for i, (activity_id, name) in enumerate(query.fetchall()):
+            self.activity.addItem(name, QVariant(activity_id))
+            self.secondary_activity.addItem(name, activity_id)
 
         # editing a task - need to set all values accordingly
         if task:
-            self.deadline = task.deadline
+            self.deadline = task.get_deadline()
             self.skill_ids = self.task.skill_ids
             self.priority.setValue(task.priority)
 
@@ -164,7 +171,7 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
                     self.button8.setEnabled(True)
 
             self.notes.document().setPlainText(task.notes)
-            self.space.setCurrentIndex(self.space.findText(self.task.space))
+            self.space.setCurrentIndex(self.space.findText(self.task.get_space()))
             self.level.setCurrentIndex(self.level.findText(self.task.level))
             self.activity.setCurrentIndex(self.activity.findText(self.task.activity))
             self.secondary_activity.setCurrentIndex(
@@ -194,14 +201,14 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
             )
 
             if okPressed and text != "":
-                submit_sql(
+                db.execute(
                     f"""
 INSERT OR IGNORE INTO resources
 (url)
 VALUES ('{text}')
 """
                 )
-                query = submit_sql(
+                query = db.execute(
                     f"""
 SELECT resource_id
 FROM resources
@@ -257,15 +264,13 @@ WHERE url = '{text}'
         def _():
             space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
             if space_id is not None:
-                for row in iter_over(
-                    submit_sql(
-                        f"""
+                for row in db.execute(
+                    f"""
 SELECT primary_activity_id, secondary_activity_id
 FROM spaces
 WHERE space_id = {space_id}
                 """
-                    )
-                ):
+                ).fetchall():
                     if row(0):
                         self.activity.setCurrentIndex(self.activity.findData(QVariant(row(0))))
                     else:
@@ -300,7 +305,7 @@ WHERE space_id = {space_id}
 
         task_id = self.task.id
 
-        submit_sql(
+        db.execute(
             f"""
 UPDATE tasks 
 SET do = '{do}',
@@ -316,37 +321,37 @@ WHERE id={task_id}
             debugging=True,
         )
         # need to clean up first
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM task_requires_task WHERE task_of_concern == {task_id}
 """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM task_requires_task WHERE required_task == {task_id}
 """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM task_uses_resource WHERE task_id = {task_id}
 """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM task_trains_skill WHERE task_id = {task_id}
 """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM constraints WHERE task_id = {task_id}
         """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM deadlines WHERE task_id = {task_id}
         """
         )
-        submit_sql(
+        db.execute(
             f"""
 DELETE FROM repeats WHERE task_id = {task_id}
         """
@@ -355,7 +360,7 @@ DELETE FROM repeats WHERE task_id = {task_id}
         # enter fresh, no matter whether new or old
 
         for required_task in self.subtasks:
-            submit_sql(
+            db.execute(
                 f"""
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
@@ -364,7 +369,7 @@ VALUES ({task_id}, {required_task})
 """
             )
         for task_of_concern in self.supertasks:
-            submit_sql(
+            db.execute(
                 f"""
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
@@ -373,7 +378,7 @@ VALUES ({task_of_concern}, {task_id})
 """
             )
         for skill_id in self.skill_ids:
-            submit_sql(
+            db.execute(
                 f"""
 INSERT INTO task_trains_skill
 (task_id, skill_id)
@@ -383,7 +388,7 @@ VALUES (
 """
             )
         for i in range(self.resources.count()):
-            submit_sql(
+            db.execute(
                 f"""
 INSERT INTO task_uses_resource
 (task_id, resource_id)
@@ -391,7 +396,7 @@ VALUES ({task_id}, {self.resources.itemData(i)});
 """
             )
         if np.any(self.constraints):
-            submit_sql(
+            db.execute(
                 f"""
     INSERT INTO constraints
     (task_id, flags)
@@ -399,7 +404,7 @@ VALUES ({task_id}, {self.resources.itemData(i)});
             """
             )
         if self.deadline != float("inf"):
-            submit_sql(
+            db.execute(
                 f"""
 INSERT INTO deadlines
 (task_id, time_of_reference)
@@ -408,7 +413,7 @@ VALUES ({task_id}, '{self.deadline}')
             )
 
         if self.repeats is not None:
-            submit_sql(
+            db.execute(
                 f"""
 INSERT INTO repeats
 (task_id, every_ilk, x_every, min_distance, x_per)
@@ -429,7 +434,7 @@ VALUES (
     def reject(self):
         super().reject()
         if self.task.do == "" and self.task.notes == "":
-            submit_sql(
+            db.execute(
                 f"""
                 DELETE FROM tasks where id == {self.task.id}
 """
@@ -461,7 +466,7 @@ VALUES (
         if status == "done" and set_flag:
             task_finished.Task_Finished(self.task).exec()
         else:
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE tasks
 SET '{property}' = {set_flag}

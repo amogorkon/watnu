@@ -3,16 +3,17 @@ from datetime import datetime
 import numpy as np
 
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import (QDate, QDateTime,
-                          QItemSelectionModel, Qt)
+from PyQt6.QtCore import QDate, QDateTime, QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 from dateutil.relativedelta import relativedelta
 
 import ui
-from classes import (EVERY, Every, Task)
+from classes import EVERY, Every, Task2
 
 from .stuff import app, db, config, __version__
-def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
+
+
+def Chooser(editor: "task_editor.Editor", task: Task2, kind: str):
     """Returns the fitting instance of a Chooser."""
 
     class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
@@ -61,7 +62,7 @@ def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
                 # holy crap, that was a difficult birth..
                 self.listView.selectionModel().clear()
                 for index in range(model.rowCount()):
-                    if Task(model.itemData(model.index(index, 0))[0]) in task.subtasks:
+                    if model.itemData(model.index(index, 0))[0] in [t.id for t in task.subtasks]:
                         self.listView.selectionModel().select(
                             model.index(index, 1), QItemSelectionModel.Select
                         )
@@ -88,7 +89,7 @@ def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
                 # holy crap, that was a difficult birth..
                 self.listView.selectionModel().clear()
                 for index in range(model.rowCount()):
-                    if Task(model.itemData(model.index(index, 0))[0]) in task.supertasks:
+                    if model.itemData(model.index(index, 0))[0] in [t.id for t in task.supertasks]:
                         self.listView.selectionModel().select(
                             model.index(index, 1), QItemSelectionModel.Select
                         )
@@ -99,7 +100,7 @@ def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
             ]
 
     class ConstraintChooser(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):
-        def __init__(self, editor, task: Task = None):
+        def __init__(self, editor, task: Task2 = None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
@@ -156,7 +157,7 @@ def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
             self.editor.deadline = self.reference_date.dateTime().toSecsSinceEpoch()
 
     class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
-        def __init__(self, editor: task_editor.Editor, task: Task = None):
+        def __init__(self, editor: task_editor.Editor, task: Task2 = None):
             super().__init__()
             self.setupUi(self)
             self.editor = editor
@@ -202,5 +203,6 @@ def Chooser(editor: "task_editor.Editor", task: Task, kind: str):
             return ConstraintChooser(editor, task)
         case "repeats":
             return RepeatChooser(editor, task)
+
 
 from ux import task_editor

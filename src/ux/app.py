@@ -1,12 +1,14 @@
+import sqlite3
 from bisect import bisect_right
 from datetime import datetime
 
-import use
+import q
 from PyQt6 import QtWidgets
 
-import q
-from classes import Task, cached_and_invalidated, iter_over, submit_sql, Task2
 from config import Config
+
+config: Config
+db: sqlite3.Connection
 
 
 class Application(QtWidgets.QApplication):
@@ -14,6 +16,7 @@ class Application(QtWidgets.QApplication):
 
     def __init__(self, argv):
         super().__init__(argv)
+        self.db_last_modified = 0
 
     def setUp(self, conf: Config):
         global config
@@ -62,20 +65,8 @@ class Application(QtWidgets.QApplication):
         event.ignore()
         return False
 
-    @use.woody_logger
-    @cached_and_invalidated
-    def considered_tasks(self) -> list[Task2]:
-        query = submit_sql(
-            """
-    SELECT id, do, deadline  FROM tasks
-    WHERE deleted != TRUE AND draft != TRUE AND inactive != TRUE AND done != TRUE
-    ;
-    """
-        )
-        return [Task(row(0)) for row in iter_over(query)]
-
     def write_session(self, task_id, start, stop, finished=False, pause_time=0):
-        submit_sql(
+        db.execute(
             f"""
             INSERT INTO sessions (task_id, start, stop, pause_time, finished)
             VALUES ('{task_id}', {int(start)}, {int(stop)}, {pause_time}, {finished})
@@ -83,7 +74,7 @@ class Application(QtWidgets.QApplication):
         )
 
     def sanitize_db(self):
-        query = submit_sql(
+        query = db.execute(
             """
     SELECT r.resource_id
     FROM resources r
@@ -93,8 +84,8 @@ class Application(QtWidgets.QApplication):
     """
         )
         i = None
-        for i, row in enumerate(iter_over(query)):
-            submit_sql(
+        for i, row in enumerate(query.fetchall()):
+            db.execute(
                 f"""
     DELETE FROM resources
     WHERE resource_id = {row(0)}

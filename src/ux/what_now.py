@@ -1,34 +1,24 @@
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
 from math import modf, sin
 from random import seed
 from time import time
 
 import use
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
 import config
 import ui
-from classes import type_check_result
-from logic import (
-    balance,
-    check_task_conditions,
-    consider_tasks,
-    constraints_met,
-    pipes,
-    prioritize,
-    schedule,
-    tasks,
-)
+from classes import typed
+from logic import balance, get_tasks, prioritize, schedule
 from ux import task_editor, task_finished, task_running
 
-from .stuff import app, config
+from .stuff import app, config, db
 
 _translate = QCoreApplication.translate
 
-con = sqlite3.connect(config.db_path)
+db: sqlite3.Connection
 
 
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
@@ -79,7 +69,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             # every full second
             if self.task_timing:
                 T = time()
-                diff = self.task_timing.deadline - T
+                diff = self.task_timing.get_deadline() - T
                 rst, weeks = modf(diff / (7 * 24 * 60 * 60))
                 rst, days = modf(rst * 7)
                 rst, hours = modf(rst * 24)
@@ -160,7 +150,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_priority = self.priority_tasks[0]
             self.task_desc_priority.setText(self.task_priority.do)
             self.task_desc_priority.adjustSize()
-            self.task_space_priority.setText(self.task_priority.space)
+            self.task_space_priority.setText(self.task_priority.get_space())
 
             if old_task == self.task_priority:
                 QtWidgets.QMessageBox.information(
@@ -182,7 +172,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_balanced = self.balanced_tasks[0]
             self.task_desc_balanced.setText(self.task_balanced.do)
             self.task_desc_balanced.adjustSize()
-            self.task_space_balanced.setText(self.task_balanced.space)
+            self.task_space_balanced.setText(self.task_balanced.get_space())
 
         @self.go_timing.clicked.connect
         def go_timing_clicked():
@@ -195,7 +185,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_timing.last_checked = time()
             self.task_timing = self.timing_tasks[0]
             self.task_desc_timing.setText(self.task_timing.do)
-            self.task_space_timing.setText(self.task_timing.space)
+            self.task_space_timing.setText(self.task_timing.get_space())
 
         @self.cancel.clicked.connect
         def cancel_clicked_():
@@ -215,22 +205,13 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             task_finished.Task_Finished(self.task_timing).exec()
 
     @use.woody_logger
-    @pipes
     def lets_check_whats_next(self):
         seed((config.coin ^ config.lucky_num) * config.count)
         config.count += 1
 
         self.groups = defaultdict(lambda: [])
 
-        now = datetime.now()
-
-        self.tasks = (
-            tasks(con)
-            >> check_task_conditions(now=now)
-            >> consider_tasks
-            >> filter(constraints_met(now))
-            >> list
-        )
+        self.tasks = get_tasks(db)
 
         if not self.tasks:
             QtWidgets.QMessageBox.information(
@@ -247,6 +228,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def reject(self):
         super().reject()
         app.win_main.show()
+        app.win_main.statusBar.clearMessage()
         self.sec_timer.stop()
         self.animation_timer.stop()
         for L in app.list_of_task_lists:
@@ -260,7 +242,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.task_priority = self.priority_tasks[0]
         self.task_desc_priority.setText(self.task_priority.do)
         self.task_desc_priority.adjustSize()
-        self.task_space_priority.setText(self.task_priority.space)
+        self.task_space_priority.setText(self.task_priority.get_space())
 
     @use.woody_logger
     def set_timing_task(self):
@@ -268,7 +250,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.timing_tasks = schedule(self.tasks)
             self.task_timing = self.timing_tasks[0]
             self.task_desc_timing.setText(self.task_timing.do)
-            self.task_space_timing.setText(self.task_timing.space)
+            self.task_space_timing.setText(self.task_timing.get_space())
 
         except IndexError:
             self.task_desc_timing.setText("nix was präsiert")
@@ -293,7 +275,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     @use.woody_logger
     def set_task_balanced(self):
         activity_time_spent = defaultdict(lambda: 0)
-        query = con.execute(
+        query = db.execute(
             """
 SELECT
     activity_id,
@@ -303,9 +285,9 @@ WHERE activity_id not NULL
 """
         )
         for row in query.fetchall():
-            activity_time_spent[type_check_result(row, 0, int, default=None)] = type_check_result(row, 1, int)
+            activity_time_spent[typed(row, 0, int, default=None)] = typed(row, 1, int)
 
-        query = con.execute(
+        query = db.execute(
             """
 SELECT
     primary_activity_id,
@@ -318,8 +300,9 @@ GROUP BY
         )
 
         for row in query.fetchall():
-            activity_time_spent[type_check_result(row, 0, int, default=0)] += type_check_result(row, 1, int)
-        query = con.execute(
+            activity_time_spent[typed(row, 0, int, default=0)] += typed(row, 1, int)
+
+        query = db.execute(
             """
 SELECT
     secondary_activity_id,
@@ -331,9 +314,7 @@ GROUP BY
 """
         )
         for row in query.fetchall():
-            activity_time_spent[type_check_result(row, 0, int, default=0)] += int(
-                type_check_result(row, 1, int, default=0) * 0.382
-            )
+            activity_time_spent[typed(row, 0, int, default=0)] += int(typed(row, 1, int, default=0) * 0.382)
         activity_time_spent[None] = max(activity_time_spent.values())
 
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
@@ -341,9 +322,7 @@ GROUP BY
         self.task_balanced = self.balanced_tasks[0]
         self.task_desc_balanced.setText(self.task_balanced.do)
         self.task_desc_balanced.adjustSize()
-        self.task_space_balanced.setText(self.task_balanced.space)
-        self.task_space_balanced.setText(self.task_balanced.space)
-        self.task_space_balanced.setText(self.task_balanced.space)
+        self.task_space_balanced.setText(self.task_balanced.get_space())
 
     def showEvent(self, event):
         for L in app.list_of_task_lists:

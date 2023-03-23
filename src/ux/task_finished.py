@@ -1,22 +1,22 @@
 from math import modf
 from time import time
 
+import use
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox
 
 import ui
+from classes import ILK, Task2
 from logic import skill_level
-from classes import ILK, Task, submit_sql
 from ux import task_editor
 
-from .stuff import app, config, db
+from .stuff import app, db
 
 
 class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(
         self,
-        task: Task,
+        task: Task2,
         start: float = None,
         stop: float = None,
         old_skills=None,
@@ -29,7 +29,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
 
 
         Args:
-            task (Task): current task.
+            task (Task2): current task.
             ticks (int, optional): . Defaults to 0.
             start (int, optional): Time task was started current session. Defaults to None.
             stop (int, optional): Time task was stopped current session. Defaults to None.
@@ -43,14 +43,14 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.stop = stop or self.start
         self.pause_time = pause_time
         self.old_skills = old_skills or [
-            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
+            (skill.id, int(skill_level(skill.time_spent))) for skill in task.get_skills()
         ]
 
         self.task_desc.setText(task.do)
         # let's ask the DB for previous sessions and add the current time
         current_session_time = self.stop - self.start
 
-        self.total = task.time_spent + task.adjust_time_spent + current_session_time - self.pause_time
+        self.total = task.get_time_spent() + task.adjust_time_spent + current_session_time - self.pause_time
         rst, days = modf(self.total / (60 * 60 * 24))
         rst, hours = modf(self.total / (60 * 60))
         rst, minutes = modf(rst * 60)
@@ -71,17 +71,17 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
                 + self.minutes.value() * 60
             )
 
-        submit_sql(
+        db.execute(
             f"""
     UPDATE tasks 
-    SET adjust_time_spent = {total - self.task.time_spent},     
+    SET adjust_time_spent = {total - self.task.get_time_spent()},     
         done=TRUE
     WHERE id={self.task.id};
     """
         )
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 
-        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.skills]
+        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.get_skills()]
 
         for x, y in zip(self.old_skills, new_skills):
             if x[1] < y[1]:

@@ -1,3 +1,5 @@
+import sqlite3
+
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QVariant
 from PyQt6.QtSql import QSqlDatabase
@@ -7,10 +9,13 @@ _translate = QCoreApplication.translate
 
 
 import q
-import ui
-from classes import Task, cached_and_invalidated, iter_over, submit_sql, typed
 
-from .stuff import __version__, app, config, db
+import ui
+from classes import Task2, cached_and_invalidated, typed
+
+from .stuff import __version__, app, db
+
+db: sqlite3.Connection
 
 
 class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
@@ -32,7 +37,7 @@ class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
                 self, "Neue Aktivität", "Name der neuen Aktivität", QtWidgets.QLineEdit.Normal, ""
             )
             if okPressed and text != "":
-                submit_sql(
+                db.execute(
                     f"""
 INSERT OR IGNORE INTO skills (name)
 VALUES ('{text}')
@@ -59,7 +64,7 @@ VALUES ('{text}')
             )
 
             if okPressed and text != "":
-                submit_sql(
+                db.execute(
                     f"""
 UPDATE skills 
 SET name = '{text}'
@@ -75,12 +80,12 @@ WHERE skill_id == {skill_id};
 
         @self.clear_all_deleted.clicked.connect
         def _():
-            submit_sql(
+            db.execute(
                 """
 DELETE FROM tasks WHERE deleted == TRUE;
 """
             )
-            submit_sql(
+            db.execute(
                 """
 DELETE FROM sessions 
 WHERE NOT EXISTS(SELECT NULL
@@ -101,7 +106,7 @@ WHERE sessions.task_id = tasks.id)
 
             match QMessageBox.question(self, "Bitte bestätigen!", f"Wirklich Fähigkeit '{name}' löschen?"):
                 case QMessageBox.StandardButton.Yes:
-                    submit_sql(
+                    db.execute(
                         f"""
     DELETE FROM skills WHERE skill_id == {skill_id};
     """
@@ -117,7 +122,7 @@ WHERE sessions.task_id = tasks.id)
                 self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.Normal, ""
             )
             if okPressed and text != "":
-                submit_sql(
+                db.execute(
                     f"""
 INSERT OR IGNORE INTO spaces (name)
 VALUES ('{text}')
@@ -137,7 +142,7 @@ VALUES ('{text}')
 
             match QMessageBox.question(self, "Bitte bestätigen!", f"Wirklich Space '{name}' löschen?"):
                 case QMessageBox.StandardButton.Yes:
-                    submit_sql(
+                    db.execute(
                         f"""
     DELETE FROM spaces WHERE space_id == {space_id};
     """
@@ -155,12 +160,12 @@ VALUES ('{text}')
             self.space_id = self.spaces_table.item(self.spaces_table.selectedItems()[0].row(), 0).data(
                 Qt.ItemDataRole.UserRole
             )
-            query = submit_sql(
+            query = db.execute(
                 f"""
 SELECT * from spaces where space_id = {self.space_id}
 """
             )
-            for row in iter_over(query):
+            for row in query.fetchall():
                 self.space_name.setText(row(1))
                 self.space_priority.setValue(row(2))
                 self.space_primary_activity.setCurrentIndex(
@@ -172,7 +177,7 @@ SELECT * from spaces where space_id = {self.space_id}
 
         @self.space_name.textChanged.connect
         def space_name_changed():
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE spaces
 SET name = '{self.space_name.toPlainText()}'
@@ -185,7 +190,7 @@ WHERE space_id = {self.space_id}
 
         @self.space_priority.valueChanged.connect
         def space_priority_changed():
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE spaces
 SET priority = {self.space_priority.value()}
@@ -197,7 +202,7 @@ WHERE space_id = {self.space_id}
         @self.space_primary_activity.currentIndexChanged.connect
         def _():
             x = self.space_primary_activity.itemData(self.space_primary_activity.currentIndex())
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE spaces
 SET primary_activity_id = {x if x is not None else "NULL"}
@@ -208,7 +213,7 @@ WHERE space_id = {self.space_id}
         @self.space_secondary_activity.currentIndexChanged.connect
         def _():
             x = self.space_secondary_activity.itemData(self.space_secondary_activity.currentIndex())
-            submit_sql(
+            db.execute(
                 f"""
 UPDATE spaces
 SET secondary_activity_id = {x if x is not None else "NULL"}
@@ -217,27 +222,26 @@ WHERE space_id = {self.space_id}
             )
 
     def build_skill_table(self):
-        query = submit_sql(
+        query = db.execute(
             """
         SELECT skill_id, name FROM skills;
         """
         )
         self.skills_table.setSortingEnabled(False)
 
-        for i, row in enumerate(iter_over(query)):
+        for i, row in enumerate(query.fetchall()):
             self.skills_table.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(typed(row, 1, str))
             self.skills_table.setItem(i, 1, item)
             item.setText(typed(row, 1, str))
             item.setData(Qt.ItemDataRole.UserRole, typed(row, 0, int))
 
-            inner_query = submit_sql(
+            inner_query = db.execute(
                 f"""
 SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int))};
 """
             )
-            inner_query.first()
-            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, 0)))
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.fetchone(), 0, int, 0)))
             self.skills_table.setItem(i, 2, item)
 
         self.skills_table.setSortingEnabled(True)
@@ -245,14 +249,14 @@ SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int)
         self.update()
 
     def build_spaces_table(self):
-        query = submit_sql(
+        query = db.execute(
             """
         SELECT space_id, name FROM spaces;
         """
         )
         self.spaces_table.setSortingEnabled(False)
 
-        for i, row in enumerate(iter_over(query)):
+        for i, row in enumerate(query.fetchall()):
             space_id = typed(row, 0, int)
             name = typed(row, 1, str)
             self.spaces_table.setRowCount(i + 1)
@@ -261,25 +265,24 @@ SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int)
             item.setData(Qt.ItemDataRole.UserRole, space_id)
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            inner_query = submit_sql(
+            inner_query = db.execute(
                 f"""
-SELECT COUNT(*) FROM tasks WHERE space_id == {row(0)};
+SELECT COUNT(*) FROM tasks WHERE space_id == {row[0]};
 """
             )
-            inner_query.first()
-            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.value, 0, int, 0)))
+            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.fetchone(), 0, int, 0)))
             self.spaces_table.setItem(i, 1, item)
 
         self.spaces_table.setSortingEnabled(True)
         self.spaces_table.sortItems(0)  # ? strange
 
-        query = submit_sql(
+        query = db.execute(
             """
         SELECT activity_id, name FROM activities;
         """
         )
 
-        for row in iter_over(query):
+        for row in query.fetchall():
             self.space_primary_activity.addItem(typed(row, 1, str), QVariant(typed(row, 0, int)))
             self.space_secondary_activity.addItem(typed(row, 1, str), QVariant(typed(row, 0, int)))
         self.update()

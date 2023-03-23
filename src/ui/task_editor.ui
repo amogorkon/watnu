@@ -524,7 +524,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDial" name="embarassment">
+                 <widget class="QDial" name="embarrassment">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>

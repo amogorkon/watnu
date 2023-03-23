@@ -1,28 +1,19 @@
 import ast
 import inspect
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 from functools import singledispatch, update_wrapper
 from itertools import takewhile
 from math import isinf, sqrt
 from textwrap import dedent
 from time import time
-from typing import Iterable
 
+import numpy as np
 import use
+from beartype import beartype
 
-np = use(
-    "numpy",
-    version="1.24.1",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
-    },
-)
-
-from classes import EVERY, ILK, Task, Task2, cached_and_invalidated, iter_over, submit_sql
+from classes import EVERY, ILK, Task2, retrieve_task_by_id, retrieve_tasks
 
 fuzzy = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
@@ -89,16 +80,16 @@ def weight(time_spent, last_checked, now) -> float:
 
 
 @use.tinny_profiler
-def prioritize(tasks: list[Task]) -> list:
+def prioritize(tasks: list[Task2]) -> list:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
-        key=lambda t: (t.level_id, t.space_priority + t.priority, t.last_checked),
+        key=lambda t: (t.level_id, t.get_space_priority() + t.priority, t.last_checked),
     )
     return deque(sorted_tasks)
 
 
-def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task]:
+def balance(tasks: list[Task2], activity_time_spent: dict[int, int]) -> list[Task2]:
     # first prefer neglected activity; second prefer neglected tasks/habits
     sorted_tasks = sorted(
         tasks,
@@ -108,7 +99,7 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
                 1.618 * activity_time_spent[t.secondary_activity_id],
             ),
             weight(  # lightest weights float to the top!
-                t.time_spent,
+                t.get_time_spent(),
                 t.last_checked,
                 time(),
             ),
@@ -118,34 +109,36 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
 
 
 def schedule(tasks: list) -> list:
-    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
+    filtered_by_infinity = filter(lambda t: not isinf(float(t.get_deadline())) or t.ilk is ILK.routine, tasks)
     sorted_by_last_checked = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
-    sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
+    sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.get_deadline()))
     return deque(sorted_by_deadline)
 
 
-def check_task_conditions(task, now: datetime):
-    if not task.is_done:
-        return task
+def check_tasks(tasks: list[Task2], now: datetime):
+    for task in tasks:
+        if not task.done:
+            yield task
+            continue
+        if task.get_repeats() is None:
+            yield task
+            continue
 
-    if task.repeats is None:
-        return task
+        every_x = task.get_repeats().x_every
 
-    every_x = task.repeats.x_every
+        then = datetime.fromtimestamp(task.last_finished)
+        if task.ilk is ILK.habit:
+            if now.date() > then.date():
+                task.set_done(False)
 
-    then = datetime.fromtimestamp(task.last_finished)
-    if task.ilk is ILK.habit:
-        if now.date() > then.date():
-            task.is_done = False
+        elif task.get_repeats() is not None:
+            reset_task(task, now, every_x)
 
-    elif task.repeats is not None:
-        reset_task(task, now, every_x)
-
-    return task
+        yield task
 
 
-def reset_task(task, now, every_x):
-    every_ilk, x_every, per_ilk, x_per = task.repeats
+def reset_task(db, task, now, every_x):
+    every_ilk, x_every, per_ilk, x_per = task.get_repeats()
 
     now = datetime.timestamp(now)
 
@@ -179,13 +172,13 @@ def reset_task(task, now, every_x):
                     EVERY.year: 60 * 60 * 24 * 365.25,
                 }[per_ilk]
             )
-            query = submit_sql(
+            query = db.execute(
                 f"""
     SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  
     """
             )
 
-            if len(list(iter_over(query))) < x_per:
+            if len(list(query.fetchall())) < x_per:
                 task.is_done = False
 
 
@@ -196,10 +189,15 @@ def reset_task_if_time_passed(now, days, task, every_x):
         task.is_done = False
 
 
-def filter_tasks(tasks, pattern):
+def levenshtein_distance(text, pattern) -> int:
+    """Calculates the Levenshtein distance between two strings."""
+
+
+def filter_tasks(tasks: Iterable[Task2], pattern: str) -> Iterable[Task2]:
+    # TODO: use fuzzy matching from https://github.com/taleinat/fuzzysearch
     if pattern.isspace() or not pattern:
         return tasks
-    return list(filter(lambda t: pattern in t.do.casefold(), tasks))
+    return filter(lambda t: pattern in t.do.casefold(), tasks)
 
 
 def skill_level(seconds):
@@ -234,70 +232,27 @@ def skill_level(seconds):
 
 
 @use.woody_logger
-def constraints_met(task, /, *, now: datetime):
-    if task.constraints is None:
-        return True
-    return task.constraints[now.weekday(), now.time().hour * 6 + now.time().minute // 10]
+@beartype
+def filter_by_constraints(tasks: Iterable[Task2], /, *, now: datetime) -> Iterable[Task2]:
+    for task in tasks:
+        if task.get_constraints() is None:
+            yield task
+        elif task.get_constraints()[now.weekday(), now.time().hour * 6 + now.time().minute // 10]:
+            yield task
 
 
-from functools import cache, wraps
-
-
-def flagged_cache(func):
-    last_res = ...
-
-    @wraps(func)
-    def wrapper(
-        *args,
-        **kwargs,
-    ):
-        nonlocal last_res
-        if kwargs.get("db_modified", False) or last_res is ...:
-            last_res = func(*args, **kwargs)
-            return last_res
-        else:
-            return last_res
-
-    return wrapper
-
-
-@use.woody_logger
-@flagged_cache
-def tasks(con, /, *, db_modified: bool) -> list[Task2]:
-    query = con.execute(
-        """
-        SELECT id, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarassment, last_checked, workload, ilk FROM tasks;
-    """
-    )
-
-    return [
-        Task2(
-            ID,
-            do,
-            notes,
-            deleted,
-            draft,
-            inactive,
-            done,
-            primary_activity_id,
-            secondary_activity_id,
-            space_id,
-            priority,
-            level_id,
-            adjust_time_spent,
-            difficulty,
-            fear,
-            embarassment,
-            last_checked,
-            workload,
-            ilk,
-        )
-        for ID, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarassment, last_checked, workload, ilk in query.fetchall()
-    ]
-
-
-def consider_tasks(tasks: list[Task2]) -> Iterable[Task2]:
+@beartype
+def consider_tasks(tasks: Iterable[Task2]) -> Iterable[Task2]:
     return filter(lambda t: not t.deleted and not t.draft and not t.inactive, tasks)
 
 
+@pipes
+def get_tasks(db) -> list[Task2]:
+    now = datetime.now()
+    return (
+        retrieve_tasks(db) >> check_tasks(now=now) >> consider_tasks << filter_by_constraints(now=now) >> list
+    )
 
+
+def get_string_representation_of_dict_without_quotation_marks(d: dict) -> str:
+    return str(d).replace("'", "").replace('"', "")

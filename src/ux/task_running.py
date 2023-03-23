@@ -1,3 +1,4 @@
+import sqlite3
 import webbrowser
 from collections import defaultdict
 from datetime import datetime
@@ -5,27 +6,21 @@ from math import modf, sin
 from random import choice, seed
 from time import time
 
+import q
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 from PyQt6.QtSql import QSqlDatabase
 
 import config
-import q
 import ui
-from logic import (
-    balance,
-    check_task_conditions,
-    constraints_met,
-    filter_tasks,
-    prioritize,
-    schedule,
-    skill_level,
-)
-from classes import EVERY, ILK, Every, Task, cached_and_invalidated, iter_over, submit_sql, typed
+from classes import EVERY, ILK, Every, Task2, cached_and_invalidated, typed
 from config import Config
+from logic import skill_level
 from ux import app, task_editor, task_finished, task_running
 
 from .stuff import __version__, app, config, db
+
+db: sqlite3.Connection
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
@@ -46,7 +41,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
 
         app.win_settings.hide()
 
-        self.task: Task = task
+        self.task: Task2 = task
         self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) for skill in task.skills]
 
         self.paused = False
@@ -217,10 +212,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         self.task = None
 
         for win in app.list_of_task_lists:
-            win.button5.setEnabled(True)
-            win.timer.start(100)
-            win.filter_timer.start(1000)
-
+            self.restart_win(win)
         if app.list_of_task_lists:
             for win in app.list_of_task_lists:
                 win.show()
@@ -238,7 +230,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
     def start_task(self):
         # check if working conditions are optimal once a day
-        query = submit_sql(
+        query = db.execute(
             """
         SELECT start 
         FROM sessions
@@ -281,6 +273,9 @@ Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
 
     def finished(self):
         for win in app.list_of_task_lists:
-            win.button5.setEnabled(True)
-            win.timer.start(100)
-            win.filter_timer.start(1000)
+            self.restart_win(win)
+
+    def restart_win(self, win):
+        win.button5.setEnabled(True)
+        win.timer.start(100)
+        win.filter_timer.start(1000)

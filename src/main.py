@@ -7,6 +7,7 @@ import sqlite3
 import sys
 from pathlib import Path
 from random import seed
+from time import time
 
 import use
 from PyQt6 import QtWidgets
@@ -17,8 +18,9 @@ from PyQt6.QtSql import QSqlDatabase
 # ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
-use(use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q")
-import q
+q = use(
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+).Q()
 
 use(
     "numpy",
@@ -56,13 +58,10 @@ flux = use(
 
 
 load = stay.Decoder()
-
-import classes
 import config
 
 __version__ = use.Version("0.2.2")
 __author__ = "Anselm Kiefner"
-breakpoint()
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
 
@@ -89,57 +88,61 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
             app.win_main.raise_()
 
 
+class DB(sqlite3.Connection):
+    def commit(self):
+        super().commit()
+        app.db_last_modified = time()
+
+
 if __name__ == "__main__":
     path = Path(__file__).resolve().parents[1]
     # touch, just in case user killed the config or first start
     (path / "config.stay").touch()
     # overwriting the module with the instance for convenience
     config = config.read(path / "config.stay")
-    con = sqlite3.connect(config.db_path)
-    classes.set_globals(config)
 
-    from ux import app
-
-    app = app.Application(sys.argv)
+    app = use(use.Path("ux/app.py"), initial_globals={"config": config}, import_as="ux.app").Application(
+        sys.argv
+    )
     app.icon = QIcon(config.icon)
     app.setWindowIcon(app.icon)
 
     seed((config.coin ^ config.lucky_num) * config.count)
 
-    db = QSqlDatabase.addDatabase("QSQLITE")
+    qdb = QSqlDatabase.addDatabase("QSQLITE")
+    db = sqlite3.connect(config.db_path, factory=DB)
 
     initial_globals = {
         "config": config,
-        "db": db,
         "app": app,
         "__version__": __version__,
+        "db": db,
     }
+    use(use.Path("classes.py"), initial_globals=initial_globals, import_as="classes")
 
     if config.tutorial_active:
-        landing = use(use.Path("ux/landing.py"), initial_globals={"app": app, "db": db})
+        landing = use(use.Path("ux/landing.py"), initial_globals={"app": app, "qdb": qdb})
         win_landing = landing.Landing()
         concluded = win_landing.exec()
         if concluded:
             config.tutorial_active = False
-    db.setDatabaseName(config.db_path)
+    qdb.setDatabaseName(config.db_path)
 
-    if not db.open():
+    if not qdb.open():
         q("Could not open DB!")
 
     if config.first_start:
-        import first_start
-
-        first_start.run(db, config)
+        use(use.Path("first_run.py"), initial_globals=initial_globals).run()
         config.first_start = False
         config.write()
 
     if config.run_sql_stuff:
+        # just in case..
+        (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
+
+        use("sql_stuff.py", initial_globals={"config": config})
         config.run_sql_stuff = False
         config.write()
-        # just in case..
-        dbpath = path / config.db_path
-        backup = path / f"{config.db_path}.bak"
-        backup.write_bytes(dbpath.read_bytes())  # nice way to copy a file
 
     app.list_of_task_lists: list["task_list.TaskList"] = []
     "Multiple TaskLists can be open at the same time."
@@ -158,7 +161,7 @@ if __name__ == "__main__":
         2: config.activity_color_spirit,
     }
 
-    if not db.tables():
+    if not qdb.tables():
         config.first_start = True
         config.write()
         QtWidgets.QMessageBox.critical(

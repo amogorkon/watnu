@@ -1,17 +1,20 @@
 print("FIRST START")
 
+import sqlite3
+
 import use
-from PyQt6.QtSql import QSqlDatabase
 
-submit_sql = use(use.Path("classes.py")).submit_sql
+from config import Config
+
+config: Config
+
+db: sqlite3.Connection
 
 
-def run(db: QSqlDatabase) -> None:
-
+def run() -> None:
     ### CREATE SQL TABLES ###
-    # qsql can't handle multiple statements >:|
-
-    statements = """
+    db.executescript(
+        """
 CREATE TABLE "activities" (
     "activity_id"	INTEGER NOT NULL UNIQUE,
     "name"	VARCHAR(255) NOT NULL UNIQUE,
@@ -91,10 +94,10 @@ CREATE TABLE "spaces" (
 );
 
 CREATE TABLE "task_requires_task" (
-      "task_of_concern"  INTEGER NOT NULL,
-       "required_task"  INTEGER NOT NULL CHECK (task_of_concern <> required_task),
-      FOREIGN KEY("task_of_concern") REFERENCES "tasks" ("id") ON DELETE CASCADE,
-      FOREIGN KEY("required_task") REFERENCES "tasks" ("id") ON DELETE CASCADE
+    "task_of_concern"  INTEGER NOT NULL,
+    "required_task"  INTEGER NOT NULL CHECK (task_of_concern <> required_task),
+    FOREIGN KEY("task_of_concern") REFERENCES "tasks" ("id") ON DELETE CASCADE,
+    FOREIGN KEY("required_task") REFERENCES "tasks" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "task_trains_skill" (
@@ -127,7 +130,7 @@ CREATE TABLE "tasks" (
     "workload"	INTEGER,
     "difficulty"	REAL DEFAULT 5,
     "fear"	REAL DEFAULT 5,
-    "embarassment"	REAL DEFAULT 5,
+    "embarrassment"	REAL DEFAULT 5,
     "last_checked"	INTEGER DEFAULT 0,
     "adjust_time_spent"	INTEGER DEFAULT 0,
     "ilk"	INTEGER NOT NULL DEFAULT 1,
@@ -142,14 +145,12 @@ CREATE TABLE "tasks" (
     PRIMARY KEY("id" AUTOINCREMENT)
 )
 """
-
-    for S in statements.split(";"):
-        submit_sql(S)
+    )
 
     ### Default Entries ###
 
     for name, level_id in zip(["MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"], [-2, -1, 0, 1, 2]):
-        submit_sql(
+        db.execute(
             f"""
         INSERT INTO levels (name, level_id)
         VALUES ('{name}', {level_id})
@@ -157,7 +158,7 @@ CREATE TABLE "tasks" (
         )
 
     for name, activity_id in zip(["BODY", "SPIRIT", "MIND"], [0, 1, 2]):
-        submit_sql(
+        db.execute(
             f"""
         INSERT INTO activities (name, activity_id)
         VALUES ('{name}', {activity_id})
@@ -165,7 +166,7 @@ CREATE TABLE "tasks" (
         )
 
     for s in ["Heim & Haus", "Arbeit", "Hobby"]:
-        db.submit_sql(
+        db.execute(
             f"""
             INSERT INTO spaces (name)
             VALUES ('{s}')
