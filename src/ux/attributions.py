@@ -9,7 +9,7 @@ _translate = QCoreApplication.translate
 
 import ui
 
-from .stuff import app, db, config, __version__
+from stuff import app, db, config, __version__
 
 
 class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
@@ -17,11 +17,10 @@ class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
         super().__init__()
         self.setupUi(self)
         self.browser = QWebEngineView()
-        with open("attributions.html", "r") as f:
+        with open("extra/attributions.html", "r") as f:
             html = f.read()
         self.browser.setHtml(html)
         self.verticalLayout.addWidget(self.browser)
-
 
     def reject(self):
         super().reject()

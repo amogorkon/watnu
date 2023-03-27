@@ -1,14 +1,8 @@
-import sqlite3
 from bisect import bisect_right
 from datetime import datetime
 
 import q
 from PyQt6 import QtWidgets
-
-from configuration import Config
-
-config: Config
-db: sqlite3.Connection
 
 
 class Application(QtWidgets.QApplication):
@@ -23,6 +17,11 @@ class Application(QtWidgets.QApplication):
 
     def setUp(self):
         import ux
+
+        self.list_of_task_lists: list[ux.task_list.TaskList] = []
+        "Multiple TaskLists can be open at the same time."
+        self.list_of_editors: list[ux.task_editor.Editor] = []
+        "Multiple Editors can be open at the same time."
         self.last_edited_space: str = None
         self.win_main = ux.main_window.MainWindow()
 

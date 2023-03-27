@@ -11,11 +11,10 @@ _translate = QCoreApplication.translate
 import q
 
 import ui
-from classes import Task2, cached_and_invalidated, typed
+from classes import Task, cached_and_invalidated, typed, typed_row
 
-from .stuff import __version__, app, db
+from stuff import __version__, app, db
 
-db: sqlite3.Connection
 
 
 class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
@@ -43,6 +42,7 @@ INSERT OR IGNORE INTO skills (name)
 VALUES ('{text}')
 """
                 )
+                db.commit()
                 self.build_skill_table()
 
         @self.rename_skill.clicked.connect
@@ -71,6 +71,7 @@ SET name = '{text}'
 WHERE skill_id == {skill_id};
 """
                 )
+                db.commit()
                 self.build_skill_table()
 
         @self.clear_unused_resources.clicked.connect
@@ -128,6 +129,7 @@ INSERT OR IGNORE INTO spaces (name)
 VALUES ('{text}')
 """
                 )
+                db.commit()
                 self.build_spaces_table()
 
         @self.delete_space.clicked.connect
@@ -162,17 +164,29 @@ VALUES ('{text}')
             )
             query = db.execute(
                 f"""
-SELECT * from spaces where space_id = {self.space_id}
+SELECT space_id, name, priority, primary_activity_id, secondary_activity_id
+FROM spaces 
+WHERE space_id = {self.space_id}
 """
             )
-            for row in query.fetchall():
-                self.space_name.setText(row(1))
-                self.space_priority.setValue(row(2))
+            for space_id, name, priority, primary_activity_id, secondary_activity_id in query.fetchall():
+                self.space_name.setText(typed(name, str))
+                self.space_priority.setValue(typed(priority, float))
                 self.space_primary_activity.setCurrentIndex(
-                    x if (x := self.space_primary_activity.findData(QVariant(row(3)))) != -1 else 0
+                    x
+                    if (x := self.space_primary_activity.findData(QVariant(typed(primary_activity_id, int))))
+                    != -1
+                    else 0
                 )
                 self.space_secondary_activity.setCurrentIndex(
-                    x if (x := self.space_secondary_activity.findData(QVariant(row(4)))) != -1 else 0
+                    x
+                    if (
+                        x := self.space_secondary_activity.findData(
+                            QVariant(typed(secondary_activity_id, int))
+                        )
+                    )
+                    != -1
+                    else 0
                 )
 
         @self.space_name.textChanged.connect
@@ -184,6 +198,7 @@ SET name = '{self.space_name.toPlainText()}'
 WHERE space_id = {self.space_id}
             """
             )
+            db.commit()
             self.spaces_table.item(self.spaces_table.selectedItems()[0].row(), 0).setText(
                 self.space_name.toPlainText()
             )
@@ -196,8 +211,8 @@ UPDATE spaces
 SET priority = {self.space_priority.value()}
 WHERE space_id = {self.space_id}
             """,
-                debugging=True,
             )
+            db.commit()
 
         @self.space_primary_activity.currentIndexChanged.connect
         def _():
@@ -209,6 +224,7 @@ SET primary_activity_id = {x if x is not None else "NULL"}
 WHERE space_id = {self.space_id}
 """
             )
+            db.commit()
 
         @self.space_secondary_activity.currentIndexChanged.connect
         def _():
@@ -220,6 +236,7 @@ SET secondary_activity_id = {x if x is not None else "NULL"}
 WHERE space_id = {self.space_id}
 """
             )
+            db.commit()
 
     def build_skill_table(self):
         query = db.execute(
@@ -229,19 +246,19 @@ WHERE space_id = {self.space_id}
         )
         self.skills_table.setSortingEnabled(False)
 
-        for i, row in enumerate(query.fetchall()):
+        for i, (skill_id, name) in enumerate(query.fetchall()):
             self.skills_table.setRowCount(i + 1)
-            item = QtWidgets.QTableWidgetItem(typed(row, 1, str))
+            item = QtWidgets.QTableWidgetItem(typed(name, str))
             self.skills_table.setItem(i, 1, item)
-            item.setText(typed(row, 1, str))
-            item.setData(Qt.ItemDataRole.UserRole, typed(row, 0, int))
+            item.setText(typed(name, str))
+            item.setData(Qt.ItemDataRole.UserRole, typed(skill_id, int))
 
             inner_query = db.execute(
                 f"""
-SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int))};
+SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(skill_id, int))};
 """
             )
-            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.fetchone(), 0, int, 0)))
+            item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, 0)))
             self.skills_table.setItem(i, 2, item)
 
         self.skills_table.setSortingEnabled(True)
@@ -256,9 +273,9 @@ SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int)
         )
         self.spaces_table.setSortingEnabled(False)
 
-        for i, row in enumerate(query.fetchall()):
-            space_id = typed(row, 0, int)
-            name = typed(row, 1, str)
+        for i, (space_id, name) in enumerate(query.fetchall()):
+            space_id = typed(space_id, int)
+            name = typed(name, str)
             self.spaces_table.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(name)
             self.spaces_table.setItem(i, 0, item)
@@ -267,10 +284,10 @@ SELECT COUNT(*) FROM task_trains_skill WHERE skill_id == {str(typed(row, 0, int)
 
             inner_query = db.execute(
                 f"""
-SELECT COUNT(*) FROM tasks WHERE space_id == {row[0]};
+SELECT COUNT(*) FROM tasks WHERE space_id == {space_id};
 """
             )
-            item = QtWidgets.QTableWidgetItem(str(typed(inner_query.fetchone(), 0, int, 0)))
+            item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, 0)))
             self.spaces_table.setItem(i, 1, item)
 
         self.spaces_table.setSortingEnabled(True)
@@ -282,9 +299,9 @@ SELECT COUNT(*) FROM tasks WHERE space_id == {row[0]};
         """
         )
 
-        for row in query.fetchall():
-            self.space_primary_activity.addItem(typed(row, 1, str), QVariant(typed(row, 0, int)))
-            self.space_secondary_activity.addItem(typed(row, 1, str), QVariant(typed(row, 0, int)))
+        for activity_id, name in query.fetchall():
+            self.space_primary_activity.addItem(typed(name, str), QVariant(typed(activity_id, int)))
+            self.space_secondary_activity.addItem(typed(name, str), QVariant(typed(activity_id, int)))
         self.update()
 
     def reject(self):

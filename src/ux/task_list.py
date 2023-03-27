@@ -15,26 +15,33 @@ from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
-from classes import Task2, cached_and_invalidated, typed
-from logic import filter_tasks, get_tasks
+from classes import Task, cached_and_invalidated, typed, typed_row
+from logic import (
+    filter_tasks_by_constraints,
+    filter_tasks_by_content,
+    filter_tasks_by_ilk,
+    filter_tasks_by_space,
+    filter_tasks_by_status,
+    get_doable_tasks,
+    pipes,
+    retrieve_tasks,
+)
 from ux import task_editor, task_finished, task_running
 
-from .stuff import app, config, db
+from stuff import app, config, db
 
 db: sqlite3.Connection
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def __init__(self):
-        self.task_list: QtWidgets.QTableWidget
-        self.status: QtWidgets.QComboBox
         super().__init__()
         self.setupUi(self)
         self.timer = QTimer()
         "Timer for polling if the db has changed and regenerate the list."
         self.timer.start(100)
         self.last_generated = 0
-        self.tasks: list[Task2] = []
+        self.tasks: list[Task] = []
 
         @self.timer.timeout.connect
         def db_changed_check():
@@ -42,7 +49,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self.build_task_list()
 
         def delete_item():
-            selected = self.task_list.selectedItems()
+            selected: list[Task] = [x.data(Qt.ItemDataRole.UserRole) for x in self.task_list.selectedItems()]
             if not selected:
                 return
             # if we are dealing with tasks in the bin, we need to ask if we want to delete permanently
@@ -53,29 +60,42 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                     "Wirklich - unwiderruflich - löschen?",
                 ):
                     case QMessageBox.StandardButton.Yes:
-                        pass
+                        for task in selected:
+                            task.really_delete()
                     case _:
                         return
-            for x in selected:
-                task: Task2 = x.data(Qt.ItemDataRole.UserRole)
-                task.delete()
+            else:
+                for task in selected:
+                    task.delete()
             self.build_task_list()
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(delete_item)
 
-        self.task_list.setStyleSheet("alternate-background-color: #bfffbf; background-color: #deffde;")
+        self.task_list.setStyleSheet(
+            """
+alternate-background-color: #bfffbf; 
+background-color: #deffde;
+font-family: Algerian;
+font-style: bold;
+font-size: 49pt;
+        """
+        )
+        self.task_list.style().unpolish(self.task_list)
+        self.task_list.style().polish(self.task_list)
+        self.task_list.update()
 
         def build_space_list():
             self.space.clear()
+            font = QFont("Algerian", italic=True)
+            self.space.addItem("-- alle Räume --")
+            self.space.setItemData(0, font, Qt.ItemDataRole.FontRole)
             query = db.execute(
                 """
             SELECT space_id, name FROM spaces;
             """
             )
-            for row in query.fetchall():
-                space_id = typed(row, 0, int)
-                space_name = typed(row, 1, str)
-                self.space.addItem(space_name, QVariant(space_id))
+            for space_id, name in query.fetchall():
+                self.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
 
             self.space.model().sort(1, Qt.SortOrder.AscendingOrder)
 
@@ -86,20 +106,15 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         def space_switched():
             self.build_task_list()
             config.last_selected_space = self.space.currentIndex()
-            config.write()
+            config.save()
+
+        self.build_button1_menu()
 
         menu = QtWidgets.QMenu()
         menu.addAction("genau so", self.clone_as_is)
         menu.addAction("als Subtask", self.clone_as_sub)
         menu.addAction("als Supertask", self.clone_as_sup)
         self.button9.setMenu(menu)
-
-        menu = QtWidgets.QMenu()
-        menu.addAction("erledigt", partial(self.set_as, "done", True))
-        menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-        menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-        menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-        self.button1.setMenu(menu)
 
         menu = QtWidgets.QMenu()
 
@@ -114,6 +129,7 @@ INSERT OR IGNORE INTO spaces (name)
 VALUES ('{text}')
 """
                 )
+                db.commit()
             build_space_list()
 
         menu.addAction("hinzufügen", space_add)
@@ -154,7 +170,6 @@ DELETE FROM spaces where name=='{space_name}'
         @self.task_list.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
             task = self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
-
             win = task_editor.Editor(task)
             win.show()
 
@@ -227,6 +242,7 @@ DELETE FROM spaces where name=='{space_name}'
             # then set the bit -
             config.coin |= first
             seed((config.coin ^ config.lucky_num) * config.count)
+            config.count += 1
 
             x = choice(["Kopf", "Zahl"])
             mb = QtWidgets.QMessageBox()
@@ -239,41 +255,13 @@ DELETE FROM spaces where name=='{space_name}'
                 mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
             mb.exec()
 
+        @self.ilk.currentIndexChanged.connect
+        def ilk_switched():
+            self.build_task_list()
+
         @self.status.currentIndexChanged.connect
         def status_switched():
-            menu = QtWidgets.QMenu()
-            match self.status.currentIndex():
-                case 0:  # open
-                    menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-                    menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-                    menu.addAction("erledigt", partial(self.set_as, "done", True))
-                    menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-                case 1:  # draft
-                    menu.addAction("offen", self.set_as_open)
-                    menu.addAction("kein Entwurf", partial(self.set_as, "draft", False))
-                    menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-                    menu.addAction("erledigt", partial(self.set_as, "done", True))
-                    menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-                case 2:  # inactive
-                    menu.addAction("offen", self.set_as_open)
-                    menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-                    menu.addAction("nicht inaktiv", partial(self.set_as, "inactive", False))
-                    menu.addAction("erledigt", partial(self.set_as, "done", True))
-                    menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-
-                case 3:  # done
-                    menu.addAction("offen", self.set_as_open)
-                    menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-                    menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-                    menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
-                    menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-                case 4:  # deleted
-                    menu.addAction("offen", self.set_as_open)
-                    menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-                    menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-                    menu.addAction("erledigt", partial(self.set_as, "done", True))
-                    menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
-            self.button1.setMenu(menu)
+            self.build_button1_menu()
             self.build_task_list()
 
         # once we change the filter, we wait for 1 sec before applying the filter,
@@ -287,7 +275,9 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.filter_timer.timeout.connect
         def filter_changed():
-            self.arrange_list(list(filter_tasks(self.tasks, self.field_filter.text().casefold())))
+            self.arrange_list(
+                list(filter_tasks_by_content(retrieve_tasks(), self.field_filter.text().casefold()))
+            )
             self.update()
             self.filter_timer.stop()
 
@@ -307,6 +297,7 @@ SET 'deleted' = False, 'done' = False, 'draft' = False, 'inactive' = False
 WHERE id == {task.id}
 """
             )
+            db.commit()
 
     def set_as(self, property: str, set_flag):
         X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
@@ -315,7 +306,7 @@ WHERE id == {task.id}
             return
 
         for x in X:
-            task: Task2 = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
+            task: Task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
             if property == "done" and set_flag:
                 task_finished.Task_Finished(task).exec()
             else:
@@ -326,6 +317,7 @@ SET '{property}' = {set_flag}
 WHERE id == {task.id}
 """
                 )
+        db.commit()
         self.build_task_list()
 
     def clone_as_is(self):
@@ -359,49 +351,14 @@ WHERE id == {task.id}
         win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
-    def build_task_list(self, db_modified=False):
+    def build_task_list(self):
         self.last_generated = time()
 
-        selected_space = self.space.itemData(self.space.currentIndex())
+        self.selected_space = self.space.itemData(self.space.currentIndex())
+        config.last_selected_space = self.selected_space or 0
+        config.save()
 
-        match self.status.currentIndex():
-            # open
-            case 0:
-                tasks = filter(
-                    lambda t: not t.done
-                    and not t.draft
-                    and not t.inactive
-                    and not t.deleted
-                    and (t.space_id == selected_space if selected_space else True),
-                    get_tasks(db),
-                )
-            # draft
-            case 1:
-                tasks = filter(
-                    lambda t: t.draft and (t.space_id == selected_space if selected_space else True),
-                    get_tasks(db),
-                )
-            # inactive
-            case 2:
-                tasks = filter(
-                    lambda t: t.inactive and (t.space_id == selected_space if selected_space else True),
-                    get_tasks(db),
-                )
-            # done
-            case 3:
-                tasks = filter(
-                    lambda t: t.done and (t.space_id == selected_space if selected_space else True),
-                    get_tasks(db),
-                )
-            # deleted
-            case 4:
-                tasks = filter(
-                    lambda t: t.deleted and (t.space_id == selected_space if selected_space else True),
-                    get_tasks(db),
-                )
-
-        self.tasks = list(filter_tasks(tasks, self.field_filter.text().casefold()))
-        self.arrange_list(self.tasks)
+        self.tasks = get_filtered_tasks(self)
         self.update()
 
     def reject(self):
@@ -416,10 +373,14 @@ WHERE id == {task.id}
         app.list_of_task_lists.remove(self)
 
     @use.woody_logger
-    def arrange_list(self, tasks: list[Task2]):
+    def arrange_list(self, tasks: list[Task]):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         self.task_list.hide()
         self.task_list.clear()
+
+        if not tasks:
+            self.task_list.clearContents()
+            self.task_list.setRowCount(0)
 
         self.task_list.setSortingEnabled(False)
         self.task_list.setRowCount(len(tasks))
@@ -446,18 +407,59 @@ WHERE id == {task.id}
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     self.task_list.setItem(i, 0, item)
 
-            # item = QtWidgets.QTableWidgetItem(str(task.level))
-            # self.task_list.setItem(i, 1, item)
-            # item = QtWidgets.QTableWidgetItem(str(task.priority))
-            # self.task_list.setItem(i, 2, item)
-            # item = QtWidgets.QTableWidgetItem(
-            #     "---" if isinf(task.deadline) else datetime.fromtimestamp(task.deadline).isoformat()
-            # )
-            # self.task_list.setItem(i, 4, item)
-
-        if not tasks:
-            self.task_list.clearContents()
-            self.task_list.setRowCount(0)
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
         self.task_list.show()
+        return tasks
+
+    def build_button1_menu(self):
+        menu = QtWidgets.QMenu()
+        match self.status.currentIndex():
+            case 0:  # open
+                menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+                menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+                menu.addAction("erledigt", partial(self.set_as, "done", True))
+                menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+            case 1:  # draft
+                menu.addAction("offen", self.set_as_open)
+                menu.addAction("kein Entwurf", partial(self.set_as, "draft", False))
+                menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+                menu.addAction("erledigt", partial(self.set_as, "done", True))
+                menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+            case 2:  # inactive
+                menu.addAction("offen", self.set_as_open)
+                menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+                menu.addAction("nicht inaktiv", partial(self.set_as, "inactive", False))
+                menu.addAction("erledigt", partial(self.set_as, "done", True))
+                menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+
+            case 3:  # done
+                menu.addAction("offen", self.set_as_open)
+                menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+                menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+                menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
+                menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+            case 4:  # deleted
+                menu.addAction("offen", self.set_as_open)
+                menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+                menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+                menu.addAction("erledigt", partial(self.set_as, "done", True))
+                menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+        self.button1.setMenu(menu)
+
+    def close(self) -> bool:
+        self.timer.stop()
+        return super().close()
+
+
+@pipes
+def get_filtered_tasks(self):
+    self.tasks = (
+        retrieve_tasks(db)
+        >> filter_tasks_by_status(self.status.currentIndex())
+        >> filter_tasks_by_content(self.field_filter.text().casefold())
+        >> filter_tasks_by_ilk(self.ilk.currentIndex())
+        >> filter_tasks_by_space(self.selected_space)
+        >> list
+        >> self.arrange_list
+    )

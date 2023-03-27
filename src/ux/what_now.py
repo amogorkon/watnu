@@ -8,13 +8,11 @@ import use
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
-import config
 import ui
-from classes import typed
-from logic import balance, get_tasks, prioritize, schedule
+from classes import typed, typed_row
+from logic import balance, get_doable_tasks, prioritize, schedule
+from stuff import app, config, db
 from ux import task_editor, task_finished, task_running
-
-from .stuff import app, config, db
 
 _translate = QCoreApplication.translate
 
@@ -211,7 +209,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         self.groups = defaultdict(lambda: [])
 
-        self.tasks = get_tasks(db)
+        self.tasks = get_doable_tasks(db)
 
         if not self.tasks:
             QtWidgets.QMessageBox.information(
@@ -284,8 +282,8 @@ FROM activities
 WHERE activity_id not NULL
 """
         )
-        for row in query.fetchall():
-            activity_time_spent[typed(row, 0, int, default=None)] = typed(row, 1, int)
+        for activity_id, adjust_time_spent in query.fetchall():
+            activity_time_spent[typed(activity_id, int, default=None)] = typed(adjust_time_spent, int)
 
         query = db.execute(
             """
@@ -300,7 +298,7 @@ GROUP BY
         )
 
         for row in query.fetchall():
-            activity_time_spent[typed(row, 0, int, default=0)] += typed(row, 1, int)
+            activity_time_spent[typed_row(row, 0, int, default=0)] += typed_row(row, 1, int)
 
         query = db.execute(
             """
@@ -314,7 +312,9 @@ GROUP BY
 """
         )
         for row in query.fetchall():
-            activity_time_spent[typed(row, 0, int, default=0)] += int(typed(row, 1, int, default=0) * 0.382)
+            activity_time_spent[typed_row(row, 0, int, default=0)] += int(
+                typed_row(row, 1, int, default=0) * 0.382
+            )
         activity_time_spent[None] = max(activity_time_spent.values())
 
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
@@ -330,3 +330,10 @@ GROUP BY
             L.filter_timer.stop()
             L.hide()
         super().showEvent(event)
+
+    def close(
+        self,
+    ) -> None:
+        self.sec_timer.stop()
+        self.animation_timer.stop()
+        super().close()

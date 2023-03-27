@@ -4,7 +4,7 @@ import sqlite3
 
 import use
 
-from config import Config
+from configuration import Config
 
 config: Config
 
@@ -172,3 +172,4 @@ CREATE TABLE "tasks" (
             VALUES ('{s}')
             """
         )
+    db.commit()

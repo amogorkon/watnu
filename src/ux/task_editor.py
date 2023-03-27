@@ -1,4 +1,3 @@
-import sqlite3
 from collections import namedtuple
 from functools import partial
 
@@ -11,25 +10,21 @@ from PyQt6.QtWidgets import QWizard
 
 _translate = QCoreApplication.translate
 
-import q
 from beartype import beartype
 
-from classes import ILK, Task2
+import ui
+from classes import ILK, Task
 from logic import retrieve_task_by_id
-from ui import task_editor
-
-from .stuff import app, config, db
-
-db: sqlite3.Connection
+from stuff import app, config, db
 
 
 @beartype
-class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
+class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
 
     def __init__(
         self,
-        task: Task2 = None,
+        task: Task = None,
         cloning: bool = False,
         templating: bool = False,
         as_sup: bool = 0,
@@ -48,14 +43,19 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
         if not task:
             query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
+            db.commit()
             self.task = retrieve_task_by_id(db, query.lastrowid)
             self.draft = True
         else:
             self.task = task
 
-        self.setButtonText(QWizard.WizardButton.CustomButton1, "Entwurf speichern")
-        if not self.draft:
-            self.button(QWizard.WizardButton.CustomButton1).setEnabled(False)
+        self.setButtonText(QWizard.WizardButton.CustomButton1, "als Entwurf speichern")
+
+        @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
+        def _():
+            self.draft = True
+            self.save_task()
+            self.done(12)
 
         self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
         self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
@@ -108,37 +108,6 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         menu.addAction("als Klon von dieser Aufgabe", self.clone)
         self.button6.setMenu(menu)
 
-        def set_as_draft():
-            self.set_as("draft", True)
-            self.button(QWizard.WizardButton.CustomButton1).setEnabled(True)
-
-        def set_as_not_draft():
-            self.set_as("draft", False)
-            self.button(QWizard.WizardButton.CustomButton1).setEnabled(False)
-
-        menu = QtWidgets.QMenu()
-        if self.task.done:
-            menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
-        else:
-            menu.addAction("erledigt", partial(self.set_as, "done", True))
-
-        if self.task.draft:
-            menu.addAction("kein Entwurf", set_as_not_draft)
-        else:
-            menu.addAction("Entwurf", set_as_draft)
-
-        if self.task.deleted:
-            menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
-        else:
-            menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
-
-        if not self.task.inactive:
-            menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-        else:
-            menu.addAction("aktiv", partial(self.set_as, "inactive", False))
-
-        self.button1.setMenu(menu)
-
         query = db.execute(
             """
         SELECT activity_id, name FROM activities;
@@ -146,16 +115,16 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
         )
 
         for i, (activity_id, name) in enumerate(query.fetchall()):
-            self.activity.addItem(name, QVariant(activity_id))
+            self.primary_activity.addItem(name, QVariant(activity_id))
             self.secondary_activity.addItem(name, activity_id)
 
         # editing a task - need to set all values accordingly
         if task:
             self.deadline = task.get_deadline()
-            self.skill_ids = self.task.skill_ids
+            self.skill_ids = self.task.get_skills()
             self.priority.setValue(task.priority)
 
-            for url, ID in task.resources:
+            for url, ID in task.get_resources():
                 self.resources.addItem(url, ID)
 
             self.desc.document().setPlainText(task.do)
@@ -172,13 +141,16 @@ class Editor(QtWidgets.QWizard, task_editor.Ui_Wizard):
 
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.get_space()))
-            self.level.setCurrentIndex(self.level.findText(self.task.level))
-            self.activity.setCurrentIndex(self.activity.findText(self.task.activity))
-            self.secondary_activity.setCurrentIndex(
-                self.secondary_activity.findText(self.task.secondary_activity)
+            self.level.setCurrentIndex(self.level.findText(self.task.get_level()))
+            self.primary_activity.setCurrentIndex(
+                self.primary_activity.findText(self.task.get_primary_activity_name())
             )
-            self.repeats = self.task.repeats
-            self.constraints = x if (x := self.task.constraints) is not None else np.zeros((7, 144))
+
+            self.secondary_activity.setCurrentIndex(
+                self.primary_activity.findText(self.task.get_secondary_activity_name())
+            )
+            self.repeats = self.task.get_repeats()
+            self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 144))
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
@@ -208,6 +180,7 @@ INSERT OR IGNORE INTO resources
 VALUES ('{text}')
 """
                 )
+                db.commit()
                 query = db.execute(
                     f"""
 SELECT resource_id
@@ -241,7 +214,8 @@ WHERE url = '{text}'
 
         @self.button5.clicked.connect
         def start_button():
-            self.accept()
+            self.save_task()
+            self.done(12)
             task_running.Running(self.task)
 
         @self.button6.clicked.connect
@@ -264,36 +238,28 @@ WHERE url = '{text}'
         def _():
             space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
             if space_id is not None:
-                for row in db.execute(
+                for primary_activity_id, secondary_activity_id in db.execute(
                     f"""
 SELECT primary_activity_id, secondary_activity_id
 FROM spaces
 WHERE space_id = {space_id}
                 """
                 ).fetchall():
-                    if row(0):
-                        self.activity.setCurrentIndex(self.activity.findData(QVariant(row(0))))
+                    if primary_activity_id is not None:
+                        self.primary_activity.setCurrentIndex(
+                            self.primary_activity.findData(QVariant(primary_activity_id))
+                        )
                     else:
-                        self.activity.setCurrentIndex(0)
-                    if row(1):
+                        self.primary_activity.setCurrentIndex(0)
+                    if secondary_activity_id is not None:
                         self.secondary_activity.setCurrentIndex(
-                            self.secondary_activity.findData(QVariant(row(1)))
+                            self.secondary_activity.findData(QVariant(secondary_activity_id))
                         )
                     else:
                         self.secondary_activity.setCurrentIndex(0)
 
-    def accept(self):
-        # TODO check sanity for traditions and routines
-        super().accept()
-
-        do = self.desc.toPlainText()
-        priority = self.priority.value()
-        space_id = self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))
-
+    def save_task(self):
         app.last_edited_space = self.space.currentText()
-        primary_activity_id = x if (x := self.activity.currentData()) is not None else "NULL"
-        secondary_activity_id = x if (x := self.secondary_activity.currentData()) is not None else "NULL"
-        level_id = self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))
 
         task_type = ILK.task
         if self.is_habit.isChecked():
@@ -303,104 +269,72 @@ WHERE space_id = {space_id}
         if self.is_tradition.isChecked():
             task_type = ILK.tradition
 
-        task_id = self.task.id
-
-        db.execute(
+        db.executescript(
             f"""
+BEGIN;
 UPDATE tasks 
-SET do = '{do}',
-    priority = {priority},
-    level_id = {level_id},
-    primary_activity_id = {primary_activity_id},
-    secondary_activity_id = {secondary_activity_id},
-    space_id = {space_id},
-    ilk = {task_type.value}
-    draft = FALSE
-WHERE id={task_id}
-""",
-            debugging=True,
-        )
-        # need to clean up first
-        db.execute(
-            f"""
-DELETE FROM task_requires_task WHERE task_of_concern == {task_id}
+SET do = '{self.desc.toPlainText()}',
+    priority = {self.priority.value()},
+    level_id = {self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))},
+    primary_activity_id = {x if (x := self.primary_activity.currentData()) is not None else "NULL"},
+    secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
+    space_id = {self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))},
+    ilk = {task_type.value},
+    draft = {self.draft}
+WHERE id={self.task.id};
+-- need to clean up first
+DELETE FROM task_requires_task WHERE task_of_concern == {self.task.id};
+DELETE FROM task_requires_task WHERE required_task == {self.task.id};
+DELETE FROM task_uses_resource WHERE task_id = {self.task.id};
+DELETE FROM task_trains_skill WHERE task_id = {self.task.id};
+DELETE FROM constraints WHERE task_id = {self.task.id};
+DELETE FROM deadlines WHERE task_id = {self.task.id};
+DELETE FROM repeats WHERE task_id = {self.task.id};
+COMMIT;
 """
         )
-        db.execute(
-            f"""
-DELETE FROM task_requires_task WHERE required_task == {task_id}
-"""
-        )
-        db.execute(
-            f"""
-DELETE FROM task_uses_resource WHERE task_id = {task_id}
-"""
-        )
-        db.execute(
-            f"""
-DELETE FROM task_trains_skill WHERE task_id = {task_id}
-"""
-        )
-        db.execute(
-            f"""
-DELETE FROM constraints WHERE task_id = {task_id}
-        """
-        )
-        db.execute(
-            f"""
-DELETE FROM deadlines WHERE task_id = {task_id}
-        """
-        )
-        db.execute(
-            f"""
-DELETE FROM repeats WHERE task_id = {task_id}
-        """
-        )
-
         # enter fresh, no matter whether new or old
-
-        for required_task in self.subtasks:
-            db.execute(
-                f"""
+        db.executemany(
+            """
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
-VALUES ({task_id}, {required_task})
+VALUES ({self.task.id}, ?)
 ;
-"""
-            )
-        for task_of_concern in self.supertasks:
-            db.execute(
-                f"""
+""",
+            self.subtasks,
+        )
+        db.executemany(
+            f"""
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
-VALUES ({task_of_concern}, {task_id})
+VALUES (?, {self.task.id})
 ;
-"""
-            )
-        for skill_id in self.skill_ids:
-            db.execute(
-                f"""
+""",
+            self.supertasks,
+        )
+        db.executemany(
+            f"""
 INSERT INTO task_trains_skill
 (task_id, skill_id)
-VALUES (
-{task_id}, {skill_id}
-    );
-"""
-            )
-        for i in range(self.resources.count()):
-            db.execute(
-                f"""
+VALUES ({self.task.id}, ?);
+""",
+            self.skill_ids,
+        )
+
+        db.executemany(
+            f"""
 INSERT INTO task_uses_resource
 (task_id, resource_id)
-VALUES ({task_id}, {self.resources.itemData(i)});
-"""
-            )
+VALUES ({self.task.id}, ?);
+""",
+            (self.resources.itemData(i) for i in range(self.resources.count())),
+        )
         if np.any(self.constraints):
             db.execute(
                 f"""
     INSERT INTO constraints
     (task_id, flags)
-    VALUES ({task_id}, '{''.join(str(x) for x in self.constraints.flatten())}')
+    VALUES ({self.task.id}, '{''.join(str(x) for x in self.constraints.flatten())}')
             """
             )
         if self.deadline != float("inf"):
@@ -408,7 +342,7 @@ VALUES ({task_id}, {self.resources.itemData(i)});
                 f"""
 INSERT INTO deadlines
 (task_id, time_of_reference)
-VALUES ({task_id}, '{self.deadline}')
+VALUES ({self.task.id}, '{self.deadline}')
             """
             )
 
@@ -418,18 +352,23 @@ VALUES ({task_id}, '{self.deadline}')
 INSERT INTO repeats
 (task_id, every_ilk, x_every, min_distance, x_per)
 VALUES (
-{task_id}, 
+{self.task.id}, 
 {self.repeats.every_ilk.value},
 {self.repeats.x_every},
 {self.repeats.x_per},
 {self.repeats.per_ilk.value}
 )
-            """,
-                debugging=True,
+            """
             )
+        db.commit()
 
         for win in app.list_of_task_lists:
             win.build_task_list()
+
+    def accept(self):
+        self.draft = False
+        self.save_task()
+        super().accept()
 
     def reject(self):
         super().reject()
@@ -473,6 +412,32 @@ SET '{property}' = {set_flag}
 WHERE id == {self.task.id}
 """
             )
+            db.commit()
+        setattr(self.task, status, set_flag)
+        self.build_button1_menu()
+
+    def build_button1_menu(self):
+        menu = QtWidgets.QMenu()
+        if self.task.done:
+            menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
+        else:
+            menu.addAction("erledigt", partial(self.set_as, "done", True))
+
+        if self.task.draft:
+            menu.addAction("kein Entwurf", partial(self.set_as, "draft", False))
+        else:
+            menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+
+        if self.task.deleted:
+            menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+        else:
+            menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
+
+        if self.task.inactive:
+            menu.addAction("aktiv", partial(self.set_as, "inactive", False))
+        else:
+            menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+        self.button1.setMenu(menu)
 
 
 from ux import chooser, task_finished, task_running

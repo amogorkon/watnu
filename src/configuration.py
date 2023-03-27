@@ -17,17 +17,17 @@ attrs = use(
 )
 import attrs
 
-
 stay = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/stay/master/src/stay/stay.py"),
     hash_algo=use.Hash.sha256,
     hash_value="47e11e8de6b07f24c95233fba1e7281c385b049f771f74c5647a837b51bd7ff4",
     import_as="stay",
 )
-import stay
 
-load = stay.Decoder()
-dump = stay.Encoder()
+from typing import Any, cast
+
+load = cast(Callable[[], dict[Any, Any]], stay.Decoder())
+dump = cast(Callable[[], None], stay.Encoder())
 
 
 class ConfigurationError(Exception):

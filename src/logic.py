@@ -13,7 +13,7 @@ import numpy as np
 import use
 from beartype import beartype
 
-from classes import EVERY, ILK, Task2, retrieve_task_by_id, retrieve_tasks
+from classes import EVERY, ILK, Task, retrieve_task_by_id, retrieve_tasks
 
 fuzzy = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
@@ -80,7 +80,7 @@ def weight(time_spent, last_checked, now) -> float:
 
 
 @use.tinny_profiler
-def prioritize(tasks: list[Task2]) -> list:
+def prioritize(tasks: list[Task]) -> list:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
@@ -89,7 +89,7 @@ def prioritize(tasks: list[Task2]) -> list:
     return deque(sorted_tasks)
 
 
-def balance(tasks: list[Task2], activity_time_spent: dict[int, int]) -> list[Task2]:
+def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task]:
     # first prefer neglected activity; second prefer neglected tasks/habits
     sorted_tasks = sorted(
         tasks,
@@ -115,7 +115,7 @@ def schedule(tasks: list) -> list:
     return deque(sorted_by_deadline)
 
 
-def check_tasks(tasks: list[Task2], now: datetime):
+def check_tasks(tasks: list[Task], now: datetime):
     for task in tasks:
         if not task.done:
             yield task
@@ -189,17 +189,6 @@ def reset_task_if_time_passed(now, days, task, every_x):
         task.is_done = False
 
 
-def levenshtein_distance(text, pattern) -> int:
-    """Calculates the Levenshtein distance between two strings."""
-
-
-def filter_tasks(tasks: Iterable[Task2], pattern: str) -> Iterable[Task2]:
-    # TODO: use fuzzy matching from https://github.com/taleinat/fuzzysearch
-    if pattern.isspace() or not pattern:
-        return tasks
-    return filter(lambda t: pattern in t.do.casefold(), tasks)
-
-
 def skill_level(seconds):
     """Maps a number of hours to a small number of levels.
 
@@ -231,9 +220,56 @@ def skill_level(seconds):
     return 2 * (sqrt(x + 5625) - 75)
 
 
+@pipes
+def get_doable_tasks(db) -> list[Task]:
+    """Get all viable tasks from the database."""
+    now = datetime.now()
+    return (
+        retrieve_tasks(db)
+        >> check_tasks(now=now)
+        >> filter_tasks_by_status(0)
+        << filter_tasks_by_constraints(now=now)
+        >> list
+    )
+
+
 @use.woody_logger
-@beartype
-def filter_by_constraints(tasks: Iterable[Task2], /, *, now: datetime) -> Iterable[Task2]:
+def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:
+    match status:
+        # open
+        case 0:
+            return filter(
+                lambda t: not t.done and not t.draft and not t.inactive and not t.deleted,
+                tasks,
+            )
+        # draft
+        case 1:
+            return filter(
+                lambda t: t.draft,
+                tasks,
+            )
+        # inactive
+        case 2:
+            return filter(
+                lambda t: t.inactive,
+                tasks,
+            )
+        # done
+        case 3:
+            return filter(
+                lambda t: t.done,
+                tasks,
+            )
+        # deleted
+        case 4:
+            return filter(
+                lambda t: t.deleted,
+                tasks,
+            )
+
+
+@use.woody_logger
+def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> Iterable[Task]:
     for task in tasks:
         if task.get_constraints() is None:
             yield task
@@ -241,18 +277,23 @@ def filter_by_constraints(tasks: Iterable[Task2], /, *, now: datetime) -> Iterab
             yield task
 
 
-@beartype
-def consider_tasks(tasks: Iterable[Task2]) -> Iterable[Task2]:
-    return filter(lambda t: not t.deleted and not t.draft and not t.inactive, tasks)
+def levenshtein_distance(text, pattern) -> int:
+    """Calculates the Levenshtein distance between two strings."""
 
 
-@pipes
-def get_tasks(db) -> list[Task2]:
-    now = datetime.now()
-    return (
-        retrieve_tasks(db) >> check_tasks(now=now) >> consider_tasks << filter_by_constraints(now=now) >> list
-    )
+@use.woody_logger
+def filter_tasks_by_content(tasks: Iterable[Task], pattern: str) -> Iterable[Task]:
+    # TODO: use fuzzy matching from https://github.com/taleinat/fuzzysearch
+    if pattern.isspace() or not pattern:
+        return tasks
+    return filter(lambda t: pattern in t.do.casefold(), tasks)
 
 
-def get_string_representation_of_dict_without_quotation_marks(d: dict) -> str:
-    return str(d).replace("'", "").replace('"', "")
+@use.woody_logger
+def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int) -> Iterable[Task]:
+    return list(filter(lambda t: t.ilk == ilk if ilk else True, tasks))
+
+
+@use.woody_logger
+def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task]:
+    return filter(lambda t: t.space_id == space_id if space_id is not None else True, tasks)

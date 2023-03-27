@@ -17,9 +17,7 @@ import q
 import ui
 from ux import about, attributions, task_editor, task_list
 
-from .stuff import __version__, app, config, db
-
-db: sqlite3.Connection
+from stuff import __version__, app, config, db
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
@@ -63,9 +61,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def whatnow():
             """Watnu?!"""
             self.statusBar.clearMessage()
-            self.statusBar.showMessage(
-                "Ermittle was als nächstes dran ist... das könnte eine Weile dauern...", 5000
-            )
             self.repaint()
             app.win_what.lets_check_whats_next()
             app.win_what.show()
@@ -148,6 +143,7 @@ VALUES ('{d["do"]}',
 )
 """
                         )
+                        db.commit()
 
     def closeEvent(self, event):
         if app.win_running:
@@ -179,4 +175,4 @@ VALUES ('{d["do"]}',
             win.close()
         for win in app.list_of_editors:
             win.close()
-        config.write()
+        config.save()

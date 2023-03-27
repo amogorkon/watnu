@@ -6,17 +6,17 @@ import ctypes
 import sqlite3
 import sys
 from pathlib import Path
-from random import seed
 from time import time
 
 import use
-from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication
-from PyQt6.QtGui import QIcon
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlDatabase
 
 # ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
 from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
@@ -58,7 +58,8 @@ flux = use(
 
 
 load = stay.Decoder()
-import config
+import app
+import configuration
 
 __version__ = use.Version("0.2.2")
 __author__ = "Anselm Kiefner"
@@ -69,13 +70,6 @@ myappid = f"kiefnerit.watnu.{__version__}"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 _translate = QCoreApplication.translate
-
-
-def breakpoint_():
-    from PyQt6.QtCore import pyqtRemoveInputHook
-
-    pyqtRemoveInputHook()
-    sys.breakpointhook()
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -98,19 +92,14 @@ if __name__ == "__main__":
     path = Path(__file__).resolve().parents[1]
     # touch, just in case user killed the config or first start
     (path / "config.stay").touch()
-    # overwriting the module with the instance for convenience
-    config = config.read(path / "config.stay")
-
-    app = use(use.Path("ux/app.py"), initial_globals={"config": config}, import_as="ux.app").Application(
-        sys.argv
-    )
+    config = configuration.read(path / "config.stay")
+    config.base_path = path
+    db = sqlite3.connect(config.db_path, factory=DB)
+    app = app.Application(sys.argv, config, db)
     app.icon = QIcon(config.icon)
     app.setWindowIcon(app.icon)
 
-    seed((config.coin ^ config.lucky_num) * config.count)
-
     qdb = QSqlDatabase.addDatabase("QSQLITE")
-    db = sqlite3.connect(config.db_path, factory=DB)
 
     initial_globals = {
         "config": config,
@@ -118,10 +107,17 @@ if __name__ == "__main__":
         "__version__": __version__,
         "db": db,
     }
-    use(use.Path("classes.py"), initial_globals=initial_globals, import_as="classes")
+
+    # push all the globals into 'stuff' so we can import them properly and getting all the perks of IDE autocompletion
+    use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="stuff")
+
+    from classes import Task, retrieve_tasks
+
+    app.setUp()
+    from ux import task_editor
 
     if config.tutorial_active:
-        landing = use(use.Path("ux/landing.py"), initial_globals={"app": app, "qdb": qdb})
+        landing = use(use.Path("ux/landing.py"), initial_globals=initial_globals, import_as="ux.landing")
         win_landing = landing.Landing()
         concluded = win_landing.exec()
         if concluded:
@@ -131,29 +127,13 @@ if __name__ == "__main__":
     if not qdb.open():
         q("Could not open DB!")
 
-    if config.first_start:
-        use(use.Path("first_run.py"), initial_globals=initial_globals).run()
-        config.first_start = False
-        config.write()
-
     if config.run_sql_stuff:
         # just in case..
         (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
 
         use("sql_stuff.py", initial_globals={"config": config})
         config.run_sql_stuff = False
-        config.write()
-
-    app.list_of_task_lists: list["task_list.TaskList"] = []
-    "Multiple TaskLists can be open at the same time."
-    app.list_of_editors: list["task_editor.Editor"] = []
-    "Multiple Editors can be open at the same time."
-
-    use(use.Path("ux/stuff.py"), initial_globals=initial_globals, import_as="ux.stuff")
-
-    from ux import task_editor, task_list
-
-    app.setUp(config)
+        config.save()
 
     app.activity_color = {
         0: config.activity_color_body,
@@ -163,7 +143,7 @@ if __name__ == "__main__":
 
     if not qdb.tables():
         config.first_start = True
-        config.write()
+        config.save()
         QtWidgets.QMessageBox.critical(
             None,
             "Restart required",
@@ -176,5 +156,26 @@ if __name__ == "__main__":
 
     app.tray = TrayIcon(app.icon, app.win_main)
     app.tray.show()
+
+    print(QtGui.QFontDatabase.families())
+
+    tasks: list[Task] = retrieve_tasks(db)
+    # first, let's clean up empty ones
+    for t in tasks:
+        if t.do == "" and t.notes in ("", None):
+            t.really_delete()
+    tasks = retrieve_tasks(db)
+    if drafts := [t for t in tasks if t.draft]:
+        match QtWidgets.QMessageBox.question(
+            app.win_main,
+            "Jetzt bearbeiten?",
+            f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",
+        ):
+            case QtWidgets.QMessageBox.StandardButton.Yes:
+                for t in drafts:
+                    editor = task_editor.Editor(t)
+                    editor.show()
+                    editor.raise_()
+                    app.list_of_editors.append(editor)
 
     sys.exit(app.exec())

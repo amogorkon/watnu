@@ -11,16 +11,13 @@ from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 from PyQt6.QtSql import QSqlDatabase
 
-import config
+import configuration
 import ui
-from classes import EVERY, ILK, Every, Task2, cached_and_invalidated, typed
-from config import Config
+import ux
+from classes import EVERY, ILK, Every, Task, cached_and_invalidated, typed_row
 from logic import skill_level
-from ux import app, task_editor, task_finished, task_running
 
-from .stuff import __version__, app, config, db
-
-db: sqlite3.Connection
+from stuff import __version__, app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
@@ -41,7 +38,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
 
         app.win_settings.hide()
 
-        self.task: Task2 = task
+        self.task: Task = task
         self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) for skill in task.skills]
 
         self.paused = False
@@ -103,14 +100,13 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
         @self.notes.document().contentsChanged.connect
         def _():
-            query = statement = f"""
+            db.execute(
+                f"""
             UPDATE tasks SET notes= {self.notes.document().toMarkdown()}
             WHERE id={self.task.id}
             """
-            if not query.exec():
-                q("SQL failed:\n" + statement)
-                q(query.lastError().text())
-            return
+            )
+            db.commit()
 
         @self.timer.timeout.connect
         # timeout happens every 1 sec
@@ -175,7 +171,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.button6.clicked.connect
         def _():
             self.paused = True
-            win = task_editor.Editor(draft=True)
+            win = ux.task_editor.Editor(draft=True)
             win.exec()
             self.paused = False
 
@@ -190,7 +186,9 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         def finish_task_button():
             if timer_was_running := self.timer.isActive():
                 self.timer.stop()
-            win = task_finished.Task_Finished(self.task, start=self.start_time, pause_time=self.paused_ticks)
+            win = ux.task_finished.Task_Finished(
+                self.task, start=self.start_time, pause_time=self.paused_ticks
+            )
             if not win.exec():
                 if timer_was_running:
                     self.timer.start()

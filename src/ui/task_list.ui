@@ -18,7 +18,7 @@
   </property>
   <layout class="QVBoxLayout" name="layout">
    <item>
-    <widget class="QGroupBox" name="">
+    <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Auswahl</string>
      </property>
@@ -144,12 +144,12 @@
         </property>
         <item>
          <property name="text">
-          <string>Aufgabe</string>
+          <string>alles</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Routine</string>
+          <string>Aufgabe</string>
          </property>
         </item>
         <item>
@@ -160,6 +160,11 @@
         <item>
          <property name="text">
           <string>Tradition</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Routine</string>
          </property>
         </item>
        </widget>

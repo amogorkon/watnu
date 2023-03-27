@@ -5,18 +5,19 @@ import use
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox
 
+from stuff import app, db
 import ui
-from classes import ILK, Task2
+from classes import ILK, Task
 from logic import skill_level
 from ux import task_editor
 
-from .stuff import app, db
+
 
 
 class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(
         self,
-        task: Task2,
+        task: Task,
         start: float = None,
         stop: float = None,
         old_skills=None,
@@ -29,7 +30,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
 
 
         Args:
-            task (Task2): current task.
+            task (Task): current task.
             ticks (int, optional): . Defaults to 0.
             start (int, optional): Time task was started current session. Defaults to None.
             stop (int, optional): Time task was stopped current session. Defaults to None.
@@ -79,6 +80,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     WHERE id={self.task.id};
     """
         )
+        db.commit()
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 
         new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.get_skills()]

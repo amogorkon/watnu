@@ -6,10 +6,10 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 import ui
-from classes import Task2, cached_and_invalidated, typed
+from classes import Task, cached_and_invalidated, typed_row
 from logic import retrieve_task_by_id
 
-from .stuff import app, db
+from stuff import app, db
 
 
 class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):

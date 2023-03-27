@@ -1,6 +1,6 @@
 import sqlite3
 
-from config import Config
+from configuration import Config
 
 config: Config
 db: sqlite3.Connection
@@ -20,3 +20,5 @@ INSERT OR IGNORE INTO deadlines
 VALUES ({task_id}, {deadline})
 		"""
     )
+
+db.commit()
