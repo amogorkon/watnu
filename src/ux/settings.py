@@ -1,20 +1,14 @@
-import sqlite3
-
+import q
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QVariant
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox
 
-_translate = QCoreApplication.translate
-
-
-import q
-
 import ui
 from classes import Task, cached_and_invalidated, typed, typed_row
-
 from stuff import __version__, app, db
 
+_translate = QCoreApplication.translate
 
 
 class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):

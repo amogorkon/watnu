@@ -1,15 +1,12 @@
-import sqlite3
 from collections import defaultdict
 
-import use
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 import ui
-from classes import Task, cached_and_invalidated, typed_row
+from classes import cached_and_invalidated
 from logic import retrieve_task_by_id
-
-from stuff import app, db
+from stuff import db
 
 
 class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):

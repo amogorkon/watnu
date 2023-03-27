@@ -1,17 +1,14 @@
 from math import modf
 from time import time
 
-import use
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QMessageBox
 
-from stuff import app, db
 import ui
 from classes import ILK, Task
 from logic import skill_level
+from stuff import app, db
 from ux import task_editor
-
-
 
 
 class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):

@@ -2,20 +2,19 @@ from collections import namedtuple
 from functools import partial
 
 import numpy as np
+from beartype import beartype
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QVariant
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QWizard
 
-_translate = QCoreApplication.translate
-
-from beartype import beartype
-
 import ui
 from classes import ILK, Task
 from logic import retrieve_task_by_id
-from stuff import app, config, db
+from stuff import app, db
+
+_translate = QCoreApplication.translate
 
 
 @beartype

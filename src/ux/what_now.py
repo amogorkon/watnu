@@ -1,4 +1,3 @@
-import sqlite3
 from collections import defaultdict
 from math import modf, sin
 from random import seed
@@ -15,8 +14,6 @@ from stuff import app, config, db
 from ux import task_editor, task_finished, task_running
 
 _translate = QCoreApplication.translate
-
-db: sqlite3.Connection
 
 
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):

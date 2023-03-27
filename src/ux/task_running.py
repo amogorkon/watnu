@@ -1,22 +1,17 @@
-import sqlite3
 import webbrowser
 from collections import defaultdict
 from datetime import datetime
 from math import modf, sin
-from random import choice, seed
+from random import choice
 from time import time
 
-import q
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt, QTimer
-from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtCore import Qt, QTimer
 
-import configuration
 import ui
 import ux
-from classes import EVERY, ILK, Every, Task, cached_and_invalidated, typed_row
+from classes import Task
 from logic import skill_level
-
 from stuff import __version__, app, config, db
 
 

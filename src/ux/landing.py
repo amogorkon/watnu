@@ -1,14 +1,11 @@
+import use
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-_translate = QCoreApplication.translate
-
-import use
-
 import ui
+from stuff import app, config, db
 
-from stuff import app, db, config
-
+_translate = QCoreApplication.translate
 
 class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
     def __init__(self):

@@ -1,18 +1,14 @@
-import sqlite3
 from datetime import datetime
-from inspect import currentframe, getframeinfo
-from pathlib import Path
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon
-
-_translate = QCoreApplication.translate
+from PyQt6.QtGui import QIcon
 
 import ui
-from classes import Task, cached_and_invalidated, typed, typed_row
+from classes import typed, typed_row
+from stuff import __version__, db
 
-from stuff import __version__, app, config, db
+_translate = QCoreApplication.translate
 
 ok = QIcon("./extra/feathericons/check.svg")
 nok = QIcon("./extra/feathericons/x.svg")

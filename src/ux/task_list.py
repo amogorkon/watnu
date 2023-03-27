@@ -1,8 +1,5 @@
-import sqlite3
-from datetime import datetime
 from functools import partial
 from itertools import count
-from math import isinf
 from pathlib import Path
 from random import choice, seed
 from time import time, time_ns
@@ -15,22 +12,18 @@ from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
-from classes import Task, cached_and_invalidated, typed, typed_row
+from classes import Task, typed
 from logic import (
     filter_tasks_by_constraints,
     filter_tasks_by_content,
     filter_tasks_by_ilk,
     filter_tasks_by_space,
     filter_tasks_by_status,
-    get_doable_tasks,
     pipes,
     retrieve_tasks,
 )
-from ux import task_editor, task_finished, task_running
-
 from stuff import app, config, db
-
-db: sqlite3.Connection
+from ux import task_editor, task_finished, task_running
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):

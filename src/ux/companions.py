@@ -1,12 +1,11 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-_translate = QCoreApplication.translate
 
 import ui
+from stuff import __version__
 
-from stuff import app, db, config, __version__
-
+_translate = QCoreApplication.translate
 
 class Companions(QtWidgets.QDialog, ui.companions.Ui_Dialog):
     def __init__(self):

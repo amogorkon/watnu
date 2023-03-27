@@ -8,8 +8,7 @@ from PyQt6.QtSql import QSqlTableModel
 
 import ui
 from classes import EVERY, Every, Task
-
-from stuff import __version__, app, config, db
+from stuff import __version__
 
 
 def Chooser(editor: "task_editor.Editor", task: Task, kind: str):

@@ -1,23 +1,19 @@
-import sqlite3
 import webbrowser
 from collections import defaultdict
 from pathlib import Path
 
+import q
+import stay
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-_translate = QCoreApplication.translate
-
-import stay
-
-load = stay.Decoder()
-
-import q
-
 import ui
+from stuff import __version__, app, config, db
 from ux import about, attributions, task_editor, task_list
 
-from stuff import __version__, app, config, db
+_translate = QCoreApplication.translate
+
+load = stay.Decoder()
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):

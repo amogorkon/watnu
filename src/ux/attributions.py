@@ -5,12 +5,10 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
-_translate = QCoreApplication.translate
-
 import ui
+from stuff import __version__
 
-from stuff import app, db, config, __version__
-
+_translate = QCoreApplication.translate
 
 class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
     def __init__(self):
