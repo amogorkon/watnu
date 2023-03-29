@@ -341,7 +341,6 @@ WHERE id == {task.id}
         win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
-
     def build_task_list(self):
         self.last_generated = time()
 
@@ -478,7 +477,7 @@ def get_desc(task):
 
 @pipes
 def get_filtered_tasks(self):
-    self.tasks = (
+    return (
         retrieve_tasks(db)
         >> filter_tasks_by_status(self.status.currentIndex())
         >> filter_tasks_by_content(self.field_filter.text().casefold())
