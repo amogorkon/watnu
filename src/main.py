@@ -91,15 +91,25 @@ class DB(sqlite3.Connection):
 if __name__ == "__main__":
     path = Path(__file__).resolve().parents[1]
     # touch, just in case user killed the config or first start
-    (path / "config.stay").touch()
-    config = configuration.read(path / "config.stay")
+    config_path = path / "config.stay"
+    config_path.touch()
+    config = configuration.read(config_path)
+    print("using config:", config_path)
     config.base_path = path
+    app = app.Application(sys.argv, config)
+    app.icon = QIcon(config.icon)
+    app.setWindowIcon(app.icon)
+
+    # split tutorial from landing wizard, so the user can do the tutorial at any time
+    if config.first_start:
+        win_landing = use(
+            use.Path("ux/landing.py"), initial_globals={"config": config}, import_as="ux.landing"
+        ).Landing()
+        concluded = win_landing.exec()
+
     db = sqlite3.connect(config.db_path, factory=DB)
     if config.debugging:
         db.set_trace_callback(q)
-    app = app.Application(sys.argv, config, db)
-    app.icon = QIcon(config.icon)
-    app.setWindowIcon(app.icon)
 
     qdb = QSqlDatabase.addDatabase("QSQLITE")
 
@@ -115,19 +125,20 @@ if __name__ == "__main__":
 
     from classes import Task, retrieve_tasks
 
-    app.setUp()
-    from ux import task_editor
+    app.setUp(db)
+    from ux import landing, task_editor
 
-    if config.tutorial_active:
-        landing = use(use.Path("ux/landing.py"), initial_globals=initial_globals, import_as="ux.landing")
-        win_landing = landing.Landing()
-        concluded = win_landing.exec()
-        if concluded:
-            config.tutorial_active = False
     qdb.setDatabaseName(config.db_path)
-
-    if not qdb.open():
-        q("Could not open DB!")
+    if not qdb.open() or not qdb.tables():
+        config.first_start = True
+        config.save()
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Restart required",
+            "No viable DB found. Everything has been reset. Shutting down - please restart!",
+        )
+        app.tray.hide()
+        sys.exit()
 
     if config.run_sql_stuff:
         # just in case..
@@ -142,17 +153,6 @@ if __name__ == "__main__":
         1: config.activity_color_mind,
         2: config.activity_color_spirit,
     }
-
-    if not qdb.tables():
-        config.first_start = True
-        config.save()
-        QtWidgets.QMessageBox.critical(
-            None,
-            "Restart required",
-            "Found an empty DB. Everything has been reset. Shutting down - please restart!",
-        )
-        app.tray.hide()
-        sys.exit()
 
     app.win_main.show()
 

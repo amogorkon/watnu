@@ -8,14 +8,15 @@ from PyQt6 import QtWidgets
 class Application(QtWidgets.QApplication):
     """Main Application logic."""
 
-    def __init__(self, argv, config_, db_):
+    def __init__(self, argv, config_):
         super().__init__(argv)
         self.db_last_modified = 0
-        global config, db
+        global config
         config = config_
-        db = db_
 
-    def setUp(self):
+    def setUp(self, db_):
+        global db
+        db = db_
         import ux
 
         self.list_of_task_lists: list[ux.task_list.TaskList] = []
@@ -36,9 +37,8 @@ class Application(QtWidgets.QApplication):
             "Guten Abend",
             "Guten Abend",
         ][bisect_right([6, 11, 14, 18, 21, 25], datetime.now().hour)]
-        config.call_name = ""  # TODO converter in config.py?
         self.win_main.statusBar.showMessage(
-            f"{greet_time}, willkommen zurück{f', {config.call_name}' if config.call_name else ''}!", 10000
+            f"{greet_time}, {f'{config.call_name}' if config.call_name else 'willkommen zurück'}!", 10000
         )
         self.win_what = ux.what_now.What_Now()
         self.win_character = ux.character.Character()

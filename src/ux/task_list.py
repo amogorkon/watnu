@@ -76,6 +76,14 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(delete_item)
 
+        def toggle_fullscreen():
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+
         def build_space_list():
             self.space.clear()
             self.space.addItem("-- alle Räume --")
@@ -333,7 +341,19 @@ WHERE id == {task.id}
         win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
+
     def build_task_list(self):
+        self.last_generated = time()
+
+        self.selected_space = self.space.itemData(self.space.currentIndex())
+        config.last_selected_space = self.selected_space or 0
+        config.save()
+
+        self.arrange_list(get_filtered_tasks(self))
+        self.update()
+
+    def arrange_list(self, tasks: list[Task]):
+        """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         self.task_list.setStyleSheet(
             """
 alternate-background-color: #bfffbf; 
@@ -342,28 +362,6 @@ font-size: 12pt;
         """
         )
         self.task_list.ensurePolished()
-        self.last_generated = time()
-
-        self.selected_space = self.space.itemData(self.space.currentIndex())
-        config.last_selected_space = self.selected_space or 0
-        config.save()
-
-        self.tasks = get_filtered_tasks(self)
-        self.update()
-
-    def reject(self):
-        super().reject()
-        if app.win_running:
-            app.win_running.show()
-            app.win_running.raise_()
-        else:
-            app.win_main.show()
-            app.win_main.raise_()
-
-        app.list_of_task_lists.remove(self)
-
-    def arrange_list(self, tasks: list[Task]):
-        """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
         self.task_list.setSortingEnabled(False)
         self.task_list.setRowCount(len(tasks))
 
@@ -461,6 +459,17 @@ font-size: 12pt;
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
         self.button1.setMenu(menu)
 
+    def reject(self):
+        super().reject()
+        if app.win_running:
+            app.win_running.show()
+            app.win_running.raise_()
+        else:
+            app.win_main.show()
+            app.win_main.raise_()
+
+        app.list_of_task_lists.remove(self)
+
 
 def get_desc(task):
     lines = task.do.split("\n")
@@ -476,7 +485,6 @@ def get_filtered_tasks(self):
         >> filter_tasks_by_ilk(self.ilk.currentIndex())
         >> filter_tasks_by_space(self.selected_space)
         >> list
-        >> self.arrange_list
     )
 
 

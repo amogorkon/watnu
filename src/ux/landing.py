@@ -3,9 +3,11 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
 import ui
-from stuff import app, config, db
 
+from configuration import Config
+config: Config
 _translate = QCoreApplication.translate
+
 
 class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
     def __init__(self):
@@ -29,8 +31,7 @@ class Landing(QtWidgets.QWizard, ui.landing.Ui_Wizard):
 
     def done(self, status):
         config.db_path = self.db_file_name.text() or "watnu.sqlite"
-
-        use(use.Path("first_start.py"), initial_globals={"db": db, "config": config}).run()
+        config.call_name = self.call_name.text()
         config.first_start = False
         config.save()
 
