@@ -33,7 +33,9 @@ class Ui_Dialog(object):
         self.field_filter.setObjectName("field_filter")
         self.statusLayout.addWidget(self.field_filter)
         self.space = QtWidgets.QComboBox(parent=self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.space.sizePolicy().hasHeightForWidth())
@@ -59,8 +61,14 @@ class Ui_Dialog(object):
         self.status.addItem("")
         self.status.addItem("")
         self.status.addItem("")
+        self.status.addItem("")
         self.statusLayout.addWidget(self.status)
         self.ilk = QtWidgets.QComboBox(parent=self.groupBox)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setItalic(False)
+        font.setWeight(75)
+        self.ilk.setFont(font)
         self.ilk.setObjectName("ilk")
         self.ilk.addItem("")
         self.ilk.addItem("")
@@ -88,11 +96,18 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.check_deadline)
         self.layout.addWidget(self.horizontalGroupBox)
         self.task_list = QtWidgets.QTableWidget(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.task_list.sizePolicy().hasHeightForWidth())
         self.task_list.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setFamily("Segoe UI")
+        font.setBold(True)
+        font.setWeight(75)
+        self.task_list.setFont(font)
         self.task_list.setAutoFillBackground(False)
         self.task_list.setStyleSheet("")
         self.task_list.setMidLineWidth(0)
@@ -107,19 +122,14 @@ class Ui_Dialog(object):
         self.task_list.setAlternatingRowColors(True)
         self.task_list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
         self.task_list.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.task_list.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
         self.task_list.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
-        self.task_list.setShowGrid(True)
+        self.task_list.setShowGrid(False)
+        self.task_list.setWordWrap(False)
         self.task_list.setCornerButtonEnabled(True)
+        self.task_list.setColumnCount(0)
         self.task_list.setObjectName("task_list")
-        self.task_list.setColumnCount(1)
         self.task_list.setRowCount(0)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setFamily("MS Reference Sans Serif")
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.task_list.setHorizontalHeaderItem(0, item)
         self.task_list.horizontalHeader().setCascadingSectionResizes(True)
         self.task_list.horizontalHeader().setDefaultSectionSize(100)
         self.task_list.horizontalHeader().setMinimumSectionSize(5)
@@ -135,7 +145,9 @@ class Ui_Dialog(object):
         self.buttonLayout.setObjectName("buttonLayout")
         self.button6 = QtWidgets.QPushButton(parent=Dialog)
         self.button6.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button6.sizePolicy().hasHeightForWidth())
@@ -149,7 +161,9 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button4, 2, 1, 1, 1)
         self.button2 = QtWidgets.QPushButton(parent=Dialog)
         self.button2.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button2.sizePolicy().hasHeightForWidth())
@@ -158,7 +172,9 @@ class Ui_Dialog(object):
         self.button2.setObjectName("button2")
         self.buttonLayout.addWidget(self.button2, 3, 2, 1, 1)
         self.button5 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button5.sizePolicy().hasHeightForWidth())
@@ -166,7 +182,9 @@ class Ui_Dialog(object):
         self.button5.setObjectName("button5")
         self.buttonLayout.addWidget(self.button5, 2, 2, 1, 1)
         self.button1 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button1.sizePolicy().hasHeightForWidth())
@@ -175,7 +193,9 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button1, 3, 1, 1, 1)
         self.button7 = QtWidgets.QPushButton(parent=Dialog)
         self.button7.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button7.sizePolicy().hasHeightForWidth())
@@ -183,19 +203,27 @@ class Ui_Dialog(object):
         self.button7.setObjectName("button7")
         self.buttonLayout.addWidget(self.button7, 1, 1, 1, 1)
         self.button8 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button8.sizePolicy().hasHeightForWidth())
         self.button8.setSizePolicy(sizePolicy)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/feathericons/coin.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(
+            QtGui.QPixmap("ui\\../extra/feathericons/coin.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.button8.setIcon(icon)
         self.button8.setObjectName("button8")
         self.buttonLayout.addWidget(self.button8, 1, 2, 1, 1)
         self.button9 = QtWidgets.QPushButton(parent=Dialog)
         self.button9.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button9.sizePolicy().hasHeightForWidth())
@@ -205,7 +233,9 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button9, 1, 3, 1, 1)
         self.button3 = QtWidgets.QPushButton(parent=Dialog)
         self.button3.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button3.sizePolicy().hasHeightForWidth())
@@ -232,8 +262,9 @@ class Ui_Dialog(object):
         self.status.setItemText(2, _translate("Dialog", "inaktiv"))
         self.status.setItemText(3, _translate("Dialog", "erledigt"))
         self.status.setItemText(4, _translate("Dialog", "gelöscht"))
+        self.status.setItemText(5, _translate("Dialog", "-- alles --"))
         self.ilk.setToolTip(_translate("Dialog", "Art"))
-        self.ilk.setItemText(0, _translate("Dialog", "alles"))
+        self.ilk.setItemText(0, _translate("Dialog", "-- alle Arten--"))
         self.ilk.setItemText(1, _translate("Dialog", "Aufgabe"))
         self.ilk.setItemText(2, _translate("Dialog", "Gewohnheit"))
         self.ilk.setItemText(3, _translate("Dialog", "Tradition"))
@@ -244,8 +275,6 @@ class Ui_Dialog(object):
         self.check_space.setText(_translate("Dialog", "Raum"))
         self.check_deadline.setText(_translate("Dialog", "Deadline"))
         self.task_list.setSortingEnabled(True)
-        item = self.task_list.horizontalHeaderItem(0)
-        item.setText(_translate("Dialog", "Beschreibung"))
         self.button6.setText(_translate("Dialog", "erstelle neue Aufgabe"))
         self.button6.setShortcut(_translate("Dialog", "6"))
         self.button4.setText(_translate("Dialog", "bearbeite Aufgabe(n)"))

@@ -1,4 +1,5 @@
 import ast
+from sqlite3 import Connection
 import inspect
 from collections import deque
 from collections.abc import Callable, Iterable
@@ -80,7 +81,7 @@ def weight(time_spent, last_checked, now) -> float:
 
 
 @use.tinny_profiler
-def prioritize(tasks: list[Task]) -> list:
+def prioritize(tasks: list[Task]) -> deque[Task]:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
@@ -89,7 +90,7 @@ def prioritize(tasks: list[Task]) -> list:
     return deque(sorted_tasks)
 
 
-def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task]:
+def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> deque[Task]:
     # first prefer neglected activity; second prefer neglected tasks/habits
     sorted_tasks = sorted(
         tasks,
@@ -99,7 +100,7 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
                 1.618 * activity_time_spent[t.secondary_activity_id],
             ),
             weight(  # lightest weights float to the top!
-                t.get_time_spent(),
+                t.time_spent,
                 t.last_checked,
                 time(),
             ),
@@ -108,14 +109,14 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> list[Task
     return deque(sorted_tasks)
 
 
-def schedule(tasks: list) -> list:
-    filtered_by_infinity = filter(lambda t: not isinf(float(t.get_deadline())) or t.ilk is ILK.routine, tasks)
+def schedule(tasks: list) -> deque[Task]:
+    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
     sorted_by_last_checked = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
-    sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.get_deadline()))
+    sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
     return deque(sorted_by_deadline)
 
 
-def check_tasks(tasks: list[Task], now: datetime):
+def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
     for task in tasks:
         if not task.done:
             yield task
@@ -132,15 +133,13 @@ def check_tasks(tasks: list[Task], now: datetime):
                 task.set_done(False)
 
         elif task.get_repeats() is not None:
-            reset_task(task, now, every_x)
+            reset_task(task, datetime.timestamp(now), every_x)
 
         yield task
 
 
-def reset_task(db, task, now, every_x):
+def reset_task(db: Connection, task: Task, now: float, every_x: int):
     every_ilk, x_every, per_ilk, x_per = task.get_repeats()
-
-    now = datetime.timestamp(now)
 
     match every_ilk:
         case EVERY.minute:
@@ -221,7 +220,7 @@ def skill_level(seconds):
 
 
 @pipes
-def get_doable_tasks(db) -> list[Task]:
+def get_doable_tasks(db: Connection) -> list[Task]:
     """Get all viable tasks from the database."""
     now = datetime.now()
     return (
@@ -233,7 +232,6 @@ def get_doable_tasks(db) -> list[Task]:
     )
 
 
-@use.woody_logger
 def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:
     match status:
         # open
@@ -266,9 +264,10 @@ def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:
                 lambda t: t.deleted,
                 tasks,
             )
+        case 5:
+            return tasks
 
 
-@use.woody_logger
 def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> Iterable[Task]:
     for task in tasks:
         if task.get_constraints() is None:
@@ -281,7 +280,6 @@ def levenshtein_distance(text, pattern) -> int:
     """Calculates the Levenshtein distance between two strings."""
 
 
-@use.woody_logger
 def filter_tasks_by_content(tasks: Iterable[Task], pattern: str) -> Iterable[Task]:
     # TODO: use fuzzy matching from https://github.com/taleinat/fuzzysearch
     if pattern.isspace() or not pattern:
@@ -289,11 +287,11 @@ def filter_tasks_by_content(tasks: Iterable[Task], pattern: str) -> Iterable[Tas
     return filter(lambda t: pattern in t.do.casefold(), tasks)
 
 
-@use.woody_logger
-def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int) -> Iterable[Task]:
+def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int | None) -> Iterable[Task]:
+    if ilk is None:
+        return list(tasks)
     return list(filter(lambda t: t.ilk == ilk if ilk else True, tasks))
 
 
-@use.woody_logger
 def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task]:
     return filter(lambda t: t.space_id == space_id if space_id is not None else True, tasks)

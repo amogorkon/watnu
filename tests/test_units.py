@@ -1,19 +1,18 @@
 import use
-from PyQt6.QtSql import QSqlDatabase, QSqlTableModel
 from pytest import fixture, mark, raises, skip
 
-stay = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/stay/master/src/stay/stay.py"),
-    hash_algo=use.Hash.sha256,
-    hash_value="47e11e8de6b07f24c95233fba1e7281c385b049f771f74c5647a837b51bd7ff4",
-    import_as="stay",
-)
+use(
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+)  # otherwise imports from modules won't work
 
-q = use(use.Path("../src/q.py"))
+initial_globals = {"db": None, "app": None, "config": None}
 
-first_start = use(use.Path("../src/first_start.py"))
-config = use(use.Path("../src/config.py")).Config()
+use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="stuff")
+
+Task = use(use.Path("classes.py"), initial_globals=initial_globals).Task
 
 
-def test_config():
-    assert config.first_start is True
+def test_task():
+    d = {}
+    t = Task(*[0] * 19)
+    assert t

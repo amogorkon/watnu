@@ -1,12 +1,11 @@
+from datetime import datetime
 from functools import partial
 from itertools import count
 from pathlib import Path
 from random import choice, seed
 from time import time, time_ns
 
-import q
-import use
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
@@ -25,18 +24,31 @@ from logic import (
 from stuff import app, config, db
 from ux import task_editor, task_finished, task_running
 
+_translate = QtCore.QCoreApplication.translate
+
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
+    def rearrange_list(self):
+        self.arrange_list(
+            list(filter_tasks_by_content(retrieve_tasks(), self.field_filter.text().casefold()))
+        )
+        self.update()
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.timer = QTimer()
+
+        self.db_timer = QTimer()
         "Timer for polling if the db has changed and regenerate the list."
-        self.timer.start(100)
+        self.db_timer.start(100)
         self.last_generated = 0
         self.tasks: list[Task] = []
+        self.check_deadline.stateChanged.connect(self.rearrange_list)
+        self.check_level.stateChanged.connect(self.rearrange_list)
+        self.check_priority.stateChanged.connect(self.rearrange_list)
+        self.check_space.stateChanged.connect(self.rearrange_list)
 
-        @self.timer.timeout.connect
+        @self.db_timer.timeout.connect
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_list()
@@ -64,24 +76,10 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(delete_item)
 
-        self.task_list.setStyleSheet(
-            """
-alternate-background-color: #bfffbf; 
-background-color: #deffde;
-font-family: Algerian;
-font-style: bold;
-font-size: 49pt;
-        """
-        )
-        self.task_list.style().unpolish(self.task_list)
-        self.task_list.style().polish(self.task_list)
-        self.task_list.update()
-
         def build_space_list():
             self.space.clear()
-            font = QFont("Algerian", italic=True)
             self.space.addItem("-- alle Räume --")
-            self.space.setItemData(0, font, Qt.ItemDataRole.FontRole)
+            self.space.setItemData(0, self.font, Qt.ItemDataRole.FontRole)
             query = db.execute(
                 """
             SELECT space_id, name FROM spaces;
@@ -186,13 +184,13 @@ DELETE FROM spaces where name=='{space_name}'
 
             for x in X:
                 task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
-                win = list(filter(lambda w: w.task == task, app.list_of_editors))
+                win = list(filter(lambda w: w.task == task, app.list_of_task_editors))
                 if win:
                     win[0].show()
                     win[0].raise_()
                     continue
                 win = task_editor.Editor(task)
-                app.list_of_editors.append(win)
+                app.list_of_task_editors.append(win)
                 win.show()
 
         @self.button5.clicked.connect
@@ -213,7 +211,7 @@ DELETE FROM spaces where name=='{space_name}'
         @self.button6.clicked.connect
         def create_task():
             win = task_editor.Editor(current_space=self.space.currentText())
-            app.list_of_editors.append(win)
+            app.list_of_task_editors.append(win)
             win.show()
 
         @self.button8.clicked.connect
@@ -228,8 +226,6 @@ DELETE FROM spaces where name=='{space_name}'
                 if first != second:
                     break
             # 'threw 31688 pairs!' - so much for "should"
-            q("threw", i, "pairs!")
-
             # bitshift to the left
             config.coin <<= 1
             # then set the bit -
@@ -259,20 +255,13 @@ DELETE FROM spaces where name=='{space_name}'
 
         # once we change the filter, we wait for 1 sec before applying the filter,
         # in order to avoid constant refiltering for something the user doesn't actually want.
-        self.filter_timer = QTimer()
-        "Timer to give the user 1 sec to finish typing their filter query."
+        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
-        @self.field_filter.textChanged.connect
-        def field_filter_changed():
-            self.filter_timer.start(1000)
-
-        @self.filter_timer.timeout.connect
         def filter_changed():
             self.arrange_list(
                 list(filter_tasks_by_content(retrieve_tasks(), self.field_filter.text().casefold()))
             )
             self.update()
-            self.filter_timer.stop()
 
     def set_as_open(self):
         X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
@@ -345,6 +334,14 @@ WHERE id == {task.id}
         win.show()
 
     def build_task_list(self):
+        self.task_list.setStyleSheet(
+            """
+alternate-background-color: #bfffbf; 
+background-color: #deffde;
+font-size: 12pt;
+        """
+        )
+        self.task_list.ensurePolished()
         self.last_generated = time()
 
         self.selected_space = self.space.itemData(self.space.currentIndex())
@@ -365,45 +362,63 @@ WHERE id == {task.id}
 
         app.list_of_task_lists.remove(self)
 
-    @use.woody_logger
     def arrange_list(self, tasks: list[Task]):
         """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
-        self.task_list.hide()
-        self.task_list.clear()
-
-        if not tasks:
-            self.task_list.clearContents()
-            self.task_list.setRowCount(0)
-
         self.task_list.setSortingEnabled(False)
         self.task_list.setRowCount(len(tasks))
+
+        # displayed columns: tuple[Header, displayed, how to get value]
+        columns = (
+            ("space", self.check_space.isChecked(), lambda t: t.space),
+            ("level", self.check_level.isChecked(), lambda t: t.level),
+            ("priority", self.check_priority.isChecked(), lambda t: t.priority),
+            ("deadline", self.check_deadline.isChecked(), lambda t: deadline_as_str(t.deadline)),
+            ("do", True, lambda t: get_desc(t)),
+        )
+
         ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
         family = QFontDatabase.applicationFontFamilies(ID)
-        font = QFont(family)
+        item_font = QFont(family)
+        header_font = QFont("Segoi UI")
+        header_font.setBold(True)
+        header_font.setPixelSize(10)
 
-        # self.displayed_columns -> tuple of displayed columns
-        displayed = (False, False, False, False)
-        match displayed:
-            case _:
-                self.task_list.setColumnCount(1)
-                item = QTableWidgetItem("Beschreibung")
-                item.setFont(font)
+        self.task_list.setColumnCount(len(list(filter(lambda c: c[1], columns))))
 
-                self.task_list.setHorizontalHeaderItem(0, item)
+        # TODO: use _translate
+        translation = {
+            "do": "Beschreibung",
+            "space": "Raum",
+            "level": "Level",
+            "priority": "Priorität",
+            "deadline": "Deadline",
+        }
 
-                for i, task in enumerate(tasks):
-                    lines = task.do.split("\n")
-                    desc = lines[0] + ("" if len(lines) == 1 else " […]")
-                    item = QtWidgets.QTableWidgetItem(desc)
-                    item.setFont(font)
-                    item.setToolTip(task.get_space())
+        for column_number, column in enumerate(filter(lambda c: c[1], columns)):
+            self.set_header(translation[column[0]], header_font, column_number)
+
+        for i, task in enumerate(tasks):
+            for column_number, (header, displayed, func) in enumerate(filter(lambda c: c[1], columns)):
+                content = str(func(task))
+                item = QtWidgets.QTableWidgetItem(content)
+                item.setFont(item_font)
+                if column_number == 0:
                     item.setData(Qt.ItemDataRole.UserRole, task)
-                    self.task_list.setItem(i, 0, item)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
+                self.task_list.setItem(i, column_number, item)
 
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
+        self.task_list.ensurePolished()
         self.task_list.show()
         return tasks
+
+    def set_header(self, text, font, column):
+        item = QTableWidgetItem(text)
+        item.setFont(font)
+        item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.task_list.setHorizontalHeaderItem(column, item)
+        self.task_list.update()
 
     def build_button1_menu(self):
         menu = QtWidgets.QMenu()
@@ -438,11 +453,18 @@ WHERE id == {task.id}
                 menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
                 menu.addAction("erledigt", partial(self.set_as, "done", True))
                 menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+            case 5:  # all
+                menu.addAction("offen", self.set_as_open)
+                menu.addAction("Entwurf", partial(self.set_as, "draft", True))
+                menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
+                menu.addAction("erledigt", partial(self.set_as, "done", True))
+                menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
         self.button1.setMenu(menu)
 
-    def close(self) -> bool:
-        self.timer.stop()
-        return super().close()
+
+def get_desc(task):
+    lines = task.do.split("\n")
+    return lines[0] + ("" if len(lines) == 1 else " […]")
 
 
 @pipes
@@ -456,3 +478,9 @@ def get_filtered_tasks(self):
         >> list
         >> self.arrange_list
     )
+
+
+def deadline_as_str(deadline) -> str:
+    if deadline == float("inf"):
+        return ""
+    return str(datetime.fromtimestamp(deadline))

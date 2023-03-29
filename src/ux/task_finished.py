@@ -41,14 +41,14 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.stop = stop or self.start
         self.pause_time = pause_time
         self.old_skills = old_skills or [
-            (skill.id, int(skill_level(skill.time_spent))) for skill in task.get_skills()
+            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
         ]
 
         self.task_desc.setText(task.do)
         # let's ask the DB for previous sessions and add the current time
         current_session_time = self.stop - self.start
 
-        self.total = task.get_time_spent() + task.adjust_time_spent + current_session_time - self.pause_time
+        self.total = task.time_spent + task.adjust_time_spent + current_session_time - self.pause_time
         rst, days = modf(self.total / (60 * 60 * 24))
         rst, hours = modf(self.total / (60 * 60))
         rst, minutes = modf(rst * 60)
@@ -72,7 +72,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         db.execute(
             f"""
     UPDATE tasks 
-    SET adjust_time_spent = {total - self.task.get_time_spent()},     
+    SET adjust_time_spent = {total - self.task.time_spent},     
         done=TRUE
     WHERE id={self.task.id};
     """
@@ -80,7 +80,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         db.commit()
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 
-        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.get_skills()]
+        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.skills]
 
         for x, y in zip(self.old_skills, new_skills):
             if x[1] < y[1]:
@@ -108,6 +108,6 @@ Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den 
                 case QMessageBox.StandardButton.Yes:
                     # TODO check on edit if deadline and repeat is set for tradition
                     win = task_editor.Editor(task=self.task, draft=True)
-                    app.list_of_editors.append(win)
+                    app.list_of_task_editors.append(win)
                     win.exec()
         return True

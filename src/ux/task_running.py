@@ -10,13 +10,13 @@ from PyQt6.QtCore import Qt, QTimer
 
 import ui
 import ux
-from classes import Task
+from classes import Task, typed
 from logic import skill_level
 from stuff import __version__, app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
-    def __init__(self, task):
+    def __init__(self, task: Task):
         if app.win_running is not None:
             app.win_running.show()
             app.win_running.raise_()
@@ -33,7 +33,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
 
         app.win_settings.hide()
 
-        self.task: Task = task
+        self.task = task
         self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) for skill in task.skills]
 
         self.paused = False
@@ -44,7 +44,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         self.paused_ticks = 0
         self.session_adjust_time_spent = 0
 
-        self.task.last_checked = self.start_time
+        self.task.set_last_checked(self.start_time)
         self.timer = QTimer()
         self.animation_timer = QTimer()
         self.animation_timer.start(15)
@@ -199,22 +199,23 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
 
     def cancel(self):
         """Hard cancel - no button for this, just Esc"""
+        super().reject()
         self.timer.stop()
-        self.ticks = 0  #
+        self.ticks = 0
         self.task.last_checked = time()
-        self.task = None
 
         for win in app.list_of_task_lists:
             self.restart_win(win)
-        if app.list_of_task_lists:
-            for win in app.list_of_task_lists:
-                win.show()
-                win.raise_()
-        else:
+        for win in app.list_of_task_editors:
+            win.show()
+            win.raise_()
+
+        if app.win_what.shown:
             app.win_what.show()
             app.win_what.raise_()
 
-        super().reject()
+        self.close()
+        app.win_running = None
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
@@ -231,7 +232,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         """
         )
 
-        last_started = query.value(0) if query.next() else 0
+        last_started = typed(query.fetchone(), int, 0)
         now = datetime.now()
         then = datetime.fromtimestamp(last_started)
 
@@ -270,5 +271,6 @@ Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
 
     def restart_win(self, win):
         win.button5.setEnabled(True)
-        win.timer.start(100)
-        win.filter_timer.start(1000)
+        win.db_timer.start(100)
+        win.show()
+        win.raise_()

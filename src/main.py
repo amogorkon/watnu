@@ -95,6 +95,8 @@ if __name__ == "__main__":
     config = configuration.read(path / "config.stay")
     config.base_path = path
     db = sqlite3.connect(config.db_path, factory=DB)
+    if config.debugging:
+        db.set_trace_callback(q)
     app = app.Application(sys.argv, config, db)
     app.icon = QIcon(config.icon)
     app.setWindowIcon(app.icon)
@@ -157,8 +159,6 @@ if __name__ == "__main__":
     app.tray = TrayIcon(app.icon, app.win_main)
     app.tray.show()
 
-    print(QtGui.QFontDatabase.families())
-
     tasks: list[Task] = retrieve_tasks(db)
     # first, let's clean up empty ones
     for t in tasks:
@@ -176,6 +176,6 @@ if __name__ == "__main__":
                     editor = task_editor.Editor(t)
                     editor.show()
                     editor.raise_()
-                    app.list_of_editors.append(editor)
+                    app.list_of_task_editors.append(editor)
 
     sys.exit(app.exec())

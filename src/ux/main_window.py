@@ -67,7 +67,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             """Add new Task."""
             win = task_editor.Editor()
             win.show()
-            app.list_of_editors.append(win)
+            app.list_of_task_editors.append(win)
 
         @self.button1.clicked.connect
         def statistics():
@@ -169,6 +169,6 @@ VALUES ('{d["do"]}',
         app.win_statistics.close()
         for win in app.list_of_task_lists:
             win.close()
-        for win in app.list_of_editors:
+        for win in app.list_of_task_editors:
             win.close()
         config.save()

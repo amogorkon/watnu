@@ -2,22 +2,20 @@ from collections import namedtuple
 from functools import partial
 
 import numpy as np
-from beartype import beartype
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt, QVariant
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QWizard
 
 import ui
-from classes import ILK, Task
+from classes import ILK, Task, get_activity_name
 from logic import retrieve_task_by_id
 from stuff import app, db
 
 _translate = QCoreApplication.translate
 
 
-@beartype
 class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     """Editor for new or existing tasks."""
 
@@ -32,6 +30,16 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     ):
         super().__init__()
         self.setupUi(self)
+
+        self.gui_timer = QTimer()
+        self.gui_timer.start(100)
+
+        @self.gui_timer.timeout.connect
+        def gui_timer_timeout():
+            if app.win_running:
+                self.button5.setEnabled(False)
+            else:
+                self.button5.setEnabled(True)
 
         self.task = task
         self.cloning = cloning
@@ -119,11 +127,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         # editing a task - need to set all values accordingly
         if task:
-            self.deadline = task.get_deadline()
-            self.skill_ids = self.task.get_skills()
+            self.deadline = task.deadline
+            self.skill_ids = self.task.skills
             self.priority.setValue(task.priority)
-
-            for url, ID in task.get_resources():
+            for url, ID in task.resources:
                 self.resources.addItem(url, ID)
 
             self.desc.document().setPlainText(task.do)
@@ -138,15 +145,16 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
                     self.is_routine.setChecked(True)
                     self.button8.setEnabled(True)
 
+            print(repr(task))
             self.notes.document().setPlainText(task.notes)
-            self.space.setCurrentIndex(self.space.findText(self.task.get_space()))
-            self.level.setCurrentIndex(self.level.findText(self.task.get_level()))
+            self.space.setCurrentIndex(self.space.findText(self.task.space))
+            self.level.setCurrentIndex(self.level.findText(self.task.level))
             self.primary_activity.setCurrentIndex(
-                self.primary_activity.findText(self.task.get_primary_activity_name())
+                self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
             )
 
             self.secondary_activity.setCurrentIndex(
-                self.primary_activity.findText(self.task.get_secondary_activity_name())
+                self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
             )
             self.repeats = self.task.get_repeats()
             self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 144))
@@ -277,7 +285,7 @@ SET do = '{self.desc.toPlainText()}',
     level_id = {self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))},
     primary_activity_id = {x if (x := self.primary_activity.currentData()) is not None else "NULL"},
     secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
-    space_id = {self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))},
+    space_id = {x if (x := self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))) is not None else 0},
     ilk = {task_type.value},
     draft = {self.draft}
 WHERE id={self.task.id};
@@ -294,7 +302,7 @@ COMMIT;
         )
         # enter fresh, no matter whether new or old
         db.executemany(
-            """
+            f"""
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
 VALUES ({self.task.id}, ?)
@@ -363,6 +371,9 @@ VALUES (
 
         for win in app.list_of_task_lists:
             win.build_task_list()
+        
+        # it's possible to edit a task while whatnow is open - so we need to update the whatnow window        
+        app.win_what.lets_check_whats_next()
 
     def accept(self):
         self.draft = False
@@ -380,7 +391,7 @@ VALUES (
 
     def create_task(self):
         win = Editor()
-        app.list_of_editors.append(win)
+        app.list_of_task_editors.append(win)
         win.show()
 
     def clone(self):
@@ -397,7 +408,7 @@ VALUES (
         win.skill_ids = self.skill_ids
         win.priority.setValue(self.priority.value())
 
-        app.list_of_editors.append(win)
+        app.list_of_task_editors.append(win)
         win.show()
 
     def set_as(self, status: str, set_flag):

@@ -5,7 +5,7 @@ from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox
 
 import ui
-from classes import Task, cached_and_invalidated, typed, typed_row
+from classes import Task, typed, typed_row
 from stuff import __version__, app, db
 
 _translate = QCoreApplication.translate

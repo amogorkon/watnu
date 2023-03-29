@@ -4,7 +4,7 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 import ui
-from classes import cached_and_invalidated
+from classes import cached_getter
 from logic import retrieve_task_by_id
 from stuff import db
 
@@ -17,7 +17,7 @@ class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):
         self.skills_table.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         self.build_skill_table()
 
-    @cached_and_invalidated
+    @cached_getter
     def build_skill_table(self):
         query = db.execute(
             """
@@ -60,7 +60,7 @@ DELETE FROM task_trains_skill WHERE skill_id=={skill_id} AND {task_id} NOT IN (S
 
             item = QtWidgets.QTableWidgetItem(
                 str(
-                    sum(retrieve_task_by_id(db, x).get_total_time_spent() for x in skills_trained_by[skill])
+                    sum(retrieve_task_by_id(db, x).total_time_spent for x in skills_trained_by[skill])
                     // (60 * 60)
                 )
             )

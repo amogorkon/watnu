@@ -6,7 +6,6 @@ from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 import ui
-from stuff import __version__
 
 _translate = QCoreApplication.translate
 

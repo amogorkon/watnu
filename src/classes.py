@@ -1,4 +1,5 @@
 from collections import namedtuple
+from datetime import datetime
 from enum import Enum, Flag
 from functools import wraps
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Any, NamedTuple
 import use
 from beartype import beartype
 
-from stuff import config, db, app
+from stuff import app, config, db
 
 np = use(
     "numpy",
@@ -46,7 +47,7 @@ class EVERY(Enum):
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
 
 
-def cached_and_invalidated(func):
+def cached_func_noarg(func):
     last_called = 0
     last_result = ...
 
@@ -58,6 +59,26 @@ def cached_and_invalidated(func):
             last_result = res
         else:
             res = last_result
+
+        last_called = time()
+        return res
+
+    return wrapper
+
+
+def cached_getter(func):
+    last_called = 0
+    last_results = {}
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        self = args[0]
+        nonlocal last_called, last_results
+        if app.db_last_modified >= last_called or self not in last_results:
+            res = func(*args, **kwargs)
+            last_results[self] = res
+        else:
+            res = last_results[self]
 
         last_called = time()
         return res
@@ -94,7 +115,7 @@ class Skill(NamedTuple):
     id: int
 
     @property
-    @cached_and_invalidated
+    @cached_getter
     def time_spent(self):
         query = db.execute(
             f"""
@@ -134,60 +155,14 @@ class Task:
         "notes",
     )
 
-    def __init__(
-        self,
-        ID,
-        do,
-        notes,
-        deleted,
-        draft,
-        inactive,
-        done,
-        primary_activity_id,
-        secondary_activity_id,
-        space_id,
-        priority,
-        level_id,
-        adjust_time_spent,
-        difficulty,
-        fear,
-        embarrassment,
-        last_checked,
-        workload,
-        ilk,
-    ):
-        self.id = ID
-        self.do = do
-        self.deleted = deleted
-        self.draft = draft
-        self.inactive = inactive
-        self.done = done
-        self.primary_activity_id = primary_activity_id
-        self.secondary_activity_id = secondary_activity_id
-        self.space_id = space_id
-        self.priority = priority
-        self.level_id = level_id
-        self.adjust_time_spent = adjust_time_spent
-        self.difficulty = difficulty
-        self.fear = fear
-        self.embarrassment = embarrassment
-        self.last_checked = last_checked
-        self.workload = workload if workload is not None else 0  # How to estimate a default?
-        self.ilk = ilk
-        self.notes = notes
+    def __init__(self, **kwargs):
+        for name, value in kwargs.items():
+            self.set_(name, value, to_db=False)
 
     def set_done(self, value: bool) -> None:
-        self.done = value
-        db.execute(
-            f"""
-UPDATE tasks
-SET done={value} 
-WHERE id={self.id}
-        """
-        )
-        db.commit()
+        self.set_("done", value)
 
-    @cached_and_invalidated
+    @cached_getter
     def get_repeats(self) -> Every[EVERY, int]:
         """
         Return the repeats for this task.
@@ -208,7 +183,7 @@ WHERE id={self.id}
                 typed_row(query, 1, int),
                 EVERY(typed_row(query, 2, int)),
                 typed_row(
-                    query.value,
+                    query,
                     3,
                     int,
                 ),
@@ -223,7 +198,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             else None
         )
 
-    @cached_and_invalidated
+    @cached_getter
     def get_constraints(self) -> np.ndarray:
         return (
             np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 144)
@@ -238,7 +213,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             else None
         )
 
-    @cached_and_invalidated
+    @cached_getter
     def get_space_priority(self) -> float:
         if self.space_id:
             return typed_row(
@@ -253,24 +228,14 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         else:
             return 0
 
-    @cached_and_invalidated
-    def get_space(self) -> str:
-        if self.space_id:
-            return typed_row(
-                db.execute(
-                    f"""
-        SELECT name FROM spaces WHERE space_id={self.space_id};
-        """
-                ).fetchone(),
-                0,
-                str,
-                default=None,
-            )
-        else:
-            return ""
+    @property
+    @cached_getter
+    def space(self) -> str:
+        return get_space_name(self.space_id)
 
-    @cached_and_invalidated
-    def get_time_spent(self):
+    @property
+    @cached_getter
+    def time_spent(self):
         query = db.execute(
             f"""
 SELECT time_spent, adjust_time_spent
@@ -285,18 +250,20 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
             for time_spent, adjust_time_spent in query.fetchall()
         )
 
-    @cached_and_invalidated
-    def get_deadline(self) -> float:
+    @property
+    @cached_getter
+    def deadline(self) -> float:
         query = db.execute(
             f"""
         SELECT time_of_reference FROM deadlines WHERE task_id={self.id}
         """
         )
         own_deadline = typed_row(query.fetchone(), 0, float, default=float("inf"))
-        return min([t.get_deadline() for t in self.get_supertasks()] + [own_deadline]) - self.workload
+        return min([t.deadline for t in self.supertasks] + [own_deadline]) - (self.workload or 0)
 
-    @cached_and_invalidated
-    def get_supertasks(self):
+    @property
+    @cached_getter
+    def supertasks(self):
         query = db.execute(
             f"""
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
@@ -304,43 +271,25 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         return [retrieve_task_by_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
 
-    @cached_and_invalidated
-    def get_skills(self) -> list[int]:
+    @property
+    @cached_getter
+    def skills(self) -> list[int]:
         query = db.execute(
             f"""
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}
         """
         )
-        return [Skill(typed(skill_id, int)) for skill_id in query.fetchall()]
-
-    @cached_and_invalidated
-    def get_adjust_time_spent(self) -> int:
-        query = db.execute(
-            f"""
-        SELECT adjust_time_spent FROM tasks WHERE id={self.id}
-        """
-        )
-        return typed_row(query.fetchone(), 0, int, 0)
+        return [Skill(typed_row(skill_id, 0, int)) for skill_id in query.fetchall()]
 
     def set_adjust_time_spent(self, value) -> None:
-        db.execute(
-            f"""
-        UPDATE tasks SET adjust_time_spent={value} 
-        WHERE id={self.id}
-        """
-        )
-        db.commit()
+        self.set_("adjust_time_spent", value)
 
-    def get_total_time_spent(self) -> int:
-        return self.get_adjust_time_spent() + self.get_time_spent()
+    @property
+    def total_time_spent(self) -> int:
+        return self.adjust_time_spent + self.time_spent
 
     def delete(self):
-        db.execute(
-            f"""
-        UPDATE tasks SET deleted=1 WHERE id={self.id}
-        """
-        )
-        db.commit()
+        self.set_("deleted", True)
 
     def really_delete(self):
         db.execute(
@@ -350,10 +299,11 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         db.commit()
 
-    @cached_and_invalidated
-    def get_resources(self) -> list[str]:
+    @property
+    @cached_getter
+    def resources(self) -> list[str]:
         return [
-            (typed(resource_id, str), typed(url, int))
+            (typed(url, str), typed(resource_id, int))
             for url, resource_id in db.execute(
                 f"""
 SELECT resources.url, resources.resource_id
@@ -367,118 +317,120 @@ WHERE tasks.id = {self.id}
             ).fetchall()
         ]
 
-    @cached_and_invalidated
-    def get_level(self) -> str:
-        actual_level = max(t.level_id for t in self.get_supertasks() | {self})
+    @property
+    @cached_getter
+    def level(self) -> str:
+        actual_level = max(t.level_id for t in self.supertasks | {self})
+        return get_level_name(actual_level)
+
+    @property
+    @cached_getter
+    def last_finished(self) -> int:
         query = db.execute(
             f"""
-        SELECT name FROM levels WHERE level_id={actual_level};
+        SELECT stop
+        FROM sessions
+        WHERE task_id == {self.id} AND finished == TRUE
+        ORDER BY
+            stop DESC
+        ;
         """
         )
-        return typed_row(query.fetchone(), 0, str)
+        return typed(query.fetchone(), 0, int, default=0)
 
-    @cached_and_invalidated
-    def get_supertasks(self) -> set["Task"]:
+    @property
+    @cached_getter
+    def supertasks(self) -> set["Task"]:
         query = db.execute(
             f"""
 SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
-        return {retrieve_task_by_id(typed_row(row, 0, int)) for row in query.fetchall()}
+        return {retrieve_task_by_id(db, typed_row(row, 0, int)) for row in query.fetchall()}
 
-    @cached_and_invalidated
-    def get_subtasks(self) -> set["Task"]:
+    @property
+    @cached_getter
+    def subtasks(self) -> set["Task"]:
         query = db.execute(
             f"""
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
-        return {retrieve_task_by_id(typed(required_task, int)) for required_task in query.fetchall()}
+        return {retrieve_task_by_id(db, typed(required_task, int)) for required_task in query.fetchall()}
 
-    @cached_and_invalidated
-    def get_primary_activity_id(self) -> int | None:
-        query = db.execute(
-            f"""
-        SELECT primary_activity_id FROM tasks WHERE id={self.id}
-        """
-        )
+    def set_primary_activity_id(self, activity_id: int) -> None:
+        self.set_("primary_activity_id", activity_id)
 
-        return typed_row(query.fetchone(), 0, int | None, default=None)
+    def set_last_checked(self, time_: float) -> None:
+        self.set_("last_checked", time_)
 
-    @cached_and_invalidated
-    def get_secondary_activity_id(self) -> int | None:
-        query = db.execute(
-            f"""
-        SELECT secondary_activity_id FROM tasks WHERE id={self.id}
-        """
-        )
-        return typed_row(query.fetchone(), 0, int | None, default=None)
+    def set_(self, name, value, to_db=True):
+        if to_db:
+            db.execute(f"UPDATE tasks SET {name}={value} WHERE id={self.id}")
+            db.commit()
+        object.__setattr__(self, name, value)
 
-    @cached_and_invalidated
-    def get_primary_activity_name(self) -> str:
-        if (activity := self.get_primary_activity_id()) is None:
-            return ""
-        query = db.execute(
-            f"""
-        SELECT name FROM activities WHERE activity_id={activity};
-        """
-        )
-        return typed_row(query.fetchone(), 0, str, default="")
+        return value
 
-    @cached_and_invalidated
-    def get_secondary_activity_name(self) -> str:
-        if (activity := self.get_secondary_activity_id()) is None:
-            return ""
-        query = db.execute(
-            f"""
-        SELECT name FROM activities WHERE activity_id={activity};
-        """
-        )
-        return typed_row(query.fetchone(), 0, str, default="")
+    def __str__(self):
+        return f"Task({self.id}, ...)"
+
+    def __repr__(self):
+        return f"Task(**{ {k: getattr(self, k) for k in Task.__slots__}})"
+
+    def __setattr__(self, name, value):
+        raise UserWarning("Can't directly assign to Task attributes. Use Task.set_() instead.")
 
 
 def retrieve_task_by_id(db, ID: int) -> Task:
-    query = db.execute(
-        f"""
-SELECT id, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarrassment, last_checked, workload, ilk FROM tasks WHERE id == {ID};
-    """
-    )
+    query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks WHERE id == {ID};")
     res = query.fetchone()
     assert res is not None, breakpoint()
-    return Task(*res)
+    kwargs = dict(zip(Task.__slots__, res))
+    return Task(**kwargs)
 
 
-@use.woody_logger
-@cached_and_invalidated
+@cached_func_noarg
 def retrieve_tasks(db) -> list[Task]:
     """Load all tasks from the database."""
-    query = db.execute(
-        """
-        SELECT id, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarrassment, last_checked, workload, ilk FROM tasks;
-    """
-    )
+    query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks;")
 
-    return [
-        Task(
-            ID,
-            do,
-            notes,
-            deleted,
-            draft,
-            inactive,
-            done,
-            primary_activity_id,
-            secondary_activity_id,
-            space_id,
-            priority,
-            level_id,
-            adjust_time_spent,
-            difficulty,
-            fear,
-            embarrassment,
-            last_checked,
-            workload,
-            ilk,
+    return [Task(**dict(zip(Task.__slots__, res))) for res in query.fetchall()]
+
+
+@cached_getter
+def get_level_name(level_id) -> str:
+    query = db.execute(
+        f"""
+SELECT name FROM levels WHERE level_id={level_id};
+"""
+    )
+    return typed_row(query.fetchone(), 0, str)
+
+
+@cached_getter
+def get_space_name(space_id) -> str:
+    if space_id:
+        return typed_row(
+            db.execute(
+                f"""
+    SELECT name FROM spaces WHERE space_id={space_id};
+    """
+            ).fetchone(),
+            0,
+            str,
+            default=None,
         )
-        for ID, do, notes, deleted, draft, inactive, done, primary_activity_id, secondary_activity_id, space_id, priority, level_id, adjust_time_spent, difficulty, fear, embarrassment, last_checked, workload, ilk in query.fetchall()
-    ]
+    else:
+        return ""
+
+
+def get_activity_name(activity_id) -> str:
+    if activity_id is None:
+        return ""
+    query = db.execute(
+        f"""
+        SELECT name FROM activities WHERE activity_id={activity_id};
+        """
+    )
+    return typed_row(query.fetchone(), 0, str, default="")

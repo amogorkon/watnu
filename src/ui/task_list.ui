@@ -135,16 +135,28 @@
           <string>gelöscht</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>-- alles --</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>
        <widget class="QComboBox" name="ilk">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <italic>false</italic>
+          <bold>true</bold>
+         </font>
+        </property>
         <property name="toolTip">
          <string>Art</string>
         </property>
         <item>
          <property name="text">
-          <string>alles</string>
+          <string>-- alle Arten--</string>
          </property>
         </item>
         <item>
@@ -220,6 +232,13 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="autoFillBackground">
       <bool>false</bool>
      </property>
@@ -262,17 +281,26 @@
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
+     <property name="textElideMode">
+      <enum>Qt::ElideMiddle</enum>
+     </property>
      <property name="horizontalScrollMode">
       <enum>QAbstractItemView::ScrollPerPixel</enum>
      </property>
      <property name="showGrid">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="sortingEnabled">
       <bool>true</bool>
      </property>
+     <property name="wordWrap">
+      <bool>false</bool>
+     </property>
      <property name="cornerButtonEnabled">
       <bool>true</bool>
+     </property>
+     <property name="columnCount">
+      <number>0</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
@@ -301,18 +329,6 @@
      <attribute name="verticalHeaderStretchLastSection">
       <bool>false</bool>
      </attribute>
-     <column>
-      <property name="text">
-       <string>Beschreibung</string>
-      </property>
-      <property name="font">
-       <font>
-        <family>MS Reference Sans Serif</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-     </column>
     </widget>
    </item>
    <item>
