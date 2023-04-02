@@ -9,7 +9,7 @@ from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QWizard
 
 import ui
-from classes import ILK, Task, get_activity_name
+from classes import ILK, Task, get_activity_name, typed
 from logic import retrieve_task_by_id
 from stuff import app, db
 
@@ -61,7 +61,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
         def _():
             self.draft = True
-            self.save_task()
+            self.save()
             self.done(12)
 
         self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
@@ -180,24 +180,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             )
 
             if okPressed and text != "":
-                db.execute(
-                    f"""
-INSERT OR IGNORE INTO resources
-(url)
-VALUES ('{text}')
-"""
-                )
-                db.commit()
-                query = db.execute(
-                    f"""
-SELECT resource_id
-FROM resources
-WHERE url = '{text}'
-"""
-                )
-                query.next()
-                resource_id = query.value(0)
-                self.resources.addItem(text, resource_id)
+                self.resources.addItem(text)
 
         @self.resource_remove.clicked.connect
         def _():
@@ -221,7 +204,7 @@ WHERE url = '{text}'
 
         @self.button5.clicked.connect
         def start_button():
-            self.save_task()
+            self.save()
             self.done(12)
             task_running.Running(self.task)
 
@@ -265,42 +248,71 @@ WHERE space_id = {space_id}
                     else:
                         self.secondary_activity.setCurrentIndex(0)
 
-    def save_task(self):
+    def save(self):
         app.last_edited_space = self.space.currentText()
 
-        task_type = ILK.task
-        if self.is_habit.isChecked():
-            task_type = ILK.habit
-        if self.is_routine.isChecked():
-            task_type = ILK.routine
-        if self.is_tradition.isChecked():
-            task_type = ILK.tradition
-
-        db.executescript(
-            f"""
-BEGIN;
-UPDATE tasks 
-SET do = '{self.desc.toPlainText()}',
-    priority = {self.priority.value()},
-    level_id = {self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))},
-    primary_activity_id = {x if (x := self.primary_activity.currentData()) is not None else "NULL"},
-    secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
-    space_id = {x if (x := self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))) is not None else 0},
-    ilk = {task_type.value},
-    draft = {self.draft}
-WHERE id={self.task.id};
--- need to clean up first
-DELETE FROM task_requires_task WHERE task_of_concern == {self.task.id};
-DELETE FROM task_requires_task WHERE required_task == {self.task.id};
-DELETE FROM task_uses_resource WHERE task_id = {self.task.id};
-DELETE FROM task_trains_skill WHERE task_id = {self.task.id};
-DELETE FROM constraints WHERE task_id = {self.task.id};
-DELETE FROM deadlines WHERE task_id = {self.task.id};
-DELETE FROM repeats WHERE task_id = {self.task.id};
-COMMIT;
-"""
-        )
+        self.save_task_details()
         # enter fresh, no matter whether new or old
+        self.save_cleanup()
+        self.save_subsup()
+        self.save_resources()
+        self.save_constraints()
+        self.save_deadline()
+        self.save_repeats()
+        db.commit()
+
+        for win in app.list_of_task_lists:
+            win.build_task_list()
+
+        # it's possible to edit a task while whatnow is open - so we need to update the whatnow window
+        app.win_what.lets_check_whats_next()
+
+    def save_repeats(self):
+        if self.repeats is not None:
+            db.execute(
+                f"""
+INSERT INTO repeats
+(task_id, every_ilk, x_every, min_distance, x_per)
+VALUES (
+{self.task.id}, 
+{self.repeats.every_ilk.value},
+{self.repeats.x_every},
+{self.repeats.x_per},
+{self.repeats.per_ilk.value}
+)
+            """
+            )
+
+    def save_deadline(self):
+        if self.deadline != float("inf"):
+            db.execute(
+                f"""
+INSERT INTO deadlines
+(task_id, time_of_reference)
+VALUES ({self.task.id}, '{self.deadline}')
+            """
+            )
+
+    def save_constraints(self):
+        if np.any(self.constraints):
+            db.execute(
+                f"""
+    INSERT INTO constraints
+    (task_id, flags)
+    VALUES ({self.task.id}, '{''.join(str(x) for x in self.constraints.flatten())}')
+            """
+            )
+
+    def save_resources(self):
+        for url in (self.resources.itemText(i) for i in range(self.resources.count())):
+            db.execute("INSERT OR IGNORE INTO resources (url) VALUES (?);", (url,))
+            resource_id = db.execute("SELECT resource_id FROM resources WHERE url = ?;", (url,)).fetchone()[0]
+            db.execute(
+                "INSERT INTO task_uses_resource (task_id, resource_id) VALUES (?, ?);",
+                (self.task.id, resource_id),
+            )
+
+    def save_subsup(self):
         db.executemany(
             f"""
 INSERT OR IGNORE INTO task_requires_task
@@ -328,56 +340,52 @@ VALUES ({self.task.id}, ?);
             self.skill_ids,
         )
 
-        db.executemany(
+    def save_cleanup(self):
+        db.executescript(
             f"""
-INSERT INTO task_uses_resource
-(task_id, resource_id)
-VALUES ({self.task.id}, ?);
-""",
-            (self.resources.itemData(i) for i in range(self.resources.count())),
+BEGIN;
+-- need to clean up first
+DELETE FROM task_requires_task WHERE task_of_concern == {self.task.id};
+DELETE FROM task_requires_task WHERE required_task == {self.task.id};
+DELETE FROM task_uses_resource WHERE task_id = {self.task.id};
+DELETE FROM task_trains_skill WHERE task_id = {self.task.id};
+DELETE FROM constraints WHERE task_id = {self.task.id};
+DELETE FROM deadlines WHERE task_id = {self.task.id};
+DELETE FROM repeats WHERE task_id = {self.task.id};
+COMMIT;
+"""
         )
-        if np.any(self.constraints):
-            db.execute(
-                f"""
-    INSERT INTO constraints
-    (task_id, flags)
-    VALUES ({self.task.id}, '{''.join(str(x) for x in self.constraints.flatten())}')
-            """
-            )
-        if self.deadline != float("inf"):
-            db.execute(
-                f"""
-INSERT INTO deadlines
-(task_id, time_of_reference)
-VALUES ({self.task.id}, '{self.deadline}')
-            """
-            )
 
-        if self.repeats is not None:
-            db.execute(
-                f"""
-INSERT INTO repeats
-(task_id, every_ilk, x_every, min_distance, x_per)
-VALUES (
-{self.task.id}, 
-{self.repeats.every_ilk.value},
-{self.repeats.x_every},
-{self.repeats.x_per},
-{self.repeats.per_ilk.value}
-)
-            """
-            )
-        db.commit()
+    def save_task_details(self):
+        task_type = ILK.task
+        if self.is_habit.isChecked():
+            task_type = ILK.habit
+        if self.is_routine.isChecked():
+            task_type = ILK.routine
+        if self.is_tradition.isChecked():
+            task_type = ILK.tradition
 
-        for win in app.list_of_task_lists:
-            win.build_task_list()
-        
-        # it's possible to edit a task while whatnow is open - so we need to update the whatnow window        
-        app.win_what.lets_check_whats_next()
+        db.execute(
+            f"""
+UPDATE tasks 
+SET 
+    do = ?,
+    notes = ?,
+    priority = {self.priority.value()},
+    level_id = {self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))},
+    primary_activity_id = {x if (x := self.primary_activity.currentData()) is not None else "NULL"},
+    secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
+    space_id = {x if (x := self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))) is not None else 0},
+    ilk = {task_type.value},
+    draft = {self.draft}
+WHERE id={self.task.id}
+""",
+            (self.desc.toPlainText(), self.notes.toPlainText()),
+        )
 
     def accept(self):
         self.draft = False
-        self.save_task()
+        self.save()
         super().accept()
 
     def reject(self):

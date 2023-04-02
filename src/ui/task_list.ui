@@ -221,6 +221,34 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="check_done">
+        <property name="text">
+         <string>erledigt</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="check_draft">
+        <property name="text">
+         <string>Entwurf</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="check_inactive">
+        <property name="text">
+         <string>inactiv</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="check_deleted">
+        <property name="text">
+         <string>gelöscht</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -374,7 +402,7 @@
      <item row="3" column="2">
       <widget class="QPushButton" name="button2">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -383,10 +411,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
-       </property>
-       <property name="shortcut">
-        <string>2</string>
+        <string>Erledigt!</string>
        </property>
       </widget>
      </item>

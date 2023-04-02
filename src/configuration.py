@@ -58,7 +58,7 @@ class boolean:
         return self.x
 
 
-# use.apply_aspect(attrs, use.woody_logger)  # BUG!
+# use.apply_aspect(attrs, use.woody_logger)  # BUG
 
 
 @attrs.define(
@@ -87,7 +87,7 @@ class Config:
     debugging: boolean = False
     autostart: boolean = True
     call_name: str = ""
-    last_selected_space: int = 0
+    last_selected_space: str = ""
     base_path: Path = ""
 
     def save(self):

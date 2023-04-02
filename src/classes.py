@@ -366,7 +366,7 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     def set_(self, name, value, to_db=True):
         if to_db:
-            db.execute(f"UPDATE tasks SET {name}={value} WHERE id={self.id}")
+            db.execute(f"UPDATE tasks SET {name}=? WHERE id={self.id}", (value,))
             db.commit()
         object.__setattr__(self, name, value)
 
@@ -410,7 +410,7 @@ SELECT name FROM levels WHERE level_id={level_id};
 
 @cached_getter
 def get_space_name(space_id) -> str:
-    if space_id:
+    if space_id is not None:
         return typed_row(
             db.execute(
                 f"""
@@ -419,7 +419,6 @@ def get_space_name(space_id) -> str:
             ).fetchone(),
             0,
             str,
-            default=None,
         )
     else:
         return ""

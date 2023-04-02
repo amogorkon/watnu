@@ -202,7 +202,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         super().reject()
         self.timer.stop()
         self.ticks = 0
-        self.task.last_checked = time()
+        self.task.set_("last_checked", time())
 
         for win in app.list_of_task_lists:
             self.restart_win(win)

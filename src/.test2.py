@@ -1,12 +1,6 @@
-import use
+import requests, datetime
 
-app = "adsfadsf"
-db = 23
-config = (1,2,3)
-
-initial_globals = {"app": app, "db": db, "config":config}
-
-
-use(use.Path("ux/__init__.py"), initial_globals=initial_globals)
-
-from ux import test
+query = requests.head("https://github.com/amogorkon/fuzzylogic/blob/master/src/fuzzylogic/functions.py")
+#url_time = query.headers['last-modified']
+#url_date = parsedate(url_time)
+print(query.text)

@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime
 from functools import partial
 from itertools import count
@@ -7,11 +8,11 @@ from time import time, time_ns
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QKeySequence, QShortcut
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
-from classes import Task, typed
+from classes import Task, typed, typed_row
 from logic import (
     filter_tasks_by_constraints,
     filter_tasks_by_content,
@@ -22,16 +23,18 @@ from logic import (
     retrieve_tasks,
 )
 from stuff import app, config, db
-from ux import task_editor, task_finished, task_running
+from ux import choose_space, task_editor, task_finished, task_running
 
 _translate = QtCore.QCoreApplication.translate
+
+OK = QIcon("extra/check.svg")
+NOK = QIcon("extra/cross.svg")
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def rearrange_list(self):
-        self.arrange_list(
-            list(filter_tasks_by_content(retrieve_tasks(), self.field_filter.text().casefold()))
-        )
+        """Callback for easy rearranging of the list, no filtering."""
+        self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
     def __init__(self):
@@ -42,11 +45,28 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         "Timer for polling if the db has changed and regenerate the list."
         self.db_timer.start(100)
         self.last_generated = 0
+
         self.tasks: list[Task] = []
-        self.check_deadline.stateChanged.connect(self.rearrange_list)
-        self.check_level.stateChanged.connect(self.rearrange_list)
-        self.check_priority.stateChanged.connect(self.rearrange_list)
-        self.check_space.stateChanged.connect(self.rearrange_list)
+        # to make it compatible with the rest of the code
+        self.check_do = QtWidgets.QCheckBox()
+        self.check_do.setChecked(True)
+
+        # displayed columns: tuple[Header, displayed, how to get value]
+
+        self.columns = (
+            ("space", self.check_space, lambda t: str(t.space)),
+            ("level", self.check_level, lambda t: str(t.level)),
+            ("priority", self.check_priority, lambda t: str(t.priority)),
+            ("deadline", self.check_deadline, lambda t: deadline_as_str(t.deadline)),
+            ("done", self.check_done, lambda t: OK if t.done else NOK),
+            ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
+            ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
+            ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
+            ("do", self.check_do, lambda t: get_desc(t)),
+        )
+
+        for _, check, _ in self.columns:
+            check.stateChanged.connect(self.rearrange_list)
 
         @self.db_timer.timeout.connect
         def db_changed_check():
@@ -54,8 +74,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self.build_task_list()
 
         def delete_item():
-            selected: list[Task] = [x.data(Qt.ItemDataRole.UserRole) for x in self.task_list.selectedItems()]
-            if not selected:
+            if not (selected := self.get_selected_tasks()):
                 return
             # if we are dealing with tasks in the bin, we need to ask if we want to delete permanently
             if self.status.currentIndex() == 4:
@@ -84,27 +103,15 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
-        def build_space_list():
-            self.space.clear()
-            self.space.addItem("-- alle Räume --")
-            self.space.setItemData(0, self.font, Qt.ItemDataRole.FontRole)
-            query = db.execute(
-                """
-            SELECT space_id, name FROM spaces;
-            """
-            )
-            for space_id, name in query.fetchall():
-                self.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
-
-            self.space.model().sort(1, Qt.SortOrder.AscendingOrder)
-
-        build_space_list()
-        self.space.setCurrentIndex(config.last_selected_space)
+        build_space_list(self)
+        self.space.setCurrentIndex(
+            x if (x := self.space.findText(app.last_edited_space or config.last_selected_space)) > -1 else 0
+        )
 
         @self.space.currentIndexChanged.connect
         def space_switched():
             self.build_task_list()
-            config.last_selected_space = self.space.currentIndex()
+            config.last_selected_space = self.space.currentText() or ""
             config.save()
 
         self.build_button1_menu()
@@ -116,6 +123,21 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.button9.setMenu(menu)
 
         menu = QtWidgets.QMenu()
+
+        def space_set():
+            match (win := choose_space.Space_Selection()).exec():
+                case QtWidgets.QDialog.DialogCode.Accepted:
+                    space = get_space_id(win.space.currentText(), win.space.currentIndex())
+                case _:  # Cancelled
+                    return
+            for task in (selected := self.get_selected_tasks()):
+                task.set_("space_id", space)
+            self.build_task_list()
+            self.statusBar.showMessage(
+                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.", 5000
+            )
+
+        menu.addAction("für ausgewählte Aufgaben setzen", space_set)
 
         def space_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
@@ -129,7 +151,11 @@ VALUES ('{text}')
 """
                 )
                 db.commit()
-            build_space_list()
+                self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
+                for win in app.list_of_task_editors:
+                    build_space_list(win)
+                for win in app.list_of_task_lists:
+                    build_space_list(win)
 
         menu.addAction("hinzufügen", space_add)
 
@@ -137,10 +163,13 @@ VALUES ('{text}')
             space_name = self.space.currentText()
             if self.task_list.rowCount() > 0:
                 QtWidgets.QMessageBox.information(
-                    self, f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden."
+                    self,
+                    "Sorry..",
+                    f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
                 )
             else:
                 match QtWidgets.QMessageBox.question(
+                    self,
                     "Wirklich den ausgewählten Raum löschen?",
                     f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
                 ):
@@ -150,7 +179,16 @@ VALUES ('{text}')
 DELETE FROM spaces where name=='{space_name}'
 """
                         )
-                        app.win_settings.statusbar.showMessage(f"Raum '{space_name}' gelöscht.")
+                        db.commit()
+                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
+                        for win in app.list_of_task_lists:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
+                        for win in app.list_of_task_editors:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
 
         menu.addAction("löschen", space_delete)
         self.button7.setMenu(menu)
@@ -176,9 +214,36 @@ DELETE FROM spaces where name=='{space_name}'
         def _():
             pass
 
-        @self.button2.clicked.connect
-        def _():
-            pass
+        def button2_clicked():
+            selected = self.get_selected_tasks()
+            match self.status.currentIndex():
+                # open
+                case 0:
+                    for task in selected:
+                        task.set_("done", True)
+                # draft
+                case 1:
+                    for task in selected:
+                        task.set_("draft", False)
+                # inactive
+                case 2:
+                    for task in selected:
+                        task.set_("inactive", False)
+                # done
+                case 3:
+                    for task in selected:
+                        task.set_("done", False)
+                # deleted
+                case 4:
+                    for task in selected:
+                        task.set_("deleted", False)
+                # all
+                case 5:
+                    pass
+            self.build_task_list()
+
+        QShortcut(QKeySequence(Qt.Key.Key_2), self.task_list).activated.connect(button2_clicked)
+        self.button2.clicked.connect(button2_clicked)
 
         @self.button3.clicked.connect
         def _():
@@ -258,6 +323,28 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.status.currentIndexChanged.connect
         def status_switched():
+            self.button2.setEnabled(True)
+            match self.status.currentIndex():
+                # open
+                case 0:
+                    self.button2.setText("Erledigt!")
+                # draft
+                case 1:
+                    self.button2.setText("kein Entwurf")
+                # inactive
+                case 2:
+                    self.button2.setText("Aktivieren")
+                # done
+                case 3:
+                    self.button2.setText("doch nicht erledigt")
+                # deleted
+                case 4:
+                    self.button2.setText("wiederherstellen")
+                # all
+                case 5:
+                    self.button2.setEnabled(False)
+                    self.button2.setText("")
+
             self.build_button1_menu()
             self.build_task_list()
 
@@ -266,9 +353,7 @@ DELETE FROM spaces where name=='{space_name}'
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
         def filter_changed():
-            self.arrange_list(
-                list(filter_tasks_by_content(retrieve_tasks(), self.field_filter.text().casefold()))
-            )
+            self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
             self.update()
 
     def set_as_open(self):
@@ -342,17 +427,19 @@ WHERE id == {task.id}
         win.show()
 
     def build_task_list(self):
+        """Prepare for filtering the tasks, then fetch and display them."""
+
         self.last_generated = time()
 
-        self.selected_space = self.space.itemData(self.space.currentIndex())
-        config.last_selected_space = self.selected_space or 0
+        config.last_selected_space = self.space.currentText() or ""
         config.save()
+        self.tasks = get_filtered_tasks(self)
 
-        self.arrange_list(get_filtered_tasks(self))
+        self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
     def arrange_list(self, tasks: list[Task]):
-        """Needs to be extra, otherwise filtering would hit the DB repeatedly."""
+        """Arrange the tasks in the list for display."""
         self.task_list.setStyleSheet(
             """
 alternate-background-color: #bfffbf; 
@@ -364,15 +451,6 @@ font-size: 12pt;
         self.task_list.setSortingEnabled(False)
         self.task_list.setRowCount(len(tasks))
 
-        # displayed columns: tuple[Header, displayed, how to get value]
-        columns = (
-            ("space", self.check_space.isChecked(), lambda t: t.space),
-            ("level", self.check_level.isChecked(), lambda t: t.level),
-            ("priority", self.check_priority.isChecked(), lambda t: t.priority),
-            ("deadline", self.check_deadline.isChecked(), lambda t: deadline_as_str(t.deadline)),
-            ("do", True, lambda t: get_desc(t)),
-        )
-
         ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
         family = QFontDatabase.applicationFontFamilies(ID)
         item_font = QFont(family)
@@ -380,7 +458,7 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.task_list.setColumnCount(len(list(filter(lambda c: c[1], columns))))
+        self.task_list.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
 
         # TODO: use _translate
         translation = {
@@ -389,26 +467,33 @@ font-size: 12pt;
             "level": "Level",
             "priority": "Priorität",
             "deadline": "Deadline",
+            "done": "Erledigt",
+            "draft": "Entwurf",
+            "inactive": "Inaktiv",
+            "deleted": "Gelöscht",
         }
+        selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
-        for column_number, column in enumerate(filter(lambda c: c[1], columns)):
+        for column_number, column in enumerate(selected_columns):
             self.set_header(translation[column[0]], header_font, column_number)
 
         for i, task in enumerate(tasks):
-            for column_number, (header, displayed, func) in enumerate(filter(lambda c: c[1], columns)):
-                content = str(func(task))
-                item = QtWidgets.QTableWidgetItem(content)
-                item.setFont(item_font)
-                if column_number == 0:
+            for column_number, (header, displayed, func) in enumerate(selected_columns):
+                content = func(task)
+                if isinstance(content, str):
+                    item = QtWidgets.QTableWidgetItem(content)
+                    item.setFont(item_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
-                item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
+                if isinstance(content, QIcon):
+                    item = QtWidgets.QTableWidgetItem()
+                    item.setIcon(content)
                 self.task_list.setItem(i, column_number, item)
 
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
         self.task_list.ensurePolished()
         self.task_list.show()
-        return tasks
 
     def set_header(self, text, font, column):
         item = QTableWidgetItem(text)
@@ -466,8 +551,14 @@ font-size: 12pt;
         else:
             app.win_main.show()
             app.win_main.raise_()
-
         app.list_of_task_lists.remove(self)
+
+    def get_selected_tasks(self) -> list[Task]:
+        return [
+            self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(self.task_list.rowCount())
+            if self.task_list.item(row, 0).isSelected()
+        ]
 
 
 def get_desc(task):
@@ -475,14 +566,31 @@ def get_desc(task):
     return lines[0] + ("" if len(lines) == 1 else " […]")
 
 
+def get_space_id(name, index) -> int | None:
+    return (
+        typed_row(
+            db.execute(
+                """
+                SELECT space_id FROM spaces WHERE name=?;
+                """,
+                (name,),
+            ).fetchone(),
+            0,
+            int | None,
+        )
+        if index
+        else None
+    )
+
+
 @pipes
 def get_filtered_tasks(self):
+    """Filter tasks according to the current filter settings."""
     return (
         retrieve_tasks(db)
+        >> filter_tasks_by_space(get_space_id(self.space.currentText(), self.space.currentIndex()))
         >> filter_tasks_by_status(self.status.currentIndex())
-        >> filter_tasks_by_content(self.field_filter.text().casefold())
         >> filter_tasks_by_ilk(self.ilk.currentIndex())
-        >> filter_tasks_by_space(self.selected_space)
         >> list
     )
 
@@ -491,3 +599,18 @@ def deadline_as_str(deadline) -> str:
     if deadline == float("inf"):
         return ""
     return str(datetime.fromtimestamp(deadline))
+
+
+def build_space_list(parent):
+    parent.space.clear()
+    parent.space.addItem("-- alle Räume --")
+    parent.space.setItemData(0, parent.font, Qt.ItemDataRole.FontRole)
+    query = db.execute(
+        """
+    SELECT space_id, name FROM spaces;
+    """
+    )
+    for space_id, name in query.fetchall():
+        parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
+
+    parent.space.model().sort(1, Qt.SortOrder.AscendingOrder)

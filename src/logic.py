@@ -1,5 +1,4 @@
 import ast
-from sqlite3 import Connection
 import inspect
 from collections import deque
 from collections.abc import Callable, Iterable
@@ -7,6 +6,7 @@ from datetime import datetime, timedelta
 from functools import singledispatch, update_wrapper
 from itertools import takewhile
 from math import isinf, sqrt
+from sqlite3 import Connection
 from textwrap import dedent
 from time import time
 
@@ -294,4 +294,5 @@ def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int | None) -> Iterable[Task
 
 
 def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task]:
-    return filter(lambda t: t.space_id == space_id if space_id is not None else True, tasks)
+    """Filter tasks by space id."""
+    return filter(lambda t: t.space_id == (space_id) if space_id is not None else True, tasks)
