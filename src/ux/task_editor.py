@@ -3,8 +3,8 @@ from functools import partial
 
 import numpy as np
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtCore import QCoreApplication, QSize, Qt, QTimer, QVariant
+from PyQt6.QtGui import QIcon, QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QWizard
 
@@ -47,6 +47,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.as_sup = as_sup
         self.current_space = current_space
         self.draft = draft
+        # TODO: set icons for all labels
+        self.fear_label.setPixmap(QIcon("extra/fear.png").pixmap(QSize(16, 16)))
+        self.difficulty_label
+        self.embarrassment_label
 
         if not task:
             query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
@@ -145,7 +149,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
                     self.is_routine.setChecked(True)
                     self.button8.setEnabled(True)
 
-            print(repr(task))
             self.notes.document().setPlainText(task.notes)
             self.space.setCurrentIndex(self.space.findText(self.task.space))
             self.level.setCurrentIndex(self.level.findText(self.task.level))

@@ -430,7 +430,7 @@
                  <number>10</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_7">
+                 <widget class="QLabel" name="fear_label">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -438,7 +438,7 @@
                    </sizepolicy>
                   </property>
                   <property name="text">
-                   <string>Angst</string>
+                   <string/>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -446,21 +446,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDial" name="fear">
+                 <widget class="QSlider" name="fear">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="invertedAppearance">
-                   <bool>false</bool>
-                  </property>
-                  <property name="invertedControls">
-                   <bool>false</bool>
-                  </property>
-                  <property name="wrapping">
-                   <bool>false</bool>
-                  </property>
-                  <property name="notchesVisible">
-                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -472,7 +460,7 @@
                  <number>10</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_8">
+                 <widget class="QLabel" name="difficulty_label">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -480,7 +468,7 @@
                    </sizepolicy>
                   </property>
                   <property name="text">
-                   <string>Schwierigkeit</string>
+                   <string/>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -488,12 +476,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDial" name="difficulty">
+                 <widget class="QSlider" name="difficulty">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="notchesVisible">
-                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -505,7 +490,7 @@
                  <number>10</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_9">
+                 <widget class="QLabel" name="embarrassment_label">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -516,7 +501,7 @@
                    <string>Peinlichkeit bei Nicht-Erledigung</string>
                   </property>
                   <property name="text">
-                   <string>Peinlichkeit</string>
+                   <string/>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -524,12 +509,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDial" name="embarrassment">
+                 <widget class="QSlider" name="embarrassment">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="notchesVisible">
-                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>

@@ -152,8 +152,8 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             stop_time = time()
             if self.timer.isActive():
                 self.timer.stop()
-            self.task.last_checked = stop_time
-            self.task.adjust_time_spent = self.session_adjust_time_spent
+            self.task.set_("last_checked", stop_time)
+            self.task.set_("adjust_time_spent", self.session_adjust_time_spent)
             self.hide()
             app.write_session(
                 self.task.id, self.start_time, stop_time, finished=False, pause_time=self.paused_ticks

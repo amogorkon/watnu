@@ -25,7 +25,6 @@ q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
 ).Q()
 
-use(use.Path("lib/utils.py"), import_as="lib.utils")
 
 last_sql_access = 0
 

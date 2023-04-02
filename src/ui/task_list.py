@@ -119,6 +119,7 @@ class Ui_Dialog(object):
         self.task_list.setAutoFillBackground(False)
         self.task_list.setStyleSheet("")
         self.task_list.setMidLineWidth(0)
+        self.task_list.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.task_list.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.task_list.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.task_list.setAutoScroll(True)

@@ -7,7 +7,7 @@ from random import choice, seed
 from time import time, time_ns
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QTimer, QVariant
+from PyQt6.QtCore import Qt, QTimer, QVariant, QKeyCombination
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
@@ -102,6 +102,12 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self.showFullScreen()
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+        QShortcut(
+            QKeySequence(
+                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
+            ),
+            self,
+        ).activated.connect(lambda: self.field_filter.setFocus())
 
         build_space_list(self)
         self.space.setCurrentIndex(
@@ -484,7 +490,7 @@ font-size: 12pt;
                     item = QtWidgets.QTableWidgetItem(content)
                     item.setFont(item_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
                     item = QtWidgets.QTableWidgetItem()
                     item.setIcon(content)
@@ -557,7 +563,7 @@ font-size: 12pt;
         return [
             self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
             for row in range(self.task_list.rowCount())
-            if self.task_list.item(row, 0).isSelected()
+            if (x := self.task_list.item(row, 0).isSelected()) and x is not None
         ]
 
 

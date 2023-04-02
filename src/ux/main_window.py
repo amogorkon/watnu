@@ -1,3 +1,5 @@
+import signal
+import sys
 import webbrowser
 from collections import defaultdict
 from pathlib import Path
@@ -17,9 +19,22 @@ load = stay.Decoder()
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
+    def quit(
+        self,
+        num,
+        event,
+    ):
+        self.cleanup()
+        self.close()
+        event.ignore()
+        sys.exit(0)
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        # catch ctrl+c and register it as a quit
+
+        signal.signal(signal.SIGINT, self.quit)
 
         @self.about.triggered.connect
         def _():
