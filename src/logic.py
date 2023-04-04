@@ -1,10 +1,11 @@
 import ast
 import inspect
+import shlex
 from collections import deque
 from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
-from functools import singledispatch, update_wrapper
-from itertools import takewhile
+from functools import reduce, singledispatch, update_wrapper
+from itertools import product, takewhile
 from math import isinf, sqrt
 from sqlite3 import Connection
 from textwrap import dedent
@@ -13,6 +14,7 @@ from time import time
 import numpy as np
 import use
 from beartype import beartype
+from Levenshtein import ratio, seqratio, setratio
 
 from classes import EVERY, ILK, Task, retrieve_task_by_id, retrieve_tasks
 
@@ -91,7 +93,7 @@ def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
         then = datetime.fromtimestamp(task.last_finished)
         if task.ilk is ILK.habit:
             if now.date() > then.date():
-                task.set_done(False)
+                task.set_("done", False)
 
         elif task.get_repeats() is not None:
             reset_task(task, datetime.timestamp(now), every_x)
@@ -233,19 +235,49 @@ def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> I
     for task in tasks:
         if task.get_constraints() is None:
             yield task
-        elif task.get_constraints()[now.weekday(), now.time().hour * 6 + now.time().minute // 10]:
+        elif task.get_constraints()[now.weekday(), now.time().hour * 6 + now.time().minute // 5]:
             yield task
 
 
-def levenshtein_distance(text, pattern) -> int:
-    """Calculates the Levenshtein distance between two strings."""
+def einstein_sum(values):
+    """OR variant."""
+
+    def op(x, y):
+        return (x + y) / (1 + x * y)
+
+    return reduce(op, values)
+
+
+def filter_ratio(pattern, text):
+    """Calculate the maximum ratio between pattern and text."""
+
+    P = shlex.split(pattern.casefold())
+    T = shlex.split(text.casefold())
+    if not P or not T:
+        return 0
+
+    ratios = [max(ratio(p, t) for t in T) for p in P]
+
+    return einstein_sum(ratios)
+
+
+def _by_simple_matching(tasks, pattern) -> list[Task]:
+    return list(filter(lambda t: pattern in t.do.casefold(), tasks))
+
+
+def _by_levenshtein(tasks, pattern) -> list[Task]:
+    # https://maxbachmann.github.io/Levenshtein/index.html
+    # return sorted tasks by levenshtein ratios with cutoff
+
+    ratios = zip(tasks, (filter_ratio(pattern, t.do) for t in tasks))
+    cutoff = filter(lambda item: item[1] > 0.7, ratios)
+    return [item[0] for item in sorted(cutoff, key=lambda item: item[1], reverse=True)]
 
 
 def filter_tasks_by_content(tasks: Iterable[Task], pattern: str) -> Iterable[Task]:
-    # TODO: use fuzzy matching from https://github.com/taleinat/fuzzysearch
     if pattern.isspace() or not pattern:
         return tasks
-    return filter(lambda t: pattern in t.do.casefold(), tasks)
+    return _by_levenshtein(tasks, pattern) or _by_simple_matching(tasks, pattern.casefold())
 
 
 def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int | None) -> Iterable[Task]:

@@ -41,103 +41,33 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             else:
                 self.button5.setEnabled(True)
 
+        # arguments passed in
+
         self.task = task
         self.cloning = cloning
         self.templating = templating
         self.as_sup = as_sup
         self.current_space = current_space
         self.draft = draft
-        # TODO: set icons for all labels
-        self.fear_label.setPixmap(QIcon("extra/fear.png").pixmap(QSize(16, 16)))
-        self.difficulty_label
-        self.embarrassment_label
 
-        if not task:
-            query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
-            db.commit()
-            self.task = retrieve_task_by_id(db, query.lastrowid)
-            self.draft = True
-        else:
-            self.task = task
-
-        self.setButtonText(QWizard.WizardButton.CustomButton1, "als Entwurf speichern")
-
-        @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
-        def _():
-            self.draft = True
-            self.save()
-            self.done(12)
-
-        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
-        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
-
-        self.activateWindow()
-
-        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
-
-        if cloning:
-            self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
-
-        if templating:
-            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
-
-        self.cloning = cloning
-        self.templating = templating
+        # defaults
+        self.deadline = float("inf")
+        self.repeats: namedtuple = None
+        self.constraints: np.ndarray = np.zeros((7, 288))
         self.subtasks: list[int] = []
         self.supertasks: list[int] = []
         self.skill_ids: list[int] = []
 
-        # clone as subtask of the given task
-        if as_sup == -1:
-            self.supertasks = [self.task.id]
-
-        # given task is a subtask of the new task
-        if as_sup == 1:
-            self.subtasks = [self.task.id]
-
-        self.page_basics.registerField("task*", self.desc, "plainText", changedSignal=self.desc.textChanged)
-        model = QSqlTableModel()
-        model.setTable("levels")
-        model.setSort(0, Qt.SortOrder.DescendingOrder)
-        model.select()
-        self.level.setModel(model)
-        self.level.setModelColumn(1)
-        self.level.setCurrentIndex(2)
-
-        model = QSqlTableModel()
-        model.setTable("spaces")
-        model.setSort(1, Qt.SortOrder.AscendingOrder)
-        model.select()
-        self.space.setModel(model)
-        self.space.setModelColumn(1)
-        self.constraints: str = None
-        self.deadline = float("inf")
-        self.repeats: namedtuple = None
-
-        menu = QtWidgets.QMenu()
-        menu.addAction("ohne Vorlage", self.create_task)
-        menu.addAction("als Klon von dieser Aufgabe", self.clone)
-        self.button6.setMenu(menu)
-
-        query = db.execute(
-            """
-        SELECT activity_id, name FROM activities;
-        """
-        )
-
-        for i, (activity_id, name) in enumerate(query.fetchall()):
-            self.primary_activity.addItem(name, QVariant(activity_id))
-            self.secondary_activity.addItem(name, activity_id)
-
+        self.page_basics.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
         # editing a task - need to set all values accordingly
         if task:
             self.deadline = task.deadline
-            self.skill_ids = self.task.skills
+            self.skill_ids = self.task.skill_ids
             self.priority.setValue(task.priority)
             for url, ID in task.resources:
                 self.resources.addItem(url, ID)
 
-            self.desc.document().setPlainText(task.do)
+            self.do.document().setPlainText(task.do)
 
             match task.ilk:
                 case ILK.habit:
@@ -160,10 +90,100 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
                 self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
             )
             self.repeats = self.task.get_repeats()
-            self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 144))
+            self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 288))
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
+
+        if not task:
+            query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
+            db.commit()
+            self.task = retrieve_task_by_id(db, query.lastrowid)
+            self.draft = True
+        else:
+            self.task = task
+
+        # TODO: set icons for all labels
+        self.fear_label.setPixmap(QIcon("extra/fear.png").pixmap(QSize(16, 16)))
+        self.difficulty_label
+        self.embarrassment_label
+
+        self.markdown = False
+        self.do_plain = self.do.toPlainText()
+
+        def toggle_markdown():
+            print("Toggle markdown")
+            self.markdown = not self.markdown
+            self.do_plain
+            if self.markdown:
+                # self.do_plain = self.do.toPlainText()
+                self.do.setMarkdown(self.do.toMarkdown())
+            else:
+                # TODO: how to conserve the syntax?
+                self.do.setPlainText(self.do.document().toRawText())
+
+        QShortcut(QKeySequence(Qt.Key.Key_F12), self).activated.connect(toggle_markdown)
+
+        self.do.toMarkdown()
+
+        self.setButtonText(QWizard.WizardButton.CustomButton1, "als Entwurf speichern")
+
+        @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
+        def _():
+            self.draft = True
+            self.save()
+            self.done(12)
+
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
+
+        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
+
+        if cloning:
+            self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
+
+        if templating:
+            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
+
+        # clone as subtask of the given task
+        if as_sup == -1:
+            self.supertasks = [self.task.id]
+
+        # given task is a subtask of the new task
+        if as_sup == 1:
+            self.subtasks = [self.task.id]
+
+        model = QSqlTableModel()
+        model.setTable("levels")
+        model.setSort(0, Qt.SortOrder.DescendingOrder)
+        model.select()
+        self.level.setModel(model)
+        self.level.setModelColumn(1)
+        self.level.setCurrentIndex(2)
+
+        model = QSqlTableModel()
+        model.setTable("spaces")
+        model.setSort(1, Qt.SortOrder.AscendingOrder)
+        model.select()
+        self.space.setModel(model)
+        self.space.setModelColumn(1)
+
+        menu = QtWidgets.QMenu()
+        menu.addAction("ohne Vorlage", self.create_task)
+        menu.addAction("als Klon von dieser Aufgabe", self.clone)
+        self.button6.setMenu(menu)
+
+        query = db.execute(
+            """
+        SELECT activity_id, name FROM activities;
+        """
+        )
+
+        for i, (activity_id, name) in enumerate(query.fetchall()):
+            self.primary_activity.addItem(name, QVariant(activity_id))
+            self.secondary_activity.addItem(name, activity_id)
+
+        self.activateWindow()
 
         @self.kind_of.buttonToggled.connect
         def kind_of_toggled():
@@ -195,7 +215,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         @self.button2.clicked.connect
         def time_constraints_button():
-            chooser.Chooser(self, self.task, kind="constraints").exec()
+            choose_constraints.ConstraintChooser(self, self.task).exec()
 
         @self.button3.clicked.connect
         def organise():
@@ -217,15 +237,15 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         @self.button7.clicked.connect
         def deadline():
-            chooser.Chooser(self, self.task, kind="deadline").exec()
+            choose_deadline.DeadlineChooser(self, self.task).exec()
 
         @self.button8.clicked.connect
         def repeats_button():
-            chooser.Chooser(self, self.task, kind="repeats").exec()
+            choose_repeats.RepeatChooser(self, self.task).exec()
 
         @self.button9.clicked.connect
         def skills_button():
-            chooser.Chooser(self, self.task, kind="skills").exec()
+            choose_skills.SkillChooser(self, self.task).exec()
 
         @self.space.currentIndexChanged.connect
         def _():
@@ -380,10 +400,13 @@ SET
     secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
     space_id = {x if (x := self.space.model().data(self.space.model().index(self.space.currentIndex(), 0))) is not None else 0},
     ilk = {task_type.value},
-    draft = {self.draft}
+    draft = {self.draft},
+    fear = {self.fear.value()},
+    difficulty = {self.difficulty.value()},
+    embarrassment = {self.embarrassment.value()}
 WHERE id={self.task.id}
 """,
-            (self.desc.toPlainText(), self.notes.toPlainText()),
+            (self.do.toPlainText(), self.notes.toPlainText()),
         )
 
     def accept(self):
@@ -409,7 +432,7 @@ WHERE id={self.task.id}
         win = Editor()
         win.supertasks = self.supertasks
         win.subtasks = self.subtasks
-        win.desc.document().setPlainText(self.desc.document().toRawText())
+        win.do.document().setPlainText(self.do.document().toRawText())
         win.notes.document().setPlainText(self.notes.document().toRawText())
         win.space.setCurrentIndex(self.space.currentIndex())
         win.level.setCurrentIndex(self.level.currentIndex())
@@ -461,4 +484,4 @@ WHERE id == {self.task.id}
         self.button1.setMenu(menu)
 
 
-from ux import chooser, task_finished, task_running
+from ux import choose_constraints, choose_deadline, choose_repeats, choose_skills, task_finished, task_running

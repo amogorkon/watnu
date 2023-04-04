@@ -4,8 +4,6 @@ from datetime import datetime
 import q
 from PyQt6 import QtWidgets
 
-# catch ctrl+c and register it as a quit
-
 
 class Application(QtWidgets.QApplication):
     """Main Application logic."""
