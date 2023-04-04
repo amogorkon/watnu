@@ -22,6 +22,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def quit(
         self,
         num,
+        frame,
         event,
     ):
         self.cleanup()

@@ -100,8 +100,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self.showNormal()
             else:
                 self.showFullScreen()
-
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+        
         QShortcut(
             QKeySequence(
                 QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),

@@ -41,7 +41,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.stop = stop or self.start
         self.pause_time = pause_time
         self.old_skills = old_skills or [
-            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
+            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skill_ids
         ]
 
         self.task_desc.setText(task.do)

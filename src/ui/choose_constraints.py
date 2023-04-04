@@ -35,7 +35,7 @@ class Ui_Dialog(object):
         self.table.setGridStyle(QtCore.Qt.PenStyle.SolidLine)
         self.table.setWordWrap(False)
         self.table.setCornerButtonEnabled(False)
-        self.table.setRowCount(144)
+        self.table.setRowCount(288)
         self.table.setColumnCount(7)
         self.table.setObjectName("table")
         item = QtWidgets.QTableWidgetItem()

@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\task_list.ui'
+# Form implementation generated from reading ui file 'ui\choose_subtasks.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #

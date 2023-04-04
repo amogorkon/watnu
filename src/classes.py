@@ -19,7 +19,10 @@ np = use(
     hashes={
         "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
     },
+    import_as="np",
 )
+
+import numpy as np  # to make pylance happy - they don't know justuse YET :)
 
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
@@ -158,9 +161,6 @@ class Task:
         for name, value in kwargs.items():
             self.set_(name, value, to_db=False)
 
-    def set_done(self, value: bool) -> None:
-        self.set_("done", value)
-
     @cached_getter
     def get_repeats(self) -> Every[EVERY, int]:
         """
@@ -198,9 +198,9 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @cached_getter
-    def get_constraints(self) -> np.ndarray:
+    def get_constraints(self) -> np.ndarray|None:
         return (
-            np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 144)
+            np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 288)
             if (
                 query := db.execute(
                     f"""
@@ -272,7 +272,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
 
     @property
     @cached_getter
-    def skills(self) -> list[int]:
+    def skill_ids(self) -> list[int]:
         query = db.execute(
             f"""
         SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}
@@ -363,7 +363,7 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
     def set_last_checked(self, time_: float) -> None:
         self.set_("last_checked", time_)
 
-    def set_(self, name, value, to_db=True):
+    def set_(self, name: str, value: Any, to_db=True):
         if to_db:
             db.execute(f"UPDATE tasks SET {name}=? WHERE id={self.id}", (value,))
             db.commit()

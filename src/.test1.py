@@ -1,12 +1,16 @@
-selected_space = 1
+import use
 
-s = f"""
-SELECT id FROM tasks
-WHERE
-done == FALSE AND
-deleted == FALSE AND
-draft == FALSE AND
-inactive == FALSE
-{f"AND space_id == {selected_space}" if selected_space else ""}
-"""
-print(s)
+np = use(
+    "numpy",
+    version="1.24.1",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
+    },
+    import_as="numpy",
+)
+
+import numpy as np
+
+print(np.__version__)
