@@ -41,59 +41,16 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             else:
                 self.button5.setEnabled(True)
 
-        # arguments passed in
-
         self.task = task
         self.cloning = cloning
         self.templating = templating
         self.as_sup = as_sup
         self.current_space = current_space
         self.draft = draft
-
-        # defaults
-        self.deadline = float("inf")
-        self.repeats: namedtuple = None
-        self.constraints: np.ndarray = np.zeros((7, 288))
-        self.subtasks: list[int] = []
-        self.supertasks: list[int] = []
-        self.skill_ids: list[int] = []
-
-        self.page_basics.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
-        # editing a task - need to set all values accordingly
-        if task:
-            self.deadline = task.deadline
-            self.skill_ids = self.task.skill_ids
-            self.priority.setValue(task.priority)
-            for url, ID in task.resources:
-                self.resources.addItem(url, ID)
-
-            self.do.document().setPlainText(task.do)
-
-            match task.ilk:
-                case ILK.habit:
-                    self.is_habit.setChecked(True)
-                case ILK.tradition:
-                    self.is_tradition.setChecked(True)
-                    self.button8.setEnabled(True)
-                case ILK.routine:
-                    self.is_routine.setChecked(True)
-                    self.button8.setEnabled(True)
-
-            self.notes.document().setPlainText(task.notes)
-            self.space.setCurrentIndex(self.space.findText(self.task.space))
-            self.level.setCurrentIndex(self.level.findText(self.task.level))
-            self.primary_activity.setCurrentIndex(
-                self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
-            )
-
-            self.secondary_activity.setCurrentIndex(
-                self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
-            )
-            self.repeats = self.task.get_repeats()
-            self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 288))
-        # new task - preset space by previous edit
-        else:
-            self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
+        # TODO: set icons for all labels
+        self.fear_label.setPixmap(QIcon("extra/fear.png").pixmap(QSize(16, 16)))
+        self.difficulty_label
+        self.embarrassment_label
 
         if not task:
             query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
@@ -121,6 +78,28 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             else:
                 # TODO: how to conserve the syntax?
                 self.do.setPlainText(self.do.document().toRawText())
+
+        QShortcut(QKeySequence(Qt.Key.Key_F12), self).activated.connect(toggle_markdown)
+
+        self.do.toMarkdown()
+
+        # TODO: set icons for all labels
+        self.fear_label.setPixmap(QIcon("extra/fear.png").pixmap(QSize(16, 16)))
+        self.difficulty_label
+        self.embarrassment_label
+
+        self.markdown = False
+        self.do_plain = self.do.toPlainText()
+
+        def toggle_markdown():
+            print("Toggle markdown")
+            self.markdown = not self.markdown
+            self.do_plain
+            if self.markdown:
+                # self.do_plain = self.do.toPlainText()
+                self.do.setMarkdown(self.do.toMarkdown())
+            else:
+                self.do.setPlainText(self.do.toPlainText())
 
         QShortcut(QKeySequence(Qt.Key.Key_F12), self).activated.connect(toggle_markdown)
 
@@ -215,6 +194,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         @self.button2.clicked.connect
         def time_constraints_button():
+            choose_constraints.ConstraintChooser(self, self.task).exec()
             choose_constraints.ConstraintChooser(self, self.task).exec()
 
         @self.button3.clicked.connect
@@ -432,6 +412,7 @@ WHERE id={self.task.id}
         win = Editor()
         win.supertasks = self.supertasks
         win.subtasks = self.subtasks
+        win.do.document().setPlainText(self.do.document().toRawText())
         win.do.document().setPlainText(self.do.document().toRawText())
         win.notes.document().setPlainText(self.notes.document().toRawText())
         win.space.setCurrentIndex(self.space.currentIndex())
