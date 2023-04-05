@@ -13,9 +13,15 @@ from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
 from classes import Task, typed, typed_row
-from logic import (filter_tasks_by_constraints, filter_tasks_by_content,
-                   filter_tasks_by_ilk, filter_tasks_by_space,
-                   filter_tasks_by_status, pipes, retrieve_tasks)
+from logic import (
+    filter_tasks_by_constraints,
+    filter_tasks_by_content,
+    filter_tasks_by_ilk,
+    filter_tasks_by_space,
+    filter_tasks_by_status,
+    pipes,
+    retrieve_tasks,
+)
 from stuff import app, config, db
 from ux import choose_space, task_editor, task_finished, task_running
 
@@ -192,6 +198,31 @@ DELETE FROM spaces where name=='{space_name}'
                                 win.space.setCurrentIndex(0)
 
         menu.addAction("löschen", space_delete)
+
+        def space_rename():
+            space_name = self.space.currentText()
+            text, okPressed = QtWidgets.QInputDialog.getText(
+                self,
+                "Raum umbenennen",
+                "Neuer Name des Raums",
+                QtWidgets.QLineEdit.EchoMode.Normal,
+                space_name,
+            )
+            if okPressed and text != "":
+                db.execute("UPDATE spaces SET name=? WHERE name=?", (text, space_name))
+                db.commit()
+                self.statusBar.showMessage(f"Raum '{space_name}' umbenannt in '{text}'.", 5000)
+                for win in app.list_of_task_lists:
+                    build_space_list(win)
+                    if win.space.currentText() == space_name:
+                        win.space.setCurrentText(text)
+                for win in app.list_of_task_editors:
+                    build_space_list(win)
+                    if win.space.currentText() == space_name:
+                        win.space.setCurrentText(text)
+
+        menu.addAction("umbenennen", space_rename)
+
         self.button7.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()

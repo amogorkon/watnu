@@ -9,9 +9,8 @@ from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QWizard
 
 import ui
-from classes import ILK, Task, get_activity_name, typed
-from logic import retrieve_task_by_id
-from stuff import app, db
+from classes import ILK, Task, get_activity_name, get_space_name, retrieve_task_by_id
+from stuff import app, config, db
 
 _translate = QCoreApplication.translate
 
@@ -47,7 +46,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.cloning = cloning
         self.templating = templating
         self.as_sup = as_sup
-        self.current_space = current_space
+        self.current_space = current_space or app.last_edited_space or config.last_selected_space
         self.draft = draft
 
         # task id!
@@ -81,6 +80,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         model.select()
         self.space.setModel(model)
         self.space.setModelColumn(1)
+
+        self.space.setCurrentIndex(self.space.findText(self.current_space))
 
         menu = QtWidgets.QMenu()
         menu.addAction("ohne Vorlage", self.create_task)
@@ -131,7 +132,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         # editing a task - need to set all values accordingly
         if task:
-            # breakpoint()
             self.deadline = task.deadline
             self.skill_ids = self.task.skill_ids
             self.priority.setValue(task.priority)
@@ -151,7 +151,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
                     self.button8.setEnabled(True)
 
             self.notes.document().setPlainText(task.notes)
-            self.space.setCurrentIndex(self.space.findText(self.task.space))
+            self.space.setCurrentIndex(self.space.findText(get_space_name(self.task.space_id)))
+
             self.level.setCurrentIndex(self.level.findText(self.task.level))
             self.primary_activity.setCurrentIndex(
                 self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
@@ -165,10 +166,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.fear.setValue(int(task.fear))
             self.difficulty.setValue(int(task.difficulty))
             self.embarrassment.setValue(int(task.embarrassment))
-
-        # new task - preset space by previous edit
-        else:
-            self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
 
         if cloning:
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))

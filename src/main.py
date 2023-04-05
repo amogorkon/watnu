@@ -161,9 +161,9 @@ if __name__ == "__main__":
 
     tasks: list[Task] = retrieve_tasks(db)
     # first, let's clean up empty ones
-    for t in tasks:
-        if t.do == "" and t.notes in ("", None):
-            t.really_delete()
+    for task in tasks:
+        if task.do == "" and task.notes in ("", None):
+            task.really_delete()
     tasks = retrieve_tasks(db)
     if drafts := [t for t in tasks if t.draft]:
         match QtWidgets.QMessageBox.question(
@@ -172,8 +172,8 @@ if __name__ == "__main__":
             f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",
         ):
             case QtWidgets.QMessageBox.StandardButton.Yes:
-                for t in drafts:
-                    editor = task_editor.Editor(t)
+                for task in drafts:
+                    editor = task_editor.Editor(task)
                     editor.show()
                     editor.raise_()
                     app.list_of_task_editors.append(editor)
