@@ -16,7 +16,10 @@ class DeadlineChooser(QtWidgets.QDialog, ui.choose_deadline.Ui_Dialog):
         super().__init__()
         self.setupUi(self)
         self.editor = editor
-        self.reference_date.setDate(QDate().currentDate())
+        if task is not None:
+            self.reference_date.setDateTime(QDateTime().fromSecsSinceEpoch(int(task.deadline)))
+        else:
+            self.reference_date.setDate(QDate().currentDate())
 
         @self.enter_date.clicked.connect
         def enter_date():

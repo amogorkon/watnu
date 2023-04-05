@@ -34,7 +34,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         app.win_settings.hide()
 
         self.task = task
-        self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) for skill in task.skills]
+        self.skill_levels = [(skill.id, int(skill_level(skill.time_spent))) for skill in task.skill_ids]
 
         self.paused = False
         self.start_time = time()

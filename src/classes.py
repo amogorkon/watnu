@@ -198,7 +198,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @cached_getter
-    def get_constraints(self) -> np.ndarray|None:
+    def get_constraints(self) -> np.ndarray | None:
         return (
             np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 288)
             if (
@@ -259,6 +259,23 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         own_deadline = typed_row(query.fetchone(), 0, float, default=float("inf"))
         return min([t.deadline for t in self.supertasks] + [own_deadline]) - (self.workload or 0)
+
+    def set_deadline(self, deadline: float) -> float:
+        # removing deadline
+        if deadline == float("inf"):
+            db.execute(f"DELETE FROM deadlines WHERE task_id={self.id}")
+            db.commit()
+            return
+
+        query = db.execute(f"SELECT time_of_reference FROM deadlines WHERE task_id={self.id}")
+
+        # changing deadline
+        if query.fetchone():
+            db.execute(f"UPDATE deadlines SET time_of_reference={deadline} WHERE task_id={self.id}")
+        else:  # new deadline
+            db.execute(f"INSERT INTO deadlines (task_id, time_of_reference) VALUES ({self.id}, {deadline})")
+
+        db.commit()
 
     @property
     @cached_getter
@@ -379,6 +396,12 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     def __setattr__(self, name, value):
         raise UserWarning("Can't directly assign to Task attributes. Use Task.set_() instead.")
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return self.id
 
 
 def retrieve_task_by_id(db, ID: int) -> Task:

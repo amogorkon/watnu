@@ -7,21 +7,15 @@ from random import choice, seed
 from time import time, time_ns
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QTimer, QVariant, QKeyCombination
+from PyQt6.QtCore import QKeyCombination, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
 from classes import Task, typed, typed_row
-from logic import (
-    filter_tasks_by_constraints,
-    filter_tasks_by_content,
-    filter_tasks_by_ilk,
-    filter_tasks_by_space,
-    filter_tasks_by_status,
-    pipes,
-    retrieve_tasks,
-)
+from logic import (filter_tasks_by_constraints, filter_tasks_by_content,
+                   filter_tasks_by_ilk, filter_tasks_by_space,
+                   filter_tasks_by_status, pipes, retrieve_tasks)
 from stuff import app, config, db
 from ux import choose_space, task_editor, task_finished, task_running
 
@@ -100,8 +94,9 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                 self.showNormal()
             else:
                 self.showFullScreen()
+
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
-        
+
         QShortcut(
             QKeySequence(
                 QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
@@ -212,9 +207,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.task_list.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            task = self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            win = task_editor.Editor(task)
-            win.show()
+            self.edit_selected()
 
         @self.button1.clicked.connect
         def _():
@@ -256,36 +249,21 @@ DELETE FROM spaces where name=='{space_name}'
             pass
 
         @self.button4.clicked.connect
-        def edit_task():
-            X: list[QTableWidgetItem] = list(
-                filter(lambda t: t.column() == 0, self.task_list.selectedItems())
-            )
-
-            for x in X:
-                task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
-                win = list(filter(lambda w: w.task == task, app.list_of_task_editors))
-                if win:
-                    win[0].show()
-                    win[0].raise_()
-                    continue
-                win = task_editor.Editor(task)
-                app.list_of_task_editors.append(win)
-                win.show()
+        def button4_clicked():
+            self.edit_selected()
 
         @self.button5.clicked.connect
         def start_task():
-            X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+            selected = self.get_selected_tasks()
 
-            if not X:
+            if not selected:
                 return
-            elif len(X) > 1:
+            elif len(selected) > 1:
                 self.statusBar.showMessage("Es kann jeweils nur eine Aufgabe gestartet werden.", 5000)
                 return
             else:
-                x = X[0].row()
-                task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
                 self.hide()
-                task_running.Running(task)
+                task_running.Running(selected[0])
 
         @self.button6.clicked.connect
         def create_task():
@@ -549,6 +527,19 @@ font-size: 12pt;
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
         self.button1.setMenu(menu)
 
+    def edit_selected(self):
+        for task in self.get_selected_tasks():
+            for win in app.list_of_task_editors:
+                if win.task == task:
+                    win.show()
+                    win.raise_()
+                    break
+            else:
+                win = task_editor.Editor(task)
+                app.list_of_task_editors.append(win)
+                win.show()
+                win.raise_()
+
     def reject(self):
         super().reject()
         if app.win_running:
@@ -601,10 +592,14 @@ def get_filtered_tasks(self):
     )
 
 
-def deadline_as_str(deadline) -> str:
+def deadline_as_str(deadline: float) -> str:
     if deadline == float("inf"):
         return ""
-    return str(datetime.fromtimestamp(deadline))
+    try:
+        return str(datetime.fromtimestamp(deadline))
+    except OSError:
+        print(deadline, type(deadline))
+        return ""
 
 
 def build_space_list(parent):

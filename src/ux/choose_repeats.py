@@ -8,7 +8,6 @@ from PyQt6.QtSql import QSqlTableModel
 
 import ui, ux
 from classes import EVERY, Every, Task
-from stuff import __version__
 
 
 

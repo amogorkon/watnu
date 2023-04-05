@@ -437,6 +437,12 @@
                   <property name="text">
                    <string/>
                   </property>
+                  <property name="pixmap">
+                   <pixmap>../extra/fear.png</pixmap>
+                  </property>
+                  <property name="scaledContents">
+                   <bool>false</bool>
+                  </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
@@ -466,6 +472,9 @@
                   </property>
                   <property name="text">
                    <string/>
+                  </property>
+                  <property name="pixmap">
+                   <pixmap>../extra/complexity.png</pixmap>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -499,6 +508,9 @@
                   </property>
                   <property name="text">
                    <string/>
+                  </property>
+                  <property name="pixmap">
+                   <pixmap>../extra/feathericons/eye.svg</pixmap>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
