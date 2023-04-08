@@ -5,7 +5,7 @@ from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QMessageBox
 
 import ui
-from classes import ILK, Task
+from classes import ILK, Task, Skill
 from logic import skill_level
 from stuff import app, db
 from ux import task_editor
@@ -80,7 +80,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         db.commit()
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 
-        new_skills = [(skill.id, int(skill_level(skill.time_spent))) for skill in self.task.skills]
+        new_skills = [(skill_id, int(skill_level(Skill(skill_id).time_spent))) for skill_id in self.task.skill_ids]
 
         for x, y in zip(self.old_skills, new_skills):
             if x[1] < y[1]:

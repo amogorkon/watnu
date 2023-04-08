@@ -1,14 +1,10 @@
-import ast
-import inspect
-import shlex
 from collections import deque
 from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
-from functools import reduce, singledispatch, update_wrapper
+from functools import reduce
 from itertools import product, takewhile
 from math import isinf, sqrt
 from sqlite3 import Connection
-from textwrap import dedent
 from time import time
 
 import numpy as np
@@ -29,6 +25,11 @@ pipes = use(
     import_as="pipes",
 ).pipes
 
+use('nltk', version='3.8.1', modes=use.auto_install, hash_algo=use.Hash.sha256, hashes={
+    'l䓔䱎㬰芰鯽倳疺苅ˤ崠㩡㦌䪑ˌ宐偏嵪',  # py3-any
+    'I帵螒倝延襂癑槓䕴茿利鹽簸艦Ȣ鼍䞗唀',  # None-None
+})
+from nltk.tokenize import WordPunctTokenizer
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
 habit_weight = fuzzy.sigmoid(k=0.0002, L=1, x0=5000)
@@ -250,9 +251,8 @@ def einstein_sum(values):
 
 def filter_ratio(pattern, text):
     """Calculate the maximum ratio between pattern and text."""
-
-    P = shlex.split(pattern.casefold())
-    T = shlex.split(text.casefold())
+    P = WordPunctTokenizer().tokenize(pattern.casefold())
+    T = WordPunctTokenizer().tokenize(text.casefold())
     if not P or not T:
         return 0
 

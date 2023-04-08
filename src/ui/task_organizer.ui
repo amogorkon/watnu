@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>624</width>
-    <height>502</height>
+    <width>639</width>
+    <height>604</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Aufgaben</string>
+   <string>Organisation</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -256,8 +256,8 @@
     <widget class="QTableWidget" name="task_list">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <horstretch>1</horstretch>
+       <verstretch>20</verstretch>
       </sizepolicy>
      </property>
      <property name="font">
@@ -363,6 +363,68 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Bezug</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>621</width>
+        <height>90</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+      </property>
+      <property name="autoScroll">
+       <bool>false</bool>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="tabKeyNavigation">
+       <bool>false</bool>
+      </property>
+      <property name="showDropIndicator" stdset="0">
+       <bool>false</bool>
+      </property>
+      <property name="dragDropOverwriteMode">
+       <bool>false</bool>
+      </property>
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::NoSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>true</bool>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+   <item>
     <layout class="QGridLayout" name="buttonLayout">
      <property name="topMargin">
       <number>0</number>
@@ -370,7 +432,7 @@
      <item row="2" column="3">
       <widget class="QPushButton" name="button6">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -379,7 +441,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>erstelle neue Aufgabe</string>
+        <string>Wähle Supertasks aus</string>
        </property>
        <property name="shortcut">
         <string>6</string>
@@ -388,8 +450,11 @@
      </item>
      <item row="2" column="1">
       <widget class="QPushButton" name="button4">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
-        <string>bearbeite Aufgabe(n)</string>
+        <string>Wähle Subtasks aus</string>
        </property>
        <property name="shortcut">
         <string>4</string>
@@ -405,7 +470,7 @@
      <item row="3" column="2">
       <widget class="QPushButton" name="button2">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -414,12 +479,15 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Erledigt!</string>
+        <string/>
        </property>
       </widget>
      </item>
      <item row="2" column="2">
       <widget class="QPushButton" name="button5">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
          <horstretch>0</horstretch>
@@ -427,7 +495,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>starte Aufgabe</string>
+        <string>wähle Bezugsaufgabe(n)</string>
        </property>
        <property name="shortcut">
         <string>5</string>
@@ -436,6 +504,9 @@
      </item>
      <item row="3" column="1">
       <widget class="QPushButton" name="button1">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
          <horstretch>0</horstretch>
@@ -443,7 +514,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>setze Aufgabe(n) als...</string>
+        <string>Zurücksetzen</string>
        </property>
        <property name="shortcut">
         <string>1</string>
@@ -453,7 +524,7 @@
      <item row="1" column="1">
       <widget class="QPushButton" name="button7">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -462,7 +533,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Raum...</string>
+        <string>Als Graph darstellen</string>
        </property>
        <property name="shortcut">
         <string>7</string>
@@ -471,6 +542,9 @@
      </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="button8">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
          <horstretch>0</horstretch>
@@ -478,11 +552,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Wirf Münze</string>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>../extra/feathericons/coin.svg</normaloff>../extra/feathericons/coin.svg</iconset>
+        <string/>
        </property>
        <property name="shortcut">
         <string>8</string>
@@ -492,7 +562,7 @@
      <item row="1" column="3">
       <widget class="QPushButton" name="button9">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -501,7 +571,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>klone Aufgabe ...</string>
+        <string>Als Gantt Chart darstellen</string>
        </property>
        <property name="shortcut">
         <string>9</string>
@@ -514,7 +584,7 @@
      <item row="3" column="3">
       <widget class="QPushButton" name="button3">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -523,7 +593,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>organisiere Aufgaben</string>
+        <string>Alles bestätigen</string>
        </property>
        <property name="shortcut">
         <string>3</string>

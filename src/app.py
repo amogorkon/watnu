@@ -23,6 +23,8 @@ class Application(QtWidgets.QApplication):
         "Multiple TaskLists can be open at the same time."
         self.list_of_task_editors: list[ux.task_editor.Editor] = []
         "Multiple Editors can be open at the same time."
+        self.list_of_task_organizers: list[ux.task_organizer.Organizer] = []
+        "Multiple Organizers can be open at the same time."
         self.last_edited_space: str = None
         self.win_main = ux.main_window.MainWindow()
 

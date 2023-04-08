@@ -403,6 +403,9 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
     def __hash__(self):
         return self.id
 
+    def __dict__(self):
+        return {k: getattr(self, k) for k in Task.__slots__}
+
 
 def retrieve_task_by_id(db, ID: int) -> Task:
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks WHERE id == {ID};")

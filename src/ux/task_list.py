@@ -23,12 +23,12 @@ from logic import (
     retrieve_tasks,
 )
 from stuff import app, config, db
-from ux import choose_space, task_editor, task_finished, task_running
+from ux import choose_space, task_editor, task_finished, task_organizer, task_running
 
 _translate = QtCore.QCoreApplication.translate
 
-OK = QIcon("extra/check.svg")
-NOK = QIcon("extra/cross.svg")
+OK = QIcon(str(config.base_path / "src/extra/check.svg"))
+NOK = QIcon(str(config.base_path / "src/extra/cross.svg"))
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
@@ -246,30 +246,28 @@ DELETE FROM spaces where name=='{space_name}'
 
         def button2_clicked():
             selected = self.get_selected_tasks()
-            match self.status.currentIndex():
-                # open
-                case 0:
-                    for task in selected:
+            for task in selected:
+                if task is None:
+                    continue
+                match self.status.currentIndex():
+                    # open
+                    case 0:
                         task.set_("done", True)
-                # draft
-                case 1:
-                    for task in selected:
+                    # draft
+                    case 1:
                         task.set_("draft", False)
-                # inactive
-                case 2:
-                    for task in selected:
+                    # inactive
+                    case 2:
                         task.set_("inactive", False)
-                # done
-                case 3:
-                    for task in selected:
+                    # done
+                    case 3:
                         task.set_("done", False)
-                # deleted
-                case 4:
-                    for task in selected:
+                    # deleted
+                    case 4:
                         task.set_("deleted", False)
-                # all
-                case 5:
-                    pass
+                    # all
+                    case 5:
+                        pass
             self.build_task_list()
 
         QShortcut(QKeySequence(Qt.Key.Key_2), self.task_list).activated.connect(button2_clicked)
@@ -277,7 +275,9 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.button3.clicked.connect
         def _():
-            pass
+            win = task_organizer.Organizer()
+            app.list_of_task_organizers.append(win)
+            win.show()
 
         @self.button4.clicked.connect
         def button4_clicked():
@@ -487,6 +487,9 @@ font-size: 12pt;
             "inactive": "Inaktiv",
             "deleted": "Gelöscht",
         }
+
+        currently_selected_rows = self.task_list.selectionModel()
+
         selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
         for column_number, column in enumerate(selected_columns):
@@ -508,6 +511,8 @@ font-size: 12pt;
         self.task_list.setSortingEnabled(True)
         self.task_list.resizeColumnsToContents()
         self.task_list.ensurePolished()
+        self.task_list.setSelectionModel(currently_selected_rows)
+
         self.task_list.show()
 
     def set_header(self, text, font, column):
@@ -633,16 +638,37 @@ def deadline_as_str(deadline: float) -> str:
         return ""
 
 
-def build_space_list(parent):
+def build_space_list(parent, first_item_text="alle Räume") -> None:
     parent.space.clear()
-    parent.space.addItem("-- alle Räume --")
-    parent.space.setItemData(0, parent.font, Qt.ItemDataRole.FontRole)
+    parent.space.addItem(first_item_text, QVariant(None))
+    # set font of first item to bold
+    # parent.space.setItemData(0, QFont("Arial", 10, QFont.setBold(True)), Qt.FontRole)
+
+    parent.space.insertSeparator(1)
+
     query = db.execute(
         """
     SELECT space_id, name FROM spaces;
     """
     )
-    for space_id, name in query.fetchall():
+    spaces = query.fetchall()
+
+    def number_of_tasks_in_space(item):
+        space_id = item[0]
+        return db.execute(
+            """
+            SELECT COUNT(*) FROM tasks WHERE space_id=?;
+            """,
+            (space_id,),
+        ).fetchone()[0]
+
+    sorted_spaces_by_number = sorted(spaces, key=number_of_tasks_in_space, reverse=True)
+
+    for space_id, name in sorted_spaces_by_number[:3]:
         parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
 
-    parent.space.model().sort(1, Qt.SortOrder.AscendingOrder)
+    parent.space.insertSeparator(5)
+
+    sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
+    for space_id, name in sorted_spaces_by_name:
+        parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))

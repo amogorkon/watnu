@@ -19,22 +19,18 @@ load = stay.Decoder()
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
-    def quit(
-        self,
-        num,
-        frame,
-        event,
-    ):
+    def quit(self, num, frame):
+        self.killed = True
         self.cleanup()
         self.close()
-        event.ignore()
         sys.exit(0)
 
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        # catch ctrl+c and register it as a quit
+        self.killed = False
 
+        # catch ctrl+c and register it as a quit
         signal.signal(signal.SIGINT, self.quit)
 
         @self.about.triggered.connect
@@ -158,6 +154,9 @@ VALUES ('{d["do"]}',
                         db.commit()
 
     def closeEvent(self, event):
+        if self.killed:
+            event.accept()
+            return
         if app.win_running:
             app.win_running.show()
             app.win_running.raise_()

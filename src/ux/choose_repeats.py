@@ -31,10 +31,10 @@ class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
         self.per_ilk.setId(self.per_year, 6)
 
         if task is not None:
-            self.every_ilk.button(task.repeats.every_ilk.value).setChecked(True)
-            self.x_every.setValue(task.repeats.amount)
-            self.per_ilk.button(task.repeats.per_ilk.value).setChecked(True)
-            self.x_per.setValue(task.repeats.min_distance)
+            self.every_ilk.button(task.get_repeats().every_ilk.value).setChecked(True)
+            self.x_every.setValue(task.get_repeats().amount)
+            self.per_ilk.button(task.get_repeats().per_ilk.value).setChecked(True)
+            self.x_per.setValue(task.get_repeats().min_distance)
 
     def accept(self):
         super().accept()

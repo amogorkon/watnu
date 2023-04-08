@@ -1,9 +1,3 @@
-from Levenshtein import ratio, seqratio, setratio
-import shlex
+currentData = 34
 
-do = "mit sarah liebe machen"
-test = "sari mach lieb"
-
-
-
-print(setratio(shlex.split(test), (shlex.split(do))))
+print(f"{f'space_id = {x},' if (x := currentData) is not None else 'asdf'}")

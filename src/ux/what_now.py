@@ -324,7 +324,6 @@ GROUP BY
     def showEvent(self, event):
         for L in app.list_of_task_lists:
             L.db_timer.stop()
-            L.filter_timer.stop()
             L.hide()
         super().showEvent(event)
 

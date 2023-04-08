@@ -88,6 +88,8 @@ class DB(sqlite3.Connection):
         app.db_last_modified = time()
 
 
+import contextlib
+
 if __name__ == "__main__":
     path = Path(__file__).resolve().parents[1]
     # touch, just in case user killed the config or first start
@@ -158,6 +160,33 @@ if __name__ == "__main__":
 
     app.tray = TrayIcon(app.icon, app.win_main)
     app.tray.show()
+
+    # windows autostart
+    if config.autostart:
+        import winreg
+
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_ALL_ACCESS,
+        )
+        winreg.SetValueEx(
+            key, "Watnu", 0, winreg.REG_SZ, f"{sys.executable} {config.base_path / 'src/main.py'}"
+        )
+        winreg.CloseKey(key)
+    else:
+        with contextlib.suppress(FileNotFoundError):
+            import winreg
+
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_ALL_ACCESS,
+            )
+            winreg.DeleteValue(key, "Watnu")
+            winreg.CloseKey(key)
 
     tasks: list[Task] = retrieve_tasks(db)
     # first, let's clean up empty ones

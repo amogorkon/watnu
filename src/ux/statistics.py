@@ -6,12 +6,12 @@ from PyQt6.QtGui import QIcon
 
 import ui
 from classes import typed, typed_row
-from stuff import __version__, db
+from stuff import __version__, config, db
 
 _translate = QCoreApplication.translate
 
-ok = QIcon("./extra/feathericons/check.svg")
-nok = QIcon("./extra/feathericons/x.svg")
+ok = QIcon(str(config.base_path / "src/extra/feathericons/check.svg"))
+nok = QIcon(str(config.base_path / "src/extra/feathericons/x.svg"))
 
 
 class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):

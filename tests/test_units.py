@@ -1,18 +1,10 @@
+from unittest.mock import Mock
+
 import use
-from pytest import fixture, mark, raises, skip
 
-use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
-)  # otherwise imports from modules won't work
-
-initial_globals = {"db": None, "app": None, "config": None}
-
-use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="stuff")
-
-Task = use(use.Path("classes.py"), initial_globals=initial_globals).Task
+initial_globals = {"config": Mock(), "app": Mock(), "__version__": use.Version("1.2.3")}
+use(use.Path("../src/stuff.py"), initial_globals=initial_globals, import_as="stuff")
 
 
-def test_task():
-    d = {}
-    t = Task(*[0] * 19)
-    assert t
+def test_foo():
+    pass

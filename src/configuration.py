@@ -85,7 +85,7 @@ class Config:
     run_sql_stuff: boolean = False
     icon: str = "./extra/feathericons/watnu1.png"
     debugging: boolean = False
-    autostart: boolean = True
+    autostart: boolean = False
     call_name: str = ""
     last_selected_space: str = ""
     base_path: Path = ""
