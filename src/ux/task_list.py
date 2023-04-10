@@ -196,6 +196,10 @@ DELETE FROM spaces where name=='{space_name}'
                             build_space_list(win)
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
+                        for win in app.list_of_task_organizers:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
 
         menu.addAction("löschen", space_delete)
 
@@ -277,6 +281,7 @@ DELETE FROM spaces where name=='{space_name}'
         def _():
             win = task_organizer.Organizer()
             app.list_of_task_organizers.append(win)
+            app.list_of_windows.append(win)
             win.show()
 
         @self.button4.clicked.connect
@@ -300,6 +305,7 @@ DELETE FROM spaces where name=='{space_name}'
         def create_task():
             win = task_editor.Editor(current_space=self.space.currentText())
             app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
             win.show()
 
         @self.button8.clicked.connect
@@ -573,18 +579,21 @@ font-size: 12pt;
             else:
                 win = task_editor.Editor(task)
                 app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
                 win.show()
                 win.raise_()
 
     def reject(self):
         super().reject()
+        app.list_of_task_lists.remove(self)
+        app.list_of_windows.remove(self)
         if app.win_running:
             app.win_running.show()
             app.win_running.raise_()
-        else:
-            app.win_main.show()
-            app.win_main.raise_()
-        app.list_of_task_lists.remove(self)
+            return
+        for win in app.list_of_windows:
+            win.show()
+            win.raise_()
 
     def get_selected_tasks(self) -> list[Task]:
         return [

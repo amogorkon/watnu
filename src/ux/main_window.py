@@ -64,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             win = task_list.TaskList()
             win.show()
             app.list_of_task_lists.append(win)
+            app.list_of_windows.append(win)
 
         @self.button5.clicked.connect
         def whatnow():
@@ -80,6 +81,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             win = task_editor.Editor()
             win.show()
             app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
 
         @self.button1.clicked.connect
         def statistics():
@@ -182,8 +184,6 @@ VALUES ('{d["do"]}',
         app.win_companions.close()
         app.win_inventory.close()
         app.win_statistics.close()
-        for win in app.list_of_task_lists:
-            win.close()
-        for win in app.list_of_task_editors:
+        for win in app.list_of_windows:
             win.close()
         config.save()

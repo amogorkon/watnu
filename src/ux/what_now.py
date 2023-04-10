@@ -43,6 +43,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         def edit_priority():
             win = task_editor.Editor(self.task_priority)
             app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
             if win.exec():
                 self.lets_check_whats_next()
 
@@ -50,6 +51,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         def edit_timing():
             win = task_editor.Editor(self.task_timing)
             app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
             if win.exec():
                 self.lets_check_whats_next()
 
@@ -57,6 +59,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         def edit_balanced():
             win = task_editor.Editor(self.task_balanced)
             app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
             if win.exec():
                 self.lets_check_whats_next()
 
@@ -227,10 +230,10 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         app.win_main.statusBar.clearMessage()
         self.sec_timer.stop()
         self.animation_timer.stop()
-        for L in app.list_of_task_lists:
-            L.db_timer.start(100)
-            L.filter_timer.start(1000)
-            L.show()
+        for win in app.list_of_task_lists:
+            win.db_timer.start(100)
+            win.filter_timer.start(1000)
+            win.show()
 
     def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
@@ -322,9 +325,12 @@ GROUP BY
         self.task_space_balanced.setText(self.task_balanced.space)
 
     def showEvent(self, event):
-        for L in app.list_of_task_lists:
-            L.db_timer.stop()
-            L.hide()
+        for win in app.list_of_task_lists:
+            win.db_timer.stop()
+            win.hide()
+        for win in app.list_of_task_organizers:
+            win.db_timer.stop()
+            win.hide()
         super().showEvent(event)
 
     def close(

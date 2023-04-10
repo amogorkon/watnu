@@ -373,7 +373,7 @@
      <property name="title">
       <string>Bezug</string>
      </property>
-     <widget class="QTableWidget" name="tableWidget">
+     <widget class="QTableWidget" name="respective_tasks">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -429,32 +429,13 @@
      <property name="topMargin">
       <number>0</number>
      </property>
-     <item row="2" column="3">
-      <widget class="QPushButton" name="button6">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Wähle Supertasks aus</string>
-       </property>
-       <property name="shortcut">
-        <string>6</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="1">
       <widget class="QPushButton" name="button4">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Wähle Subtasks aus</string>
+        <string>bearbeite Aufgabe(n)</string>
        </property>
        <property name="shortcut">
         <string>4</string>
@@ -495,7 +476,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>wähle Bezugsaufgabe(n)</string>
+        <string>Darstellung als...</string>
        </property>
        <property name="shortcut">
         <string>5</string>
@@ -514,7 +495,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Zurücksetzen</string>
+        <string>Alles zurücksetzen</string>
        </property>
        <property name="shortcut">
         <string>1</string>
@@ -533,7 +514,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Als Graph darstellen</string>
+        <string>Wähle Subtasks aus</string>
        </property>
        <property name="shortcut">
         <string>7</string>
@@ -552,7 +533,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>wähle Bezugsaufgabe(n)</string>
        </property>
        <property name="shortcut">
         <string>8</string>
@@ -571,7 +552,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Als Gantt Chart darstellen</string>
+        <string>Wähle Supertasks aus</string>
        </property>
        <property name="shortcut">
         <string>9</string>
@@ -597,6 +578,25 @@
        </property>
        <property name="shortcut">
         <string>3</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QPushButton" name="button6">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>neue Aufgabe</string>
+       </property>
+       <property name="shortcut">
+        <string>6</string>
        </property>
       </widget>
      </item>

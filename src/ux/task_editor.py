@@ -384,21 +384,27 @@ WHERE id={self.task.id}
     def accept(self):
         self.draft = False
         self.save()
+        app.list_of_task_editors.remove(self)
+        app.list_of_windows.remove(self)
         super().accept()
 
     def reject(self):
         super().reject()
+        app.list_of_task_editors.remove(self)
+        app.list_of_windows.remove(self)
         if self.task.do == "" and self.task.notes == "":
             db.execute(
                 f"""
                 DELETE FROM tasks where id == {self.task.id}
 """
             )
+        for win in app.list_of_windows:
+            win.show()
+            win.raise_()
 
     def create_task(self):
         win = Editor()
-        app.list_of_task_editors.append(win)
-        win.show()
+        self.add_win_to_app(win)
 
     def clone(self):
         win = Editor()
@@ -414,7 +420,12 @@ WHERE id={self.task.id}
         win.skill_ids = self.skill_ids
         win.priority.setValue(self.priority.value())
 
+        self.add_win_to_app(win)
+
+    # TODO Rename this here and in `create_task` and `clone`
+    def add_win_to_app(self, win):
         app.list_of_task_editors.append(win)
+        app.list_of_windows.append(win)
         win.show()
 
     def set_as(self, status: str, set_flag):

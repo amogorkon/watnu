@@ -13,17 +13,12 @@ from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
 from classes import Task, typed, typed_row
-from logic import (
-    filter_tasks_by_constraints,
-    filter_tasks_by_content,
-    filter_tasks_by_ilk,
-    filter_tasks_by_space,
-    filter_tasks_by_status,
-    pipes,
-    retrieve_tasks,
-)
+from logic import (filter_tasks_by_constraints, filter_tasks_by_content,
+                   filter_tasks_by_ilk, filter_tasks_by_space,
+                   filter_tasks_by_status, pipes, retrieve_tasks)
 from stuff import app, config, db
-from ux import choose_space, task_editor, task_finished, task_list, task_running
+from ux import (choose_space, task_editor, task_finished, task_list,
+                task_running)
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -137,7 +132,7 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
 
         @self.task_list.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected()
+            self.select_respective_tasks(self.get_selected_tasks())
 
         @self.button1.clicked.connect
         def _():
@@ -265,6 +260,9 @@ font-size: 12pt;
 
         self.task_list.show()
 
+    def select_respective_tasks(self, tasks):
+        pass
+
     def set_header(self, text, font, column):
         item = QTableWidgetItem(text)
         item.setFont(font)
@@ -274,13 +272,17 @@ font-size: 12pt;
 
     def reject(self):
         super().reject()
+        app.list_of_task_organizers.remove(self)
+        app.list_of_windows.remove(self)
+
         if app.win_running:
             app.win_running.show()
             app.win_running.raise_()
-        else:
-            app.win_main.show()
-            app.win_main.raise_()
-        app.list_of_task_organizers.remove(self)
+            return
+
+        for win in app.list_of_windows:
+            win.show()
+            win.raise_()
 
     def get_selected_tasks(self) -> list[Task]:
         return [

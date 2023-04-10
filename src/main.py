@@ -202,9 +202,10 @@ if __name__ == "__main__":
         ):
             case QtWidgets.QMessageBox.StandardButton.Yes:
                 for task in drafts:
-                    editor = task_editor.Editor(task)
-                    editor.show()
-                    editor.raise_()
-                    app.list_of_task_editors.append(editor)
+                    win = task_editor.Editor(task)
+                    win.show()
+                    win.raise_()
+                    app.list_of_task_editors.append(win)
+                    app.list_of_windows.append(win)
 
     sys.exit(app.exec())

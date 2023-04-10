@@ -55,8 +55,11 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         doc = QtGui.QTextDocument(task.do)
         self.desc.setDocument(doc)
 
-        for task_list in app.list_of_task_lists:
-            task_list.button5.setEnabled(False)
+        for win in app.list_of_task_lists:
+            win.button5.setEnabled(False)
+
+        for win in app.list_of_task_editors:
+            win.button5.setEnabled(False)
 
         if self.task.resources:
             self.open_resources.setEnabled(True)
@@ -267,6 +270,8 @@ Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
 
     def finished(self):
         for win in app.list_of_task_lists:
+            self.restart_win(win)
+        for win in app.list_of_task_organizers:
             self.restart_win(win)
 
     def restart_win(self, win):

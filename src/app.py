@@ -28,6 +28,8 @@ class Application(QtWidgets.QApplication):
         self.last_edited_space: str = None
         self.win_main = ux.main_window.MainWindow()
 
+        self.list_of_windows: list[QtWidgets.QMainWindow | QtWidgets.QDialog] = [self.win_main]
+
         self.win_main.setWindowIcon(self.icon)
         self.win_main.statusBar.show()
 
