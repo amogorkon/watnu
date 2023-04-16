@@ -1,4 +1,5 @@
 import contextlib
+import webbrowser
 from datetime import datetime
 from functools import partial
 from itertools import count
@@ -27,6 +28,8 @@ from ux import choose_space, task_editor, task_finished, task_organizer, task_ru
 
 _translate = QtCore.QCoreApplication.translate
 
+from beartype import beartype
+
 OK = QIcon(str(config.base_path / "src/extra/check.svg"))
 NOK = QIcon(str(config.base_path / "src/extra/cross.svg"))
 
@@ -34,7 +37,7 @@ NOK = QIcon(str(config.base_path / "src/extra/cross.svg"))
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def rearrange_list(self):
         """Callback for easy rearranging of the list, no filtering."""
-        self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
     def __init__(self):
@@ -71,7 +74,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         @self.db_timer.timeout.connect
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
-                self.build_task_list()
+                self.build_task_table()
 
         def delete_item():
             if not (selected := self.get_selected_tasks()):
@@ -91,7 +94,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             else:
                 for task in selected:
                     task.delete()
-            self.build_task_list()
+            self.build_task_table()
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(delete_item)
 
@@ -117,17 +120,25 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         @self.space.currentIndexChanged.connect
         def space_switched():
-            self.build_task_list()
+            self.build_task_table()
             config.last_selected_space = self.space.currentText() or ""
             config.save()
 
         self.build_button1_menu()
 
+        def create_task():
+            win = task_editor.Editor(current_space=self.space.currentText())
+            app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
+            win.show()
+
         menu = QtWidgets.QMenu()
-        menu.addAction("genau so", self.clone_as_is)
-        menu.addAction("als Subtask", self.clone_as_sub)
-        menu.addAction("als Supertask", self.clone_as_sup)
-        self.button9.setMenu(menu)
+
+        menu.addAction("neu", create_task)
+        menu.addAction("als Klon", self.clone_as_is)
+        menu.addAction("kloniert als Subtask", self.clone_as_sub)
+        menu.addAction("kloniert als Supertask", self.clone_as_sup)
+        self.button6.setMenu(menu)
 
         menu = QtWidgets.QMenu()
 
@@ -139,7 +150,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
                     return
             for task in (selected := self.get_selected_tasks()):
                 task.set_("space_id", space)
-            self.build_task_list()
+            self.build_task_table()
             self.statusBar.showMessage(
                 f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.", 5000
             )
@@ -168,7 +179,7 @@ VALUES ('{text}')
 
         def space_delete():
             space_name = self.space.currentText()
-            if self.task_list.rowCount() > 0:
+            if self.task_table.rowCount() > 0:
                 QtWidgets.QMessageBox.information(
                     self,
                     "Sorry..",
@@ -227,20 +238,20 @@ DELETE FROM spaces where name=='{space_name}'
 
         menu.addAction("umbenennen", space_rename)
 
-        self.button7.setMenu(menu)
+        self.button9.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
-        self.task_list.setVerticalHeaderItem(0, item)
+        self.task_table.setVerticalHeaderItem(0, item)
 
-        self.build_task_list()
+        self.build_task_table()
 
         self.statusBar = QtWidgets.QStatusBar(self)
         self.statusBar.setObjectName("statusBar")
         self.layout.addWidget(self.statusBar)
         self.update()
 
-        @self.task_list.cellDoubleClicked.connect
+        @self.task_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
             self.edit_selected()
 
@@ -272,17 +283,32 @@ DELETE FROM spaces where name=='{space_name}'
                     # all
                     case 5:
                         pass
-            self.build_task_list()
+            self.build_task_table()
 
-        QShortcut(QKeySequence(Qt.Key.Key_2), self.task_list).activated.connect(button2_clicked)
+        QShortcut(QKeySequence(Qt.Key.Key_2), self.task_table).activated.connect(button2_clicked)
         self.button2.clicked.connect(button2_clicked)
 
         @self.button3.clicked.connect
         def _():
-            win = task_organizer.Organizer()
-            app.list_of_task_organizers.append(win)
-            app.list_of_windows.append(win)
-            win.show()
+            selected = self.get_selected_tasks()
+            if not selected:
+                win = task_organizer.Organizer()
+                app.list_of_task_organizers.append(win)
+                app.list_of_windows.append(win)
+                win.show()
+                return
+
+            for task in selected:
+                for win in app.list_of_task_organizers:
+                    if win.task == task:
+                        win.show()
+                        win.raise_()
+                        break
+                else:
+                    win = task_organizer.Organizer(task)
+                    app.list_of_task_organizers.append(win)
+                    app.list_of_windows.append(win)
+                    win.show()
 
         @self.button4.clicked.connect
         def button4_clicked():
@@ -300,13 +326,6 @@ DELETE FROM spaces where name=='{space_name}'
             else:
                 self.hide()
                 task_running.Running(selected[0])
-
-        @self.button6.clicked.connect
-        def create_task():
-            win = task_editor.Editor(current_space=self.space.currentText())
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            win.show()
 
         @self.button8.clicked.connect
         def throw_coins():
@@ -340,7 +359,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.ilk.currentIndexChanged.connect
         def ilk_switched():
-            self.build_task_list()
+            self.build_task_table()
 
         @self.status.currentIndexChanged.connect
         def status_switched():
@@ -367,25 +386,22 @@ DELETE FROM spaces where name=='{space_name}'
                     self.button2.setText("")
 
             self.build_button1_menu()
-            self.build_task_list()
+            self.build_task_table()
 
         # once we change the filter, we wait for 1 sec before applying the filter,
         # in order to avoid constant refiltering for something the user doesn't actually want.
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
         def filter_changed():
-            self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+            self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
             self.update()
 
     def set_as_open(self):
-        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
-
-        if not X:
+        selected = self.get_selected_tasks()
+        if not selected:
             return
 
-        for x in X:
-            task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
-
+        for task in selected:
             db.execute(
                 f"""
 UPDATE tasks
@@ -396,13 +412,12 @@ WHERE id == {task.id}
             db.commit()
 
     def set_as(self, property: str, set_flag):
-        X = list(filter(lambda t: t.column() == 0, self.task_list.selectedItems()))
+        selected = self.get_selected_tasks()
 
-        if not X:
+        if not selected:
             return
 
-        for x in X:
-            task: Task = self.task_list.item(x.row(), 0).data(Qt.ItemDataRole.UserRole)
+        for task in selected:
             if property == "done" and set_flag:
                 task_finished.Task_Finished(task).exec()
             else:
@@ -414,40 +429,40 @@ WHERE id == {task.id}
 """
                 )
         db.commit()
-        self.build_task_list()
+        self.build_task_table()
 
     def clone_as_is(self):
         try:
-            x = self.task_list.selectedItems()[0].row()
+            x = self.task_table.selectedItems()[0].row()
         except IndexError:
             return
 
-        task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
+        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
         win = task_editor.Editor(task, cloning=True, as_sup=0)
         win.show()
 
     def clone_as_sub(self):
 
         try:
-            x = self.task_list.selectedItems()[0].row()
+            x = self.task_table.selectedItems()[0].row()
         except IndexError:
             return
 
-        task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
+        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
         win = task_editor.Editor(task, cloning=True, as_sup=-1)
         win.show()
 
     def clone_as_sup(self):
         try:
-            x = self.task_list.selectedItems()[0].row()
+            x = self.task_table.selectedItems()[0].row()
         except IndexError:
             return
 
-        task = self.task_list.item(x, 0).data(Qt.ItemDataRole.UserRole)
+        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
         win = task_editor.Editor(task, cloning=True, as_sup=1)
         win.show()
 
-    def build_task_list(self):
+    def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
 
         self.last_generated = time()
@@ -456,21 +471,21 @@ WHERE id == {task.id}
         config.save()
         self.tasks = get_filtered_tasks(self)
 
-        self.arrange_list(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
-    def arrange_list(self, tasks: list[Task]):
+    def arrange_table(self, tasks: list[Task]):
         """Arrange the tasks in the list for display."""
-        self.task_list.setStyleSheet(
+        self.task_table.setStyleSheet(
             """
 alternate-background-color: #bfffbf; 
 background-color: #deffde;
 font-size: 12pt;
         """
         )
-        self.task_list.ensurePolished()
-        self.task_list.setSortingEnabled(False)
-        self.task_list.setRowCount(len(tasks))
+        self.task_table.ensurePolished()
+        self.task_table.setSortingEnabled(False)
+        self.task_table.setRowCount(len(tasks))
 
         ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
         family = QFontDatabase.applicationFontFamilies(ID)
@@ -479,7 +494,7 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.task_list.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
+        self.task_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
 
         # TODO: use _translate
         translation = {
@@ -494,7 +509,7 @@ font-size: 12pt;
             "deleted": "Gelöscht",
         }
 
-        currently_selected_rows = self.task_list.selectionModel()
+        currently_selected_rows = self.task_table.selectionModel()
 
         selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
@@ -512,21 +527,21 @@ font-size: 12pt;
                 if isinstance(content, QIcon):
                     item = QtWidgets.QTableWidgetItem()
                     item.setIcon(content)
-                self.task_list.setItem(i, column_number, item)
+                self.task_table.setItem(i, column_number, item)
 
-        self.task_list.setSortingEnabled(True)
-        self.task_list.resizeColumnsToContents()
-        self.task_list.ensurePolished()
-        self.task_list.setSelectionModel(currently_selected_rows)
+        self.task_table.setSortingEnabled(True)
+        self.task_table.resizeColumnsToContents()
+        self.task_table.ensurePolished()
+        self.task_table.setSelectionModel(currently_selected_rows)
 
-        self.task_list.show()
+        self.task_table.show()
 
     def set_header(self, text, font, column):
         item = QTableWidgetItem(text)
         item.setFont(font)
         item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.task_list.setHorizontalHeaderItem(column, item)
-        self.task_list.update()
+        self.task_table.setHorizontalHeaderItem(column, item)
+        self.task_table.update()
 
     def build_button1_menu(self):
         menu = QtWidgets.QMenu()
@@ -595,15 +610,21 @@ font-size: 12pt;
             win.show()
             win.raise_()
 
-    def get_selected_tasks(self) -> list[Task]:
-        return [
-            self.task_list.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            for row in range(self.task_list.rowCount())
-            if (x := self.task_list.item(row, 0).isSelected()) and x is not None
-        ]
+    def get_selected_tasks(self) -> set[Task]:
+        return {
+            self.task_table.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(self.task_table.rowCount())
+            if (x := self.task_table.item(row, 0).isSelected()) and x is not None
+        }
+
+    def share_via_telegra(self, task):
+        text = task.do
+        url = ""
+        webbrowser.open(f"https://t.me/share/url?url={url}&text={text}")
 
 
-def get_desc(task):
+@beartype
+def get_desc(task: Task):
     lines = task.do.split("\n")
     return lines[0] + ("" if len(lines) == 1 else " […]")
 

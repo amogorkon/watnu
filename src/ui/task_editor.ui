@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>667</width>
-    <height>846</height>
+    <width>623</width>
+    <height>930</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -357,7 +357,7 @@
            </item>
           </widget>
          </item>
-         <item row="6" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
             <string>Arbeitsaufwand [h][min]</string>
@@ -367,7 +367,7 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="1">
+         <item row="8" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QSpinBox" name="ETA_hours">
@@ -380,6 +380,74 @@
             <widget class="QSpinBox" name="ETA_mins"/>
            </item>
           </layout>
+         </item>
+         <item row="9" column="1">
+          <widget class="QDateTimeEdit" name="dateTimeEdit"/>
+         </item>
+         <item row="9" column="0">
+          <widget class="QPushButton" name="choose_deadline_button">
+           <property name="text">
+            <string>Deadline...</string>
+           </property>
+           <property name="shortcut">
+            <string>7</string>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayout_2">
+         <property name="rightMargin">
+          <number>10</number>
+         </property>
+         <item row="2" column="0">
+          <widget class="QPushButton" name="choose_constraints_button">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>kann nur erledigt werden wenn...</string>
+           </property>
+           <property name="shortcut">
+            <string>2</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QPushButton" name="choose_repeats_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>zeitlicher Abstand von Wiederholungen...</string>
+           </property>
+           <property name="shortcut">
+            <string>8</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QPushButton" name="choose_skills_button">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>trainiert...</string>
+           </property>
+           <property name="shortcut">
+            <string>9</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -554,48 +622,6 @@
       <property name="topMargin">
        <number>9</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="button7">
-        <property name="text">
-         <string>hat Deadline mit Dringlichkeit...</string>
-        </property>
-        <property name="shortcut">
-         <string>7</string>
-        </property>
-        <property name="checkable">
-         <bool>false</bool>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="button2">
-        <property name="text">
-         <string>kann nur erledigt werden wenn...</string>
-        </property>
-        <property name="shortcut">
-         <string>2</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="button9">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>trainiert...</string>
-        </property>
-        <property name="shortcut">
-         <string>9</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
@@ -622,16 +648,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="button1">
-        <property name="text">
-         <string>setze Aufgabe als...</string>
-        </property>
-        <property name="shortcut">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="1">
        <widget class="QPushButton" name="button5">
         <property name="text">
@@ -642,16 +658,13 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="button8">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="button1">
         <property name="text">
-         <string>zeitlicher Abstand von Wiederholungen...</string>
+         <string>setze Aufgabe als...</string>
         </property>
         <property name="shortcut">
-         <string>8</string>
+         <string>1</string>
         </property>
        </widget>
       </item>
@@ -665,6 +678,46 @@
         </property>
         <property name="shortcut">
          <string>6</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="button7">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="button2">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="button8">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="button9">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>

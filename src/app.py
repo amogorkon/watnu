@@ -1,25 +1,28 @@
 from bisect import bisect_right
 from datetime import datetime
 
-import q
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import QCoreApplication, QEvent, QLocale, QSettings, Qt, QTimer
+
+import startup
 
 
 class Application(QtWidgets.QApplication):
     """Main Application logic."""
 
-    def __init__(self, argv, config_):
+    def __init__(self, argv):
         super().__init__(argv)
-        self.db_last_modified = 0
-        global config
-        config = config_
+        #self.startup_win = startup.Startup()
 
-    def setUp(self, db_):
-        global db
+    def setUp(self, config_, db_):
+        self.db_last_modified = 0
+        global config, db
+        config = config_
         db = db_
+
         import ux
 
-        self.list_of_task_lists: list[ux.task_list.TaskList] = []
+        self.list_of_task_lists: list[ux.task_table.TaskList] = []
         "Multiple TaskLists can be open at the same time."
         self.list_of_task_editors: list[ux.task_editor.Editor] = []
         "Multiple Editors can be open at the same time."
@@ -83,4 +86,7 @@ class Application(QtWidgets.QApplication):
     WHERE resource_id = {resource_id}
     """
             )
+
+        import q
+
         q(i + 1 if i is not None else "Nothing found, so no", "unused resources deleted.")

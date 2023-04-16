@@ -395,10 +395,10 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return f"Task(**{ {k: getattr(self, k) for k in Task.__slots__}})"
 
     def __setattr__(self, name, value):
-        raise UserWarning("Can't directly assign to Task attributes. Use Task.set_() instead.")
+        print(f"attempted assignment to read-only attribute {name}={value}")
 
     def __eq__(self, other):
-        return self.id == other.id
+        return False if other is None else self.id == other.id
 
     def __hash__(self):
         return self.id

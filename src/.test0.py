@@ -1,3 +1,3 @@
-currentData = 34
+from PyQt6.QtCore import QPair
 
-print(f"{f'space_id = {x},' if (x := currentData) is not None else 'asdf'}")
+pair = QPair(str, int)("hello", 42)

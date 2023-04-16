@@ -8,15 +8,22 @@ import sys
 from pathlib import Path
 from time import time
 
-import use
+# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlDatabase
 
-# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
+
+# show startup screen before loading anything heavy
+import startup, app
+
+app = app.Application(sys.argv)
+
+import use
+
 
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
@@ -58,7 +65,6 @@ flux = use(
 
 
 load = stay.Decoder()
-import app
 import configuration
 
 __version__ = use.Version("0.2.2")
@@ -98,7 +104,7 @@ if __name__ == "__main__":
     config = configuration.read(config_path)
     print("using config:", config_path)
     config.base_path = path
-    app = app.Application(sys.argv, config)
+
     app.icon = QIcon(config.icon)
     app.setWindowIcon(app.icon)
 
@@ -127,7 +133,7 @@ if __name__ == "__main__":
 
     from classes import Task, retrieve_tasks
 
-    app.setUp(db)
+    app.setUp(config, db)
     from ux import landing, task_editor
 
     qdb.setDatabaseName(config.db_path)

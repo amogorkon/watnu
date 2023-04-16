@@ -71,12 +71,12 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.do.document().setPlainText(task.do)
 
             match task.ilk:
-                case ILK.habit:
+                case ILK.habit.value:
                     self.is_habit.setChecked(True)
-                case ILK.tradition:
+                case ILK.tradition.value:
                     self.is_tradition.setChecked(True)
                     self.button8.setEnabled(True)
-                case ILK.routine:
+                case ILK.routine.value:
                     self.is_routine.setChecked(True)
                     self.button8.setEnabled(True)
 
@@ -190,11 +190,17 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         @self.button3.clicked.connect
         def organise():
-            pass
+            win = task_organizer.Organizer(task=self.task, editor=self)
+            app.list_of_task_organizers.append(win)
+            app.list_of_windows.append(win)
+            win.show()
+            win.raise_()
 
         @self.button4.clicked.connect
-        def _():
-            pass
+        def button4_clicked():
+            self.task.delete()
+            self.reject()
+            app.win_what.lets_check_whats_next()
 
         @self.button5.clicked.connect
         def start_button():
@@ -256,7 +262,7 @@ WHERE space_id = {space_id}
         db.commit()
 
         for win in app.list_of_task_lists:
-            win.build_task_list()
+            win.build_task_table()
 
         # it's possible to edit a task while whatnow is open - so we need to update the whatnow window
         app.win_what.lets_check_whats_next()
@@ -388,11 +394,18 @@ WHERE id={self.task.id}
         app.list_of_windows.remove(self)
         super().accept()
 
+        for win in app.list_of_windows:
+            win.show()
+            win.raise_()
+
+        if not app.win_what.isHidden():
+            app.win_what.raise_()
+
     def reject(self):
         super().reject()
         app.list_of_task_editors.remove(self)
         app.list_of_windows.remove(self)
-        if self.task.do == "" and self.task.notes == "":
+        if self.task.do == "" and self.task.notes == "":  # TODO: this is a hack
             db.execute(
                 f"""
                 DELETE FROM tasks where id == {self.task.id}
@@ -401,6 +414,9 @@ WHERE id={self.task.id}
         for win in app.list_of_windows:
             win.show()
             win.raise_()
+
+        if not app.win_what.isHidden():
+            app.win_what.raise_()
 
     def create_task(self):
         win = Editor()
@@ -422,7 +438,6 @@ WHERE id={self.task.id}
 
         self.add_win_to_app(win)
 
-    # TODO Rename this here and in `create_task` and `clone`
     def add_win_to_app(self, win):
         app.list_of_task_editors.append(win)
         app.list_of_windows.append(win)
@@ -474,5 +489,6 @@ from ux import (
     choose_skills,
     task_finished,
     task_list,
+    task_organizer,
     task_running,
 )

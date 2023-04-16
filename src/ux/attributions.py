@@ -2,12 +2,10 @@
 
 
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 import ui
 
-_translate = QCoreApplication.translate
 
 class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
     def __init__(self):
@@ -21,4 +19,3 @@ class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):
 
     def reject(self):
         super().reject()
-        win_attributions = None
