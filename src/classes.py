@@ -1,3 +1,4 @@
+import unicodedata
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum, Flag
@@ -304,6 +305,30 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
     def total_time_spent(self) -> int:
         return self.adjust_time_spent + self.time_spent
 
+    @property
+    @cached_getter
+    def total_priority(self) -> float:
+        return (
+            max((t.total_priority for t in self.supertasks), default=0)
+            + self.priority
+            + self.get_space_priority()
+        )
+
+    def get_short_do(self, max_len=None):
+        lines = self.do.split("\n")
+        if not max_len:
+            return lines[0] + ("" if len(lines) == 1 else " […]")
+        first_line_parts = lines[0].split()
+        # line = (
+        #     f"{first_line_parts[0]} "
+        #     + disemvowel(" ".join(first_line_parts[1:-1]))
+        #     + " "
+        #     + first_line_parts[-1]
+        # )
+        line = lines[0][:max_len]
+
+        return line + ("" if len(lines) == 1 else " […]")
+
     def delete(self):
         self.set_("deleted", True)
 
@@ -372,7 +397,19 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
-        return {retrieve_task_by_id(db, typed(required_task, int)) for required_task in query.fetchall()}
+        return {retrieve_task_by_id(db, typed_row(row, 0, int)) for row in query.fetchall()}
+
+    def set_subtasks(self, tasks: set["Task"]) -> None:
+        db.executemany(
+            "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
+            [(self.id, t.id) for t in tasks],
+        )
+
+    def set_supertasks(self, tasks: set["Task"]) -> None:
+        db.executemany(
+            "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
+            [(t.id, self.id) for t in tasks],
+        )
 
     def set_primary_activity_id(self, activity_id: int) -> None:
         self.set_("primary_activity_id", activity_id)
@@ -458,3 +495,12 @@ def get_activity_name(activity_id) -> str:
         """
     )
     return typed_row(query.fetchone(), 0, str, default="")
+
+
+def disemvowel(text: str) -> str:
+    for word in text.split():
+        yield disemvowel(word)
+    first, middle, last = text[0], text[1:-1], text[-1]
+
+    ascii_text = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
+    return first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last

@@ -636,7 +636,7 @@
      <item row="2" column="2">
       <widget class="QPushButton" name="button5">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -645,7 +645,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>wähle Aufgabe als Bezug</string>
+        <string/>
        </property>
        <property name="shortcut">
         <string>5</string>
@@ -693,7 +693,7 @@
      <item row="1" column="2">
       <widget class="QPushButton" name="button8">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
@@ -702,7 +702,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>Visualisierung...</string>
        </property>
        <property name="shortcut">
         <string>8</string>

@@ -24,7 +24,7 @@ from logic import (
     retrieve_tasks,
 )
 from stuff import app, config, db
-from ux import choose_space, task_editor, task_finished, task_organizer, task_running
+from ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -59,13 +59,13 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.columns = (
             ("space", self.check_space, lambda t: str(t.space)),
             ("level", self.check_level, lambda t: str(t.level)),
-            ("priority", self.check_priority, lambda t: str(t.priority)),
+            ("priority", self.check_priority, lambda t: str(t.total_priority)),
             ("deadline", self.check_deadline, lambda t: deadline_as_str(t.deadline)),
             ("done", self.check_done, lambda t: OK if t.done else NOK),
             ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
             ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
             ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
-            ("do", self.check_do, lambda t: get_desc(t)),
+            ("do", self.check_do, lambda t: t.get_short_do()),
         )
 
         for _, check, _ in self.columns:
@@ -94,7 +94,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             else:
                 for task in selected:
                     task.delete()
-            self.build_task_table()
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(delete_item)
 
@@ -214,29 +213,10 @@ DELETE FROM spaces where name=='{space_name}'
 
         menu.addAction("löschen", space_delete)
 
-        def space_rename():
-            space_name = self.space.currentText()
-            text, okPressed = QtWidgets.QInputDialog.getText(
-                self,
-                "Raum umbenennen",
-                "Neuer Name des Raums",
-                QtWidgets.QLineEdit.EchoMode.Normal,
-                space_name,
-            )
-            if okPressed and text != "":
-                db.execute("UPDATE spaces SET name=? WHERE name=?", (text, space_name))
-                db.commit()
-                self.statusBar.showMessage(f"Raum '{space_name}' umbenannt in '{text}'.", 5000)
-                for win in app.list_of_task_lists:
-                    build_space_list(win)
-                    if win.space.currentText() == space_name:
-                        win.space.setCurrentText(text)
-                for win in app.list_of_task_editors:
-                    build_space_list(win)
-                    if win.space.currentText() == space_name:
-                        win.space.setCurrentText(text)
+        def space_edit():
+            space_editor.Space_Editor(self.space.currentText()).exec()
 
-        menu.addAction("umbenennen", space_rename)
+        menu.addAction("bearbeiten", space_edit)
 
         self.button9.setMenu(menu)
 
@@ -617,16 +597,18 @@ font-size: 12pt;
             if (x := self.task_table.item(row, 0).isSelected()) and x is not None
         }
 
-    def share_via_telegra(self, task):
+    def share_via_telegram(self, task):
         text = task.do
         url = ""
         webbrowser.open(f"https://t.me/share/url?url={url}&text={text}")
 
-
-@beartype
-def get_desc(task: Task):
-    lines = task.do.split("\n")
-    return lines[0] + ("" if len(lines) == 1 else " […]")
+    def notify_windows_of_task_deletion(self, task):
+        for win in app.list_of_task_lists:
+            win.build_task_list()
+        for win in app.list_of_task_organizers:
+            win.build_task_list()
+            win.subtasks.remove
+            win.arrange_sub_sup_task_table()
 
 
 def get_space_id(name, index) -> int | None:

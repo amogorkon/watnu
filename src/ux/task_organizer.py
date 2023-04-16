@@ -8,10 +8,10 @@ from random import choice, seed
 from time import time, time_ns
 
 from beartype import beartype
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QDataStream, QIODevice, QKeyCombination, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
+from PyQt6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QMenu, QStatusBar, QTableWidgetItem
 
 import ui
 from classes import Task, typed, typed_row
@@ -53,30 +53,37 @@ translation = {
 }
 
 
-class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
+class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
     def __init__(self, task: Task | None = None, filters=None, editor=None):
         super().__init__()
         self.setupUi(self)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok
+        )
+        self.layout.addWidget(button_box)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
 
         self.task = task
+        self.subtasks: set[Task] = set()
+        self.supertasks: set[Task] = set()
+
         if task:
             self.subtasks = self.task.subtasks
             self.supertasks = self.task.supertasks
-        else:
-            self.subtasks: set[Task] = set()
-            self.supertasks: set[Task] = set()
+
         self.filters = filters
         self.editor = editor
 
         self._drag_info: list[Task] = []
-        self.statusBar = QtWidgets.QStatusBar(self)
+        self.statusBar = QStatusBar(self)
         self.db_timer = QTimer()
         "Timer for polling if the db has changed and regenerate the list."
         self.db_timer.start(100)
         self.last_generated = 0
 
         self.tasks: list[Task] = []
-        self.check_do = QtWidgets.QCheckBox()
+        self.check_do = QCheckBox()
         self.check_do.setChecked(True)
 
         self.depends_on = True
@@ -90,8 +97,8 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
             else:
                 self.relationship_button.setText("hängt ab von")
                 self.relationship_button.setIcon(ARROW_DOWN)
-
             self.depends_on ^= True
+            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
 
         # displayed columns: tuple[Header, displayed, how to get value]
 
@@ -104,7 +111,7 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
             ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
             ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
             ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
-            ("do", self.check_do, lambda t: task_list.get_desc(t)),
+            ("do", self.check_do, lambda t: t.get_short_do()),
         )
 
         for _, check, _ in self.columns:
@@ -115,31 +122,6 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_table()
 
-        def delete_item():
-            if not (selected := get_selected_tasks(self.tasks_table)):
-                return
-            # if we are dealing with tasks in the bin, we need to ask if we want to delete permanently
-            if self.status.currentIndex() == 4:
-                match QMessageBox.question(
-                    self,
-                    f"Aufgabe{'' if len(selected) == 1 else 'n'} löschen",
-                    "Wirklich - unwiderruflich - löschen?",
-                ):
-                    case QMessageBox.StandardButton.Yes:
-                        for task in selected:
-                            task.really_delete()
-                    case _:
-                        return
-            else:
-                for task in selected:
-                    task.delete()
-            self.build_task_table()
-
-            self.arrange_concerned_task_table(self.task)
-            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
-
-        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.tasks_table).activated.connect(delete_item)
-
         def toggle_fullscreen():
             if self.isFullScreen():
                 self.showNormal()
@@ -147,6 +129,7 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
                 self.showFullScreen()
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         QShortcut(
             QKeySequence(
@@ -154,6 +137,20 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
             ),
             self,
         ).activated.connect(lambda: self.field_filter.setFocus())
+
+        def remove_item_from_sub_sup():
+            if not (selected := get_selected_tasks(self.sub_sup_tasks_table)):
+                return
+            for task in selected:
+                if self.depends_on:
+                    self.subtasks.remove(task)
+                else:
+                    self.supertasks.remove(task)
+            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.sub_sup_tasks_table).activated.connect(
+            remove_item_from_sub_sup
+        )
 
         task_list.build_space_list(self)
         self.space.setCurrentIndex(
@@ -166,13 +163,13 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
             config.last_selected_space = self.space.currentText() or ""
             config.save()
 
-        item = QtWidgets.QTableWidgetItem()
+        item = QTableWidgetItem()
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
         self.tasks_table.setVerticalHeaderItem(0, item)
 
         self.build_task_table()
 
-        self.statusBar = QtWidgets.QStatusBar(self)
+        self.statusBar = QStatusBar(self)
         self.statusBar.setObjectName("statusBar")
         self.layout.addWidget(self.statusBar)
 
@@ -191,12 +188,23 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
         self.tasks_table.startDrag = startDrag
 
         def dropEvent(event):
+            if not self.task:
+                self.statusBar.showMessage("Erstmal eine Aufgabe als Bezug auswählen...", 5000)
+                event.ignore()
+                return
             if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
                 for task in self._drag_info:
+                    if task == self.task:
+                        self.statusBar.showMessage("Aufgabe kann nicht ihre eigene Voraussetzung sein!", 5000)
+                        continue
                     if self.depends_on:
                         self.subtasks.add(task)
                     else:
                         self.supertasks.add(task)
+                self.task.set_subtasks(self.subtasks) if self.depends_on else self.task.set_supertasks(
+                    self.supertasks
+                )
+
                 self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
                 event.accept()
             else:
@@ -210,6 +218,8 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
 
         @self.tasks_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
+            save_task(self.task, self.subtasks, self.supertasks)
+
             for task in get_selected_tasks(self.tasks_table):
                 self.task = task
                 self.supertasks = task.supertasks
@@ -255,17 +265,7 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
 
         @self.button5.clicked.connect
         def _():
-            if not (selected := get_selected_tasks(self.tasks_table)):
-                return
-            if len(selected) == 1:
-                self.task = selected[0]
-                self.arrange_concerned_task_table(self.task)
-                self.supertasks = self.task.supertasks
-                self.subtasks = self.task.subtasks
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
-
-            else:
-                self.statusBar.setMessage("Bitte nur eine Aufgabe als Bezug auswählen.", 5000)
+            pass
 
         @self.button6.clicked.connect
         def _():
@@ -277,6 +277,21 @@ class Organizer(QtWidgets.QDialog, ui.task_organizer.Ui_Dialog):
         @self.button7.clicked.connect
         def _():
             pass
+
+        menu = QMenu()
+
+        def print_as_mermaid():
+            print("mermaid")
+            print("graph LR")
+            for task in retrieve_tasks():
+                for supertask in task.supertasks:
+                    print(
+                        f"{supertask.id}:{supertask.get_short_do(15)} --> {task.id}:{task.get_short_do(15)}"
+                    )
+
+        menu.addAction("Mermaid", print_as_mermaid)
+
+        self.button8.setMenu(menu)
 
         @self.button8.clicked.connect
         def _():
@@ -346,12 +361,12 @@ font-size: 12pt;
             for column_number, (header, displayed, func) in enumerate(selected_columns):
                 content = func(task)
                 if isinstance(content, str):
-                    item = QtWidgets.QTableWidgetItem(content)
+                    item = QTableWidgetItem(content)
                     item.setFont(item_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
-                    item = QtWidgets.QTableWidgetItem()
+                    item = QTableWidgetItem()
                     item.setIcon(content)
                 self.tasks_table.setItem(i, column_number, item)
 
@@ -393,12 +408,12 @@ font-size: 12pt;
             for column_number, (header, displayed, func) in enumerate(selected_columns):
                 content = func(task)
                 if isinstance(content, str):
-                    item = QtWidgets.QTableWidgetItem(content)
+                    item = QTableWidgetItem(content)
                     item.setFont(item_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
-                    item = QtWidgets.QTableWidgetItem()
+                    item = QTableWidgetItem()
                     item.setIcon(content)
                 self.sub_sup_tasks_table.setItem(i, column_number, item)
 
@@ -429,12 +444,12 @@ font-size: 12pt;
         for column_number, (header, displayed, func) in enumerate(selected_columns):
             content = func(task)
             if isinstance(content, str):
-                item = QtWidgets.QTableWidgetItem(content)
+                item = QTableWidgetItem(content)
                 item.setFont(item_font)
                 item.setData(Qt.ItemDataRole.UserRole, task)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if isinstance(content, QIcon):
-                item = QtWidgets.QTableWidgetItem()
+                item = QTableWidgetItem()
                 item.setIcon(content)
             self.concerned_task_table.setItem(0, column_number, item)
 
@@ -453,6 +468,22 @@ font-size: 12pt;
         super().reject()
         app.list_of_task_organizers.remove(self)
         app.list_of_windows.remove(self)
+
+        if app.win_running:
+            app.win_running.show()
+            app.win_running.raise_()
+            return
+
+        for win in app.list_of_windows:
+            win.show()
+            win.raise_()
+
+    def accept(self):
+        super().accept()
+        app.list_of_task_organizers.remove(self)
+        app.list_of_windows.remove(self)
+
+        save_task(self.task, self.subtasks, self.supertasks)
 
         if app.win_running:
             app.win_running.show()
@@ -485,3 +516,10 @@ def set_header(widget, text, font, column):
     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft)
     widget.setHorizontalHeaderItem(column, item)
     widget.update()
+
+
+def save_task(task: Task, subtasks: set[Task], supertasks: set[Task]):
+    if not task:
+        return
+    task.set_subtasks(subtasks)
+    task.set_supertasks(supertasks)

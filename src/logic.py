@@ -25,10 +25,16 @@ pipes = use(
     import_as="pipes",
 ).pipes
 
-use('nltk', version='3.8.1', modes=use.auto_install, hash_algo=use.Hash.sha256, hashes={
-    'l䓔䱎㬰芰鯽倳疺苅ˤ崠㩡㦌䪑ˌ宐偏嵪',  # py3-any
-    'I帵螒倝延襂癑槓䕴茿利鹽簸艦Ȣ鼍䞗唀',  # None-None
-})
+use(
+    "nltk",
+    version="3.8.1",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "l䓔䱎㬰芰鯽倳疺苅ˤ崠㩡㦌䪑ˌ宐偏嵪",  # py3-any
+        "I帵螒倝延襂癑槓䕴茿利鹽簸艦Ȣ鼍䞗唀",  # None-None
+    },
+)
 from nltk.tokenize import WordPunctTokenizer
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
@@ -49,7 +55,7 @@ def prioritize(tasks: list[Task]) -> deque[Task]:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
-        key=lambda t: (t.level_id, t.get_space_priority() + t.priority, t.last_checked),
+        key=lambda t: (t.level_id, t.total_priority, t.last_checked),
     )
     return deque(sorted_tasks)
 

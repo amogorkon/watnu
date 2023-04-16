@@ -392,7 +392,6 @@ WHERE id={self.task.id}
         self.save()
         app.list_of_task_editors.remove(self)
         app.list_of_windows.remove(self)
-        super().accept()
 
         for win in app.list_of_windows:
             win.show()
@@ -401,8 +400,9 @@ WHERE id={self.task.id}
         if not app.win_what.isHidden():
             app.win_what.raise_()
 
+        super().accept()
+
     def reject(self):
-        super().reject()
         app.list_of_task_editors.remove(self)
         app.list_of_windows.remove(self)
         if self.task.do == "" and self.task.notes == "":  # TODO: this is a hack
@@ -417,6 +417,7 @@ WHERE id={self.task.id}
 
         if not app.win_what.isHidden():
             app.win_what.raise_()
+        super().reject()
 
     def create_task(self):
         win = Editor()
