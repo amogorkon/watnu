@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import QWizard
 
 import ui
 from classes import ILK, Task, get_activity_name, typed
-from logic import retrieve_task_by_id
 from stuff import app, db
 
 _translate = QCoreApplication.translate
@@ -57,7 +56,26 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.subtasks: list[int] = []
         self.supertasks: list[int] = []
         self.skill_ids: list[int] = []
+
+        @self.priority.valueChanged.connect
+        def _():
+            self.total_priority.setValue(
+                self.task.get_total_priority(
+                    priority=self.priority.value(), space_priority=get_space_priority(self.space.currentData())
+                )
+            )
+
         task_list.build_space_list(self)
+
+        query = db.execute(
+            """
+        SELECT activity_id, name FROM activities;
+        """
+        )
+
+        for activity_id, name in query.fetchall():
+            self.primary_activity.addItem(name, QVariant(activity_id))
+            self.secondary_activity.addItem(name, activity_id)
 
         self.page_basics.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
         # editing a task - need to set all values accordingly
@@ -65,6 +83,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.deadline = task.deadline
             self.skill_ids = self.task.skill_ids
             self.priority.setValue(task.priority)
+            self.total_priority.setValue(task.get_total_priority())
             for url, ID in task.resources:
                 self.resources.addItem(url, ID)
 
@@ -86,9 +105,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.primary_activity.setCurrentIndex(
                 self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
             )
-
             self.secondary_activity.setCurrentIndex(
-                self.primary_activity.findText(get_activity_name(self.task.primary_activity_id))
+                self.secondary_activity.findText(get_activity_name(self.task.secondary_activity_id))
             )
             self.repeats = self.task.get_repeats()
             self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 288))
@@ -99,7 +117,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         if not task:
             query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
             db.commit()
-            self.task = retrieve_task_by_id(db, query.lastrowid)
+            self.task = Task.from_id(query.lastrowid)
             self.draft = True
         else:
             self.task = task
@@ -143,16 +161,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         menu.addAction("ohne Vorlage", self.create_task)
         menu.addAction("als Klon von dieser Aufgabe", self.clone)
         self.button6.setMenu(menu)
-
-        query = db.execute(
-            """
-        SELECT activity_id, name FROM activities;
-        """
-        )
-
-        for i, (activity_id, name) in enumerate(query.fetchall()):
-            self.primary_activity.addItem(name, QVariant(activity_id))
-            self.secondary_activity.addItem(name, activity_id)
 
         self.activateWindow()
 
@@ -247,6 +255,13 @@ WHERE space_id = {space_id}
                         )
                     else:
                         self.secondary_activity.setCurrentIndex(0)
+
+            self.total_priority.setValue(
+                self.task.get_total_priority(
+                    priority=self.priority.value(),
+                    space_priority=get_space_priority(self.space.currentData()),
+                )
+            )
 
     def save(self):
         app.last_edited_space = self.space.currentText()
@@ -436,6 +451,7 @@ WHERE id={self.task.id}
         win.repeats = self.repeats
         win.skill_ids = self.skill_ids
         win.priority.setValue(self.priority.value())
+        win.total_priority.setValue(self.total_priority.value())
 
         self.add_win_to_app(win)
 
@@ -493,3 +509,10 @@ from ux import (
     task_organizer,
     task_running,
 )
+
+
+def get_space_priority(space_id) -> float:
+    try:
+        return float(db.execute("SELECT priority FROM spaces WHERE space_id = ?", (space_id,)).fetchone()[0])
+    except TypeError:
+        return 0

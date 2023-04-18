@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>623</width>
-    <height>930</height>
+    <width>673</width>
+    <height>843</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -268,17 +268,17 @@
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="priority">
            <property name="decimals">
-            <number>2</number>
+            <number>3</number>
            </property>
            <property name="minimum">
-            <double>-99999.990000000005239</double>
+            <double>0.000000000000000</double>
            </property>
            <property name="maximum">
             <double>99999.990000000005239</double>
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>Level</string>
@@ -288,7 +288,7 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="3" column="1">
           <widget class="QComboBox" name="level">
            <property name="enabled">
             <bool>true</bool>
@@ -313,7 +313,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
             <string>Primäre Aktivität </string>
@@ -323,7 +323,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="4" column="1">
           <widget class="QComboBox" name="primary_activity">
            <item>
             <property name="text">
@@ -332,7 +332,7 @@
            </item>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="6" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Sekundäre Aktivität</string>
@@ -342,7 +342,7 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="6" column="1">
           <widget class="QComboBox" name="secondary_activity">
            <property name="currentText">
             <string>---</string>
@@ -357,7 +357,7 @@
            </item>
           </widget>
          </item>
-         <item row="8" column="0">
+         <item row="9" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
             <string>Arbeitsaufwand [h][min]</string>
@@ -367,7 +367,7 @@
            </property>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QSpinBox" name="ETA_hours">
@@ -381,22 +381,29 @@
            </item>
           </layout>
          </item>
-         <item row="9" column="1">
-          <widget class="QDateTimeEdit" name="dateTimeEdit"/>
-         </item>
-         <item row="9" column="0">
-          <widget class="QPushButton" name="choose_deadline_button">
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>Deadline...</string>
+            <string>Totale Priorität</string>
            </property>
-           <property name="shortcut">
-            <string>7</string>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QDoubleSpinBox" name="total_priority">
+           <property name="enabled">
+            <bool>true</bool>
            </property>
-           <property name="checkable">
-            <bool>false</bool>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
-           <property name="checked">
-            <bool>false</bool>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+           <property name="decimals">
+            <number>3</number>
+           </property>
+           <property name="maximum">
+            <double>99999.990000000005239</double>
            </property>
           </widget>
          </item>
@@ -407,26 +414,17 @@
          <property name="rightMargin">
           <number>10</number>
          </property>
-         <item row="2" column="0">
-          <widget class="QPushButton" name="choose_constraints_button">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>kann nur erledigt werden wenn...</string>
-           </property>
-           <property name="shortcut">
-            <string>2</string>
-           </property>
-          </widget>
-         </item>
          <item row="3" column="0">
           <widget class="QPushButton" name="choose_repeats_button">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>zeitlicher Abstand von Wiederholungen...</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/repeats.svg</normaloff>../extra/repeats.svg</iconset>
            </property>
            <property name="shortcut">
             <string>8</string>
@@ -442,10 +440,51 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>trainiert...</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/skills.svg</normaloff>../extra/skills.svg</iconset>
            </property>
            <property name="shortcut">
             <string>9</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QPushButton" name="choose_deadline_button">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/feathericons/log-in.svg</normaloff>../extra/feathericons/log-in.svg</iconset>
+           </property>
+           <property name="shortcut">
+            <string>7</string>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QPushButton" name="choose_constraints_button">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/constraints.svg</normaloff>../extra/constraints.svg</iconset>
+           </property>
+           <property name="shortcut">
+            <string>2</string>
            </property>
           </widget>
          </item>

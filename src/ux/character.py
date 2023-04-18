@@ -4,8 +4,7 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 import ui
-from classes import cached_getter
-from logic import retrieve_task_by_id
+from classes import cached_getter, Task
 from stuff import db
 
 
@@ -60,7 +59,7 @@ DELETE FROM task_trains_skill WHERE skill_id=={skill_id} AND {task_id} NOT IN (S
 
             item = QtWidgets.QTableWidgetItem(
                 str(
-                    sum(retrieve_task_by_id(db, x).total_time_spent for x in skills_trained_by[skill])
+                    sum(Task.from_id(x).total_time_spent for x in skills_trained_by[skill])
                     // (60 * 60)
                 )
             )

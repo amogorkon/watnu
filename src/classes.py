@@ -213,8 +213,9 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             else None
         )
 
+    @property
     @cached_getter
-    def get_space_priority(self) -> float:
+    def space_priority(self) -> float:
         if self.space_id:
             return typed_row(
                 db.execute(
@@ -305,14 +306,17 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
     def total_time_spent(self) -> int:
         return self.adjust_time_spent + self.time_spent
 
-    @property
-    @cached_getter
-    def total_priority(self) -> float:
-        return (
-            max((t.total_priority for t in self.supertasks), default=0)
-            + self.priority
-            + self.get_space_priority()
+    def get_total_priority(self, priority=None, space_priority=None) -> float:
+        own_priority = (self.priority if priority is None else priority) + (
+            self.space_priority if space_priority is None else space_priority
         )
+
+        max_supertask = max(self.supertasks, key=lambda t: t.get_total_priority(), default=None)
+        sibling_priorities = (
+            {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
+        )
+        normalized = own_priority / max(sibling_priorities | {1})
+        return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
     def get_short_do(self, max_len=None):
         lines = self.do.split("\n")
@@ -442,6 +446,10 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     def __dict__(self):
         return {k: getattr(self, k) for k in Task.__slots__}
+
+    @classmethod
+    def from_id(cls, ID: int) -> "Task":
+        return retrieve_task_by_id(db, ID)
 
 
 def retrieve_task_by_id(db, ID: int) -> Task:

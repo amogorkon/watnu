@@ -59,7 +59,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.columns = (
             ("space", self.check_space, lambda t: str(t.space)),
             ("level", self.check_level, lambda t: str(t.level)),
-            ("priority", self.check_priority, lambda t: str(t.total_priority)),
+            ("priority", self.check_priority, lambda t: str(t.get_total_priority())),
             ("deadline", self.check_deadline, lambda t: deadline_as_str(t.deadline)),
             ("done", self.check_done, lambda t: OK if t.done else NOK),
             ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
@@ -412,35 +412,16 @@ WHERE id == {task.id}
         self.build_task_table()
 
     def clone_as_is(self):
-        try:
-            x = self.task_table.selectedItems()[0].row()
-        except IndexError:
-            return
-
-        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = task_editor.Editor(task, cloning=True, as_sup=0)
-        win.show()
+        for task in self.get_selected_tasks():
+            self.open_editor(task, cloning=True)
 
     def clone_as_sub(self):
-
-        try:
-            x = self.task_table.selectedItems()[0].row()
-        except IndexError:
-            return
-
-        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = task_editor.Editor(task, cloning=True, as_sup=-1)
-        win.show()
+        for task in self.get_selected_tasks():
+            self.open_editor(task, cloning=True, as_sup=-1)
 
     def clone_as_sup(self):
-        try:
-            x = self.task_table.selectedItems()[0].row()
-        except IndexError:
-            return
-
-        task = self.task_table.item(x, 0).data(Qt.ItemDataRole.UserRole)
-        win = task_editor.Editor(task, cloning=True, as_sup=1)
-        win.show()
+        for task in self.get_selected_tasks():
+            self.open_editor(task, cloning=True, as_sup=1)
 
     def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
@@ -572,11 +553,13 @@ font-size: 12pt;
                     win.raise_()
                     break
             else:
-                win = task_editor.Editor(task)
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
-                win.show()
-                win.raise_()
+                self.open_editor(task)
+
+    def open_editor(self, task, cloning=False, as_sup=0):
+        win = task_editor.Editor(task, cloning, as_sup)
+        app.list_of_task_editors.append(win)
+        app.list_of_windows.append(win)
+        win.show()
 
     def reject(self):
         super().reject()
