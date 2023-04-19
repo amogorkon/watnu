@@ -13,6 +13,7 @@ from beartype import beartype
 from Levenshtein import ratio, seqratio, setratio
 
 from classes import EVERY, ILK, Task, retrieve_tasks
+from stuff import app
 
 fuzzy = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
@@ -55,7 +56,11 @@ def prioritize(tasks: list[Task]) -> deque[Task]:
     sorted_tasks = sorted(
         tasks,
         reverse=True,
-        key=lambda t: (t.level_id, t.get_total_priority(), t.last_checked),
+        key=lambda t: (
+            t.level_id,
+            t.get_total_priority(),
+            # min(app.startup_time.timestamp(), t.last_checked),
+        ),
     )
     return deque(sorted_tasks)
 

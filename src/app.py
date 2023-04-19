@@ -4,7 +4,7 @@ from datetime import datetime
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, QEvent, QLocale, QSettings, Qt, QTimer
 
-import startup
+#import startup
 
 
 class Application(QtWidgets.QApplication):
@@ -12,7 +12,8 @@ class Application(QtWidgets.QApplication):
 
     def __init__(self, argv):
         super().__init__(argv)
-        #self.startup_win = startup.Startup()
+        self.startup_time = datetime.now()
+        # self.startup_win = startup.Startup()
 
     def setUp(self, config_, db_):
         self.db_last_modified = 0
