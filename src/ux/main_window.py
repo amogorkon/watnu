@@ -10,11 +10,13 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
 import ui
+from classes import retrieve_tasks
 from stuff import __version__, app, config, db
 from ux import about, attributions, task_editor, task_list
 
 _translate = QCoreApplication.translate
 
+dump = stay.Encoder()
 load = stay.Decoder()
 
 
@@ -113,8 +115,19 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.actionExport.triggered.connect
         def actionExport():
-            q("Not Implemented.")
-            return
+            win = QtWidgets.QDialog()
+            options = QtWidgets.QFileDialog().options()
+            filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+                win,
+                "Bitte wähle eine .todo Datei zum Exportieren",
+                "",
+                "Todo Files (*.todo);;All Files (*)",
+                options=options,
+            )
+            if filename:
+                path = Path(filename)
+                with open(path, "w") as f:
+                    f.writelines(dump(dict(task) for task in retrieve_tasks()))
 
         @self.actionImport.triggered.connect
         def actionImport():

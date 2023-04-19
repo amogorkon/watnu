@@ -444,8 +444,9 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
     def __hash__(self):
         return self.id
 
-    def __dict__(self):
-        return {k: getattr(self, k) for k in Task.__slots__}
+    def __iter__(self):
+        for k in self.__slots__:
+            yield k, getattr(self, k)
 
     @classmethod
     def from_id(cls, ID: int) -> "Task":
