@@ -168,6 +168,7 @@ VALUES ('{text}')
 """
                 )
                 db.commit()
+                space_editor.Space_Editor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
                     build_space_list(win)
@@ -214,6 +215,9 @@ DELETE FROM spaces where name=='{space_name}'
         menu.addAction("löschen", space_delete)
 
         def space_edit():
+            if self.space.currentData() is None:
+                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
+                return
             space_editor.Space_Editor(self.space.currentText()).exec()
 
         menu.addAction("bearbeiten", space_edit)

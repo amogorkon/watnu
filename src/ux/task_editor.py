@@ -61,7 +61,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         def _():
             self.total_priority.setValue(
                 self.task.get_total_priority(
-                    priority=self.priority.value(), space_priority=get_space_priority(self.space.currentData())
+                    priority=self.priority.value(),
+                    space_priority=get_space_priority(self.space.currentData()),
                 )
             )
 
@@ -75,7 +76,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         for activity_id, name in query.fetchall():
             self.primary_activity.addItem(name, QVariant(activity_id))
-            self.secondary_activity.addItem(name, activity_id)
+            self.secondary_activity.addItem(name, QVariant(activity_id))
 
         self.page_basics.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
         # editing a task - need to set all values accordingly

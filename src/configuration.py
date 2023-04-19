@@ -2,7 +2,6 @@ from ast import literal_eval
 from pathlib import Path
 from typing import Callable
 
-import q
 import use
 
 attrs = use(
