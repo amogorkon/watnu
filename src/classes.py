@@ -408,12 +408,14 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
             [(self.id, t.id) for t in tasks],
         )
+        db.commit()
 
     def set_supertasks(self, tasks: set["Task"]) -> None:
         db.executemany(
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
             [(t.id, self.id) for t in tasks],
         )
+        db.commit()
 
     def set_primary_activity_id(self, activity_id: int) -> None:
         self.set_("primary_activity_id", activity_id)
@@ -451,6 +453,10 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
     @classmethod
     def from_id(cls, ID: int) -> "Task":
         return retrieve_task_by_id(db, ID)
+
+    def reload(self):
+        self = retrieve_task_by_id(db, self.id)
+        return self
 
 
 def retrieve_task_by_id(db, ID: int) -> Task:

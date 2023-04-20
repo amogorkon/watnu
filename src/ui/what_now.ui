@@ -66,7 +66,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout">
         <item row="7" column="0">
-         <widget class="QPushButton" name="done_priority">
+         <widget class="QPushButton" name="button7">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -94,7 +94,7 @@
          </spacer>
         </item>
         <item row="8" column="0">
-         <widget class="QPushButton" name="go_priority">
+         <widget class="QPushButton" name="button4">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -112,7 +112,7 @@
          </widget>
         </item>
         <item row="9" column="0">
-         <widget class="QPushButton" name="skip_priority">
+         <widget class="QPushButton" name="button1">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -402,7 +402,7 @@
          </widget>
         </item>
         <item row="7" column="0">
-         <widget class="QPushButton" name="done_timing">
+         <widget class="QPushButton" name="button8">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -479,7 +479,7 @@
          </spacer>
         </item>
         <item row="9" column="0">
-         <widget class="QPushButton" name="skip_timing">
+         <widget class="QPushButton" name="button2">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -497,7 +497,7 @@
          </widget>
         </item>
         <item row="8" column="0">
-         <widget class="QPushButton" name="go_timing">
+         <widget class="QPushButton" name="button5">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -642,7 +642,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="5" column="1">
-         <widget class="QPushButton" name="done_balanced">
+         <widget class="QPushButton" name="button9">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -657,7 +657,7 @@
          </widget>
         </item>
         <item row="7" column="1">
-         <widget class="QPushButton" name="skip_balanced">
+         <widget class="QPushButton" name="button3">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -724,7 +724,7 @@
          </widget>
         </item>
         <item row="6" column="1">
-         <widget class="QPushButton" name="go_balanced">
+         <widget class="QPushButton" name="button6">
           <property name="font">
            <font>
             <italic>false</italic>
@@ -844,22 +844,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QPushButton" name="cancel">
-     <property name="text">
-      <string>Muss ich mir noch überlegen...</string>
-     </property>
-     <property name="shortcut">
-      <string>Esc</string>
-     </property>
-     <property name="autoDefault">
-      <bool>true</bool>
-     </property>
-     <property name="default">
-      <bool>true</bool>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

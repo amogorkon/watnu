@@ -30,16 +30,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         super().__init__()
         self.setupUi(self)
 
-        self.gui_timer = QTimer()
-        self.gui_timer.start(100)
-
-        @self.gui_timer.timeout.connect
-        def gui_timer_timeout():
-            if app.win_running:
-                self.button5.setEnabled(False)
-            else:
-                self.button5.setEnabled(True)
-
         # arguments passed in
 
         self.task = task
@@ -77,6 +67,14 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         for activity_id, name in query.fetchall():
             self.primary_activity.addItem(name, QVariant(activity_id))
             self.secondary_activity.addItem(name, QVariant(activity_id))
+
+        model = QSqlTableModel()
+        model.setTable("levels")
+        model.setSort(0, Qt.SortOrder.DescendingOrder)
+        model.select()
+        self.level.setModel(model)
+        self.level.setModelColumn(1)
+        self.level.setCurrentIndex(2)
 
         self.page_basics.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
         # editing a task - need to set all values accordingly
@@ -123,6 +121,25 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         else:
             self.task = task
 
+        self.gui_timer = QTimer()
+        self.gui_timer.start(100)
+
+        @self.gui_timer.timeout.connect
+        def gui_timer_timeout():
+            if not self.task.subtasks:
+                self.organize_subtasks.hide()
+            else:
+                self.organize_subtasks.show()
+            if not self.task.supertasks:
+                self.organize_supertasks.hide()
+            else:
+                self.organize_supertasks.show()
+
+            if app.win_running:
+                self.button5.setEnabled(False)
+            else:
+                self.button5.setEnabled(True)
+
         self.setButtonText(QWizard.WizardButton.CustomButton1, "als Entwurf speichern")
 
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
@@ -149,14 +166,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         # given task is a subtask of the new task
         if as_sup == 1:
             self.subtasks = [self.task.id]
-
-        model = QSqlTableModel()
-        model.setTable("levels")
-        model.setSort(0, Qt.SortOrder.DescendingOrder)
-        model.select()
-        self.level.setModel(model)
-        self.level.setModelColumn(1)
-        self.level.setCurrentIndex(2)
 
         menu = QtWidgets.QMenu()
         menu.addAction("ohne Vorlage", self.create_task)
@@ -197,16 +206,20 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         def time_constraints_button():
             choose_constraints.ConstraintChooser(self, self.task).exec()
 
-        @self.button3.clicked.connect
-        def organise():
-            win = task_organizer.Organizer(task=self.task, editor=self)
+        def organize(depends_on):
+            win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
             app.list_of_task_organizers.append(win)
             app.list_of_windows.append(win)
+            self.hide()
             win.show()
             win.raise_()
 
+        self.button3.clicked.connect(lambda: organize(True))
+        self.organize_subtasks.clicked.connect(lambda: organize(True))
+        self.organize_supertasks.clicked.connect(lambda: organize(False))
+
         @self.button4.clicked.connect
-        def button4_clicked():
+        def delete_task():
             self.task.delete()
             self.reject()
             app.win_what.lets_check_whats_next()

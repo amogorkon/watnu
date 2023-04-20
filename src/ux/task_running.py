@@ -213,7 +213,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             win.show()
             win.raise_()
 
-        if app.win_what.shown:
+        if not app.win_what.isHidden():
             app.win_what.show()
             app.win_what.raise_()
 

@@ -313,7 +313,7 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
             <string>Primäre Aktivität </string>
@@ -323,7 +323,7 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <widget class="QComboBox" name="primary_activity">
            <item>
             <property name="text">
@@ -332,7 +332,7 @@
            </item>
           </widget>
          </item>
-         <item row="6" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Sekundäre Aktivität</string>
@@ -342,7 +342,7 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="1">
+         <item row="7" column="1">
           <widget class="QComboBox" name="secondary_activity">
            <property name="currentText">
             <string>---</string>
@@ -357,7 +357,7 @@
            </item>
           </widget>
          </item>
-         <item row="9" column="0">
+         <item row="10" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
             <string>Arbeitsaufwand [h][min]</string>
@@ -367,7 +367,7 @@
            </property>
           </widget>
          </item>
-         <item row="9" column="1">
+         <item row="10" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QSpinBox" name="ETA_hours">
@@ -410,6 +410,19 @@
         </layout>
        </item>
        <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <layout class="QFormLayout" name="formLayout_2">
          <property name="rightMargin">
           <number>10</number>
@@ -431,7 +444,7 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QPushButton" name="choose_skills_button">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -451,7 +464,7 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="6" column="0">
           <widget class="QPushButton" name="choose_deadline_button">
            <property name="text">
             <string/>
@@ -485,6 +498,28 @@
            </property>
            <property name="shortcut">
             <string>2</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QPushButton" name="organize_subtasks">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/chevrons-down.svg</normaloff>../extra/chevrons-down.svg</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QPushButton" name="organize_supertasks">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/chevrons-up.svg</normaloff>../extra/chevrons-up.svg</iconset>
            </property>
           </widget>
          </item>

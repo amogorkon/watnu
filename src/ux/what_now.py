@@ -23,7 +23,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.task_priority = None
         self.task_timing = None
         self.task_balanced = None
-        self.shown = False
         "Reminder that this window was opened by the user and should be reopened."
         self.taskfont = self.task_desc_priority.property("font")
         self.setWindowFlags(
@@ -33,7 +32,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.sec_timer.start(1000)
         self.animation_timer = QTimer()
         self.animation_timer.start(15)
-        self.cancel.setShortcut(_translate("Dialog", "0"))
 
         self.balanced_tasks = None
         self.priority_tasks = None
@@ -137,12 +135,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             else:
                 self.frame_balanced.setStyleSheet("color: grey")
 
-        @self.go_priority.clicked.connect
+        @self.button4.clicked.connect
         def go_priority_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_priority)
 
-        @self.skip_priority.clicked.connect
+        @self.button1.clicked.connect
         def skip_priority_clicked():
             old_task = self.task_priority
             self.priority_tasks.rotate(-1)
@@ -159,12 +157,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                     "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!",
                 )
 
-        @self.go_balanced.clicked.connect
+        @self.button6.clicked.connect
         def go_balanced_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_balanced)
 
-        @self.skip_balanced.clicked.connect
+        @self.button3.clicked.connect
         def skip_balanced_clicked():
             self.task_balanced.set_last_checked(time())
             self.balanced_tasks.rotate(-1)
@@ -173,12 +171,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_desc_balanced.adjustSize()
             self.task_space_balanced.setText(self.task_balanced.space)
 
-        @self.go_timing.clicked.connect
+        @self.button5.clicked.connect
         def go_timing_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_timing)
 
-        @self.skip_timing.clicked.connect
+        @self.button2.clicked.connect
         def skip_timing_clicked():
             self.timing_tasks.rotate(-1)
             self.task_timing.set_last_checked(time())
@@ -186,20 +184,15 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_desc_timing.setText(self.task_timing.do)
             self.task_space_timing.setText(self.task_timing.space)
 
-        @self.cancel.clicked.connect
-        def cancel_clicked_():
-            self.hide()
-            app.win_main.show()
-
-        @self.done_priority.clicked.connect
+        @self.button7.clicked.connect
         def done_priority_clicked():
             task_finished.Task_Finished(self.task_priority).exec()
 
-        @self.done_balanced.clicked.connect
-        def _done_balanced_clicked():
+        @self.button9.clicked.connect
+        def done_balanced_clicked():
             task_finished.Task_Finished(self.task_balanced).exec()
 
-        @self.done_timing.clicked.connect
+        @self.button8.clicked.connect
         def done_timing_clicked():
             task_finished.Task_Finished(self.task_timing).exec()
 
@@ -225,7 +218,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
     def reject(self):
         super().reject()
-        self.shown = False
+        self.hide()
         app.win_main.show()
         app.win_main.statusBar.clearMessage()
         self.sec_timer.stop()
@@ -336,11 +329,12 @@ GROUP BY
     def close(
         self,
     ) -> None:
-        self.shown = False
         self.sec_timer.stop()
         self.animation_timer.stop()
         super().close()
 
     def show(self):
+        self.lets_check_whats_next()
+        self.sec_timer.start(1000)
+        self.animation_timer.start(15)
         super().show()
-        self.shown = True

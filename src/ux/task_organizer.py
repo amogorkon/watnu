@@ -54,15 +54,9 @@ translation = {
 
 
 class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
-    def __init__(self, task: Task | None = None, filters=None, editor=None):
+    def __init__(self, task: Task | None = None, filters=None, editor=None, depends_on=True):
         super().__init__()
         self.setupUi(self)
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok
-        )
-        self.layout.addWidget(button_box)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
 
         self.task = task
         self.subtasks: set[Task] = set()
@@ -86,8 +80,15 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         self.check_do = QCheckBox()
         self.check_do.setChecked(True)
 
-        self.depends_on = True
+        self.depends_on = depends_on
         "Switch for relationship_button."
+
+        if not self.depends_on:
+            self.relationship_button.setText("ist Voraussetzung für")
+            self.relationship_button.setIcon(ARROW_UP)
+        else:
+            self.relationship_button.setText("hängt ab von")
+            self.relationship_button.setIcon(ARROW_DOWN)
 
         @self.relationship_button.clicked.connect
         def relationship_button_clicked():
@@ -121,6 +122,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_table()
+                self.task = self.task.reload()
+                self.arrange_concerned_task_table(self.task)
+                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
 
         def toggle_fullscreen():
             if self.isFullScreen():
@@ -218,21 +222,22 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         @self.tasks_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            save_task(self.task, self.subtasks, self.supertasks)
+            self.edit_selected(self.tasks_table)
 
-            for task in get_selected_tasks(self.tasks_table):
-                self.task = task
-                self.supertasks = task.supertasks
-                self.subtasks = task.subtasks
-                self.arrange_concerned_task_table(task)
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+        @self.sub_sup_tasks_table.cellDoubleClicked.connect
+        def task_list_doubleclicked(row, column):
+            self.edit_selected(self.sub_sup_tasks_table)
+
+        @self.concerned_task_table.cellDoubleClicked.connect
+        def task_list_doubleclicked(row, column):
+            self.edit_selected(self.concerned_task_table)
 
         @self.button1.clicked.connect
         def _():
             pass
 
         @self.button2.clicked.connect
-        def button2_clicked():
+        def _():
             pass
 
         @self.button3.clicked.connect
@@ -317,6 +322,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
             self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
             self.update()
 
+    def get_selected_tasks(self, widget) -> set[Task]:
+        return {
+            widget.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(widget.rowCount())
+            if (x := widget.item(row, 0).isSelected()) and x is not None
+        }
+
     def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
 
@@ -376,6 +388,22 @@ font-size: 12pt;
         self.tasks_table.setSelectionModel(currently_selected_rows)
 
         self.tasks_table.show()
+
+    def edit_selected(self, widget):
+        for task in self.get_selected_tasks(widget):
+            for win in app.list_of_task_editors:
+                if win.task == task:
+                    win.show()
+                    win.raise_()
+                    break
+            else:
+                self.open_editor(task)
+
+    def open_editor(self, task, cloning=False, as_sup=0):
+        win = task_editor.Editor(task, cloning, as_sup)
+        app.list_of_task_editors.append(win)
+        app.list_of_windows.append(win)
+        win.show()
 
     def arrange_sub_sup_task_table(self, tasks: set[Task]):
         """Arrange the tasks in the list for display."""
@@ -469,14 +497,16 @@ font-size: 12pt;
         app.list_of_task_organizers.remove(self)
         app.list_of_windows.remove(self)
 
-        if app.win_running:
-            app.win_running.show()
-            app.win_running.raise_()
-            return
-
         for win in app.list_of_windows:
             win.show()
             win.raise_()
+
+        if app.win_running:
+            app.win_running.show()
+            app.win_running.raise_()
+
+        if self.editor:
+            self.editor.raise_()
 
     def accept(self):
         super().accept()

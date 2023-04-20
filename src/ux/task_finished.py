@@ -77,6 +77,7 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     WHERE id={self.task.id};
     """
         )
+        self.task.set_last_checked(self.stop)
         db.commit()
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 

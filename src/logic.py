@@ -51,18 +51,26 @@ def weight(time_spent, last_checked, now) -> float:
     )
 
 
-@use.tinny_profiler
+def piped_print(iterator_of_things, enumerated=True):
+    if enumerated:
+        for i, thing in enumerate(iterator_of_things):
+            print(f"{i}: {thing}")
+            yield thing
+    else:
+        for thing in iterator_of_things:
+            print(thing)
+            yield thing
+
+
+@pipes
 def prioritize(tasks: list[Task]) -> deque[Task]:
-    sorted_tasks = sorted(
-        tasks,
-        reverse=True,
-        key=lambda t: (
-            t.level_id,
-            t.get_total_priority(),
-            # min(app.startup_time.timestamp(), t.last_checked),
-        ),
+    return (
+        tasks
+        >> sorted(key=lambda t: t.level_id, reverse=True)
+        >> sorted(key=lambda t: t.get_total_priority(), reverse=True)
+        >> sorted(key=lambda t: min(t.last_checked, app.startup_time))
+        >> deque
     )
-    return deque(sorted_tasks)
 
 
 def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> deque[Task]:
@@ -202,7 +210,7 @@ def get_doable_tasks(db: Connection) -> list[Task]:
         retrieve_tasks(db)
         >> check_tasks(now=now)
         >> filter_tasks_by_status(0)
-        << filter_tasks_by_constraints(now=now)
+        >> filter_tasks_by_constraints(now=now)
         >> list
     )
 
