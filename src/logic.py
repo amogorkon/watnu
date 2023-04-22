@@ -209,10 +209,16 @@ def get_doable_tasks(db: Connection) -> list[Task]:
     return (
         retrieve_tasks(db)
         >> check_tasks(now=now)
-        >> filter_tasks_by_status(0)
+        >> filter_tasks_by_requirements
         >> filter_tasks_by_constraints(now=now)
         >> list
     )
+
+
+def filter_tasks_by_requirements(tasks: list[Task]) -> Iterable[Task]:
+    for task in tasks:
+        if task.is_doable:
+            yield task
 
 
 def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:

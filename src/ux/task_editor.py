@@ -1,5 +1,6 @@
 from collections import namedtuple
 from functools import partial
+from typing import Literal
 
 import numpy as np
 from PyQt6 import QtWidgets
@@ -23,7 +24,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         task: Task = None,
         cloning: bool = False,
         templating: bool = False,
-        as_sup: bool = 0,
+        as_sup: Literal[-1] | Literal[0] | Literal[1] = 0,
         current_space: str = None,
         draft: bool = False,
     ):
@@ -126,6 +127,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         @self.gui_timer.timeout.connect
         def gui_timer_timeout():
+            self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
+            self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
             if not self.task.subtasks:
                 self.organize_subtasks.hide()
             else:

@@ -8,9 +8,9 @@ from random import choice, seed
 from time import time, time_ns
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QKeyCombination, Qt, QTimer, QVariant
+from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
+from PyQt6.QtWidgets import QCompleter, QMessageBox, QTableWidgetItem
 
 import ui
 from classes import Task, typed, typed_row
@@ -48,6 +48,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         "Timer for polling if the db has changed and regenerate the list."
         self.db_timer.start(100)
         self.last_generated = 0
+        self.field_filter.setCompleter(QCompleter(app.filter_history))
+        # self.field_filter.completer().setModel(QStringListModel(app.filter_history))
 
         self.tasks: list[Task] = []
         # to make it compatible with the rest of the code
@@ -237,7 +239,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.task_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected()
+            self.edit_selected(self.task_table)
 
         @self.button1.clicked.connect
         def _():
@@ -273,30 +275,12 @@ DELETE FROM spaces where name=='{space_name}'
         self.button2.clicked.connect(button2_clicked)
 
         @self.button3.clicked.connect
-        def _():
-            selected = self.get_selected_tasks()
-            if not selected:
-                win = task_organizer.Organizer()
-                app.list_of_task_organizers.append(win)
-                app.list_of_windows.append(win)
-                win.show()
-                return
-
-            for task in selected:
-                for win in app.list_of_task_organizers:
-                    if win.task == task:
-                        win.show()
-                        win.raise_()
-                        break
-                else:
-                    win = task_organizer.Organizer(task)
-                    app.list_of_task_organizers.append(win)
-                    app.list_of_windows.append(win)
-                    win.show()
+        def organize_task():
+            self.organize_selected(self.task_table)
 
         @self.button4.clicked.connect
-        def button4_clicked():
-            self.edit_selected()
+        def edit_task():
+            self.edit_selected(self.task_table)
 
         @self.button5.clicked.connect
         def start_task():
@@ -309,7 +293,7 @@ DELETE FROM spaces where name=='{space_name}'
                 return
             else:
                 self.hide()
-                task_running.Running(selected[0])
+                task_running.Running(selected.pop())
 
         @self.button8.clicked.connect
         def throw_coins():
@@ -377,7 +361,11 @@ DELETE FROM spaces where name=='{space_name}'
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
         def filter_changed():
-            self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+            text = self.field_filter.text()
+            self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
+            if len(text) > 3 and text not in app.filter_history:
+                app.filter_history.append(self.field_filter.text())
+            self.field_filter.completer().setModel(QStringListModel(app.filter_history))
             self.update()
 
     def set_as_open(self):
@@ -549,15 +537,37 @@ font-size: 12pt;
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
         self.button1.setMenu(menu)
 
-    def edit_selected(self):
-        for task in self.get_selected_tasks():
+    def edit_selected(self, widget):
+        selected = self.get_selected_tasks()
+        if not selected:
+            self.statusBar.showMessage("Keine Aufgabe ausgewählt", 5000)
+        for task in selected:
             for win in app.list_of_task_editors:
                 if win.task == task:
                     win.show()
                     win.raise_()
                     break
             else:
-                self.open_editor(task)
+                win = task_editor.Editor(task)
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+                win.show()
+
+    def organize_selected(self, widget):
+        selected = self.get_selected_tasks()
+        if not selected:
+            self.statusBar.showMessage("Keine Aufgabe ausgewählt", 5000)
+        for task in selected:
+            for win in app.list_of_task_organizers:
+                if win.task == task:
+                    win.show()
+                    win.raise_()
+                    break
+            else:
+                win = task_organizer.Organizer(task)
+                app.list_of_task_organizers.append(win)
+                app.list_of_windows.append(win)
+                win.show()
 
     def open_editor(self, task, cloning=False, as_sup=0):
         win = task_editor.Editor(task, cloning, as_sup)

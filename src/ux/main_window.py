@@ -200,3 +200,5 @@ VALUES ('{d["do"]}',
         for win in app.list_of_windows:
             win.close()
         config.save()
+        with open(config.base_path / "filter_history.stay", "w") as f:
+            f.write("\n".join(app.filter_history))

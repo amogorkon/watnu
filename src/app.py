@@ -1,4 +1,5 @@
 from bisect import bisect_right
+from collections import deque
 from datetime import datetime
 
 from PyQt6 import QtWidgets
@@ -20,6 +21,10 @@ class Application(QtWidgets.QApplication):
         global config, db
         config = config_
         db = db_
+        path = config.base_path / "filter_history.stay"
+        path.touch()
+        with open(path, "r") as f:
+            self.filter_history = deque(f.readlines(), maxlen=10)
 
         import ux
 

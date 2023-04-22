@@ -122,8 +122,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_table()
-                self.task = self.task.reload()
-                self.arrange_concerned_task_table(self.task)
+                if self.task:
+                    self.task = self.task.reload()
+                    self.arrange_concerned_task_table(self.task)
                 self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
 
         def toggle_fullscreen():
@@ -222,15 +223,15 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         @self.tasks_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected(self.tasks_table)
+            self.organize_selected(self.tasks_table)
 
         @self.sub_sup_tasks_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected(self.sub_sup_tasks_table)
+            self.organize_selected(self.sub_sup_tasks_table)
 
         @self.concerned_task_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected(self.concerned_task_table)
+            self.organize_selected(self.concerned_task_table)
 
         @self.button1.clicked.connect
         def _():
@@ -397,13 +398,23 @@ font-size: 12pt;
                     win.raise_()
                     break
             else:
-                self.open_editor(task)
+                win = task_editor.Editor(task)
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+                win.show()
 
-    def open_editor(self, task, cloning=False, as_sup=0):
-        win = task_editor.Editor(task, cloning, as_sup)
-        app.list_of_task_editors.append(win)
-        app.list_of_windows.append(win)
-        win.show()
+    def organize_selected(self, widget):
+        for task in self.get_selected_tasks(widget):
+            for win in app.list_of_task_organizers:
+                if win.task == task:
+                    win.show()
+                    win.raise_()
+                    break
+            else:
+                win = Organizer(task)
+                app.list_of_task_organizers.append(win)
+                app.list_of_windows.append(win)
+                win.show()
 
     def arrange_sub_sup_task_table(self, tasks: set[Task]):
         """Arrange the tasks in the list for display."""

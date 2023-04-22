@@ -318,6 +318,13 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         normalized = own_priority / max(sibling_priorities | {1})
         return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
+    @property
+    @cached_getter
+    def is_doable(self) -> bool:
+        self_doable = not self.deleted and not self.draft and not self.inactive and not self.done
+        # what about supertasks?
+        return self_doable and not any(s.is_doable for s in self.subtasks)
+
     def get_short_do(self, max_len=None):
         lines = self.do.split("\n")
         if not max_len:

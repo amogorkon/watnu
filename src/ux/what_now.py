@@ -225,7 +225,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.animation_timer.stop()
         for win in app.list_of_task_lists:
             win.db_timer.start(100)
-            win.filter_timer.start(1000)
             win.show()
 
     def set_task_priority(self):
