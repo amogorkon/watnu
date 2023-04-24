@@ -49,8 +49,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.db_timer.start(100)
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
-        # self.field_filter.completer().setModel(QStringListModel(app.filter_history))
-
         self.tasks: list[Task] = []
         # to make it compatible with the rest of the code
         self.check_do = QtWidgets.QCheckBox()
@@ -361,10 +359,10 @@ DELETE FROM spaces where name=='{space_name}'
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
         def filter_changed():
-            text = self.field_filter.text()
+            text = self.field_filter.text().casefold()
             self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
-            if len(text) > 3 and text not in app.filter_history:
-                app.filter_history.append(self.field_filter.text())
+            if len(text) > 3 and text not in app.filter_history and not text.isspace():
+                app.filter_history.appendleft(self.field_filter.text())
             self.field_filter.completer().setModel(QStringListModel(app.filter_history))
             self.update()
 

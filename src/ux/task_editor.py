@@ -89,9 +89,11 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
             self.do.document().setPlainText(task.do)
 
+            # TODO: refactor
             match task.ilk:
                 case ILK.habit.value:
                     self.is_habit.setChecked(True)
+                    self.button8.setText("")
                 case ILK.tradition.value:
                     self.is_tradition.setChecked(True)
                     self.button8.setEnabled(True)
@@ -108,8 +110,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.secondary_activity.setCurrentIndex(
                 self.secondary_activity.findText(get_activity_name(self.task.secondary_activity_id))
             )
-            self.repeats = self.task.get_repeats()
-            self.constraints = x if (x := self.task.get_constraints()) is not None else np.zeros((7, 288))
+            self.repeats = self.task.repeats
+            self.constraints = x if (x := self.task.constraints) is not None else np.zeros((7, 288))
         # new task - preset space by previous edit
         else:
             self.space.setCurrentIndex(self.space.findText(current_space or app.last_edited_space))
@@ -129,10 +131,32 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         def gui_timer_timeout():
             self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
             self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
+
+            if self.task.deadline == float("inf"):
+                self.choose_deadline_button.hide()
+            else:
+                self.choose_deadline_button.show()
+
+            if not self.task.constraints:
+                self.choose_constraints_button.hide()
+            else:
+                self.choose_constraints_button.show()
+
+            if not self.task.repeats:
+                self.choose_repeats_button.hide()
+            else:
+                self.choose_repeats_button.show()
+
+            if not self.task.skill_ids:
+                self.choose_skills_button.hide()
+            else:
+                self.choose_skills_button.show()
+
             if not self.task.subtasks:
                 self.organize_subtasks.hide()
             else:
                 self.organize_subtasks.show()
+
             if not self.task.supertasks:
                 self.organize_supertasks.hide()
             else:
@@ -220,6 +244,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.button3.clicked.connect(lambda: organize(True))
         self.organize_subtasks.clicked.connect(lambda: organize(True))
         self.organize_supertasks.clicked.connect(lambda: organize(False))
+        self.choose_constraints_button.clicked.connect(
+            lambda: choose_constraints.ConstraintChooser(self, self.task).exec()
+        )
+        self.choose_deadline_button.clicked.connect(lambda: choose_deadline.DeadlineChooser(self, self.task).exec())
 
         @self.button4.clicked.connect
         def delete_task():
@@ -425,12 +453,12 @@ WHERE id={self.task.id}
         app.list_of_task_editors.remove(self)
         app.list_of_windows.remove(self)
 
-        for win in app.list_of_windows:
-            win.show()
-            win.raise_()
-
         if not app.win_what.isHidden():
             app.win_what.raise_()
+
+        else:
+            for win in app.list_of_windows:
+                win.raise_()
 
         super().accept()
 
@@ -443,12 +471,13 @@ WHERE id={self.task.id}
                 DELETE FROM tasks where id == {self.task.id}
 """
             )
-        for win in app.list_of_windows:
-            win.show()
-            win.raise_()
 
         if not app.win_what.isHidden():
             app.win_what.raise_()
+
+        else:
+            for win in app.list_of_windows:
+                win.raise_()
         super().reject()
 
     def create_task(self):

@@ -11,6 +11,7 @@ from PyQt6.QtCore import QCoreApplication
 
 import ui
 from classes import retrieve_tasks
+from logic import filter_filter_history
 from stuff import __version__, app, config, db
 from ux import about, attributions, task_editor, task_list
 
@@ -201,4 +202,4 @@ VALUES ('{d["do"]}',
             win.close()
         config.save()
         with open(config.base_path / "filter_history.stay", "w") as f:
-            f.write("\n".join(app.filter_history))
+            f.write("\n".join(filter_filter_history(app.filter_history)))

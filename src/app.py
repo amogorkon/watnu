@@ -24,7 +24,7 @@ class Application(QtWidgets.QApplication):
         path = config.base_path / "filter_history.stay"
         path.touch()
         with open(path, "r") as f:
-            self.filter_history = deque(f.readlines(), maxlen=10)
+            self.filter_history = deque(f.readlines(), maxlen=100)
 
         import ux
 

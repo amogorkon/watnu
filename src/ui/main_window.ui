@@ -586,9 +586,7 @@
   <tabstop>button4</tabstop>
   <tabstop>button1</tabstop>
  </tabstops>
- <resources>
-  <include location="../icons.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>actionExit</sender>

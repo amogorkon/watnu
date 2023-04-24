@@ -69,6 +69,26 @@ def cached_func_noarg(func):
     return wrapper
 
 
+def cached_property(func):
+    last_called = 0
+    last_results = {}
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        self = args[0]
+        nonlocal last_called, last_results
+        if app.db_last_modified >= last_called or self not in last_results:
+            res = func(*args, **kwargs)
+            last_results[self] = res
+        else:
+            res = last_results[self]
+
+        last_called = time()
+        return res
+
+    return property(wrapper)
+
+
 def cached_getter(func):
     last_called = 0
     last_results = {}
@@ -117,8 +137,7 @@ def typed_row(row: tuple, idx: int, kind: type, default=..., debugging=False):
 class Skill(NamedTuple):
     id: int
 
-    @property
-    @cached_getter
+    @cached_property
     def time_spent(self):
         query = db.execute(
             f"""
@@ -162,8 +181,8 @@ class Task:
         for name, value in kwargs.items():
             self.set_(name, value, to_db=False)
 
-    @cached_getter
-    def get_repeats(self) -> Every[EVERY, int]:
+    @cached_property
+    def repeats(self) -> Every[EVERY, int]|None:
         """
         Return the repeats for this task.
 
@@ -198,8 +217,8 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             else None
         )
 
-    @cached_getter
-    def get_constraints(self) -> np.ndarray | None:
+    @cached_property
+    def constraints(self) -> np.ndarray | None:
         return (
             np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 288)
             if (
@@ -213,8 +232,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             else None
         )
 
-    @property
-    @cached_getter
+    @cached_property
     def space_priority(self) -> float:
         if self.space_id:
             return typed_row(
@@ -229,13 +247,11 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         else:
             return 0
 
-    @property
-    @cached_getter
+    @cached_property
     def space(self) -> str:
         return get_space_name(self.space_id)
 
-    @property
-    @cached_getter
+    @cached_property
     def time_spent(self):
         query = db.execute(
             f"""
@@ -251,8 +267,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
             for time_spent, adjust_time_spent in query.fetchall()
         )
 
-    @property
-    @cached_getter
+    @cached_property
     def deadline(self) -> float:
         query = db.execute(
             f"""
@@ -279,8 +294,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
 
         db.commit()
 
-    @property
-    @cached_getter
+    @cached_property
     def supertasks(self):
         query = db.execute(
             f"""
@@ -289,8 +303,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         return [retrieve_task_by_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
 
-    @property
-    @cached_getter
+    @cached_property
     def skill_ids(self) -> list[int]:
         query = db.execute(
             f"""
@@ -318,8 +331,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         normalized = own_priority / max(sibling_priorities | {1})
         return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
-    @property
-    @cached_getter
+    @cached_property
     def is_doable(self) -> bool:
         self_doable = not self.deleted and not self.draft and not self.inactive and not self.done
         # what about supertasks?
@@ -351,8 +363,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         )
         db.commit()
 
-    @property
-    @cached_getter
+    @cached_property
     def resources(self) -> list[str]:
         return [
             (typed(url, str), typed(resource_id, int))
@@ -369,14 +380,12 @@ WHERE tasks.id = {self.id}
             ).fetchall()
         ]
 
-    @property
-    @cached_getter
+    @cached_property
     def level(self) -> str:
         actual_level = max(t.level_id for t in self.supertasks | {self})
         return get_level_name(actual_level)
 
-    @property
-    @cached_getter
+    @cached_property
     def last_finished(self) -> int:
         query = db.execute(
             f"""
@@ -390,8 +399,7 @@ WHERE tasks.id = {self.id}
         )
         return typed(query.fetchone(), 0, int, default=0)
 
-    @property
-    @cached_getter
+    @cached_property
     def supertasks(self) -> set["Task"]:
         query = db.execute(
             f"""
@@ -400,8 +408,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         )
         return {retrieve_task_by_id(db, typed_row(row, 0, int)) for row in query.fetchall()}
 
-    @property
-    @cached_getter
+    @cached_property
     def subtasks(self) -> set["Task"]:
         query = db.execute(
             f"""

@@ -58,6 +58,18 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         super().__init__()
         self.setupUi(self)
 
+        # buttonBox = QDialogButtonBox(self)
+        # buttonBox.setOrientation(Qt.Orientation.Horizontal)
+        # buttonBox.setStandardButtons(
+        #     QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        # )
+
+        # buttonBox.button(QDialogButtonBox.StandardButton.Ok).clicked.connect(self.accept)
+        # buttonBox.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.reject)
+        # self.layout.addWidget(self.buttonBox)
+
+        self.field_filter.setText(app.filter_history[0] if app.filter_history else "")
+
         self.task = task
         self.subtasks: set[Task] = set()
         self.supertasks: set[Task] = set()
@@ -71,6 +83,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         self._drag_info: list[Task] = []
         self.statusBar = QStatusBar(self)
+        self.statusBar.setSizeGripEnabled(False)
         self.db_timer = QTimer()
         "Timer for polling if the db has changed and regenerate the list."
         self.db_timer.start(100)
@@ -302,6 +315,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         @self.button8.clicked.connect
         def _():
             pass
+
+        menu = QMenu()
+
+        menu.addAction("Deadline", lambda: None)
+        menu.addAction("Beschränkung", lambda: None)
+
+        self.button9.setMenu(menu)
 
         @self.button9.clicked.connect
         def _():

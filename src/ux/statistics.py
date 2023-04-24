@@ -18,7 +18,7 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        res = db.execute("select max(id) from tasks")
+        res = db.execute("SELECT count(*) from tasks")
         self.total_num_tasks.setText(str(typed_row(res.fetchone(), 0, int, default=0)))
 
         res = db.execute("SELECT space_id, name FROM spaces")

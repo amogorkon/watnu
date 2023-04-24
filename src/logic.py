@@ -104,25 +104,25 @@ def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
         if not task.done:
             yield task
             continue
-        if task.get_repeats() is None:
+        if task.repeats is None:
             yield task
             continue
 
-        every_x = task.get_repeats().x_every
+        every_x = task.repeats.x_every
 
         then = datetime.fromtimestamp(task.last_finished)
         if task.ilk is ILK.habit:
             if now.date() > then.date():
                 task.set_("done", False)
 
-        elif task.get_repeats() is not None:
+        elif task.repeats is not None:
             reset_task(task, datetime.timestamp(now), every_x)
 
         yield task
 
 
 def reset_task(db: Connection, task: Task, now: float, every_x: int):
-    every_ilk, x_every, per_ilk, x_per = task.get_repeats()
+    every_ilk, x_every, per_ilk, x_per = task.repeats
 
     match every_ilk:
         case EVERY.minute:
@@ -259,9 +259,9 @@ def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:
 
 def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> Iterable[Task]:
     for task in tasks:
-        if task.get_constraints() is None:
+        if task.constraints is None:
             yield task
-        elif task.get_constraints()[now.weekday(), now.time().hour * 6 + now.time().minute // 5]:
+        elif task.constraints[now.weekday(), now.time().hour * 6 + now.time().minute // 5]:
             yield task
 
 
@@ -314,3 +314,26 @@ def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int | None) -> Iterable[Task
 def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task]:
     """Filter tasks by space id."""
     return filter(lambda t: t.space_id == (space_id) if space_id is not None else True, tasks)
+
+
+def filter_filter_history_whitespace(history: Iterable[str]):
+    for text in history:
+        if not text.isspace():
+            yield text
+
+
+def filter_filter_history_if_included(history: Iterable[str]):
+    """Remove sub-strings from the history and only keep the longest entries."""
+    seen = set()
+    for text in history:
+        if any(text in s for s in seen):
+            continue
+        seen.add(text)
+        yield text
+
+@pipes
+def filter_filter_history(history: Iterable[str]):
+    return (history
+            >> filter_filter_history_whitespace 
+            >> filter_filter_history_if_included
+    )

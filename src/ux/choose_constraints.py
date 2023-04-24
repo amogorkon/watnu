@@ -7,11 +7,12 @@ from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
 import ui
+import ux
 from classes import EVERY, Every, Task
 
 
 class ConstraintChooser(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):
-    def __init__(self, editor, task: Task = None):
+    def __init__(self, editor: "ux.task_editor.Editor", task: Task = None):
         super().__init__()
         self.setupUi(self)
         self.editor = editor
