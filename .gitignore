@@ -123,3 +123,4 @@ venv.bak/
 src/.vscode/extensions.json
 src/.vscode/settings.json
 watnu-master.code-workspace
+filter_history.stay
