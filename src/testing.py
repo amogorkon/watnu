@@ -2,6 +2,8 @@
 
 Run with py main.py and watch the Magik happen!
 """
+
+print("=== RUNNING WATNU IN TESTING MODE ===")
 import ctypes
 import sqlite3
 import sys
