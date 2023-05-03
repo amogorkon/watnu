@@ -32,6 +32,7 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         stop: float = None,
         old_skills=None,
         pause_time: int = 0,
+        direct=False,
     ):
         """
         Window to finish a task.
@@ -46,6 +47,7 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
             stop (int, optional): Time task was stopped current session. Defaults to None.
             old_skills (_type_, optional): _description_. Defaults to None.
             pause_time (int, optional): Pause time of the current session. Defaults to 0.
+            direct(bool): Whether this task is marked as done directly or not.
         """
         super().__init__()
         self.setupUi(self)
@@ -53,22 +55,23 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.start = start or time()
         self.stop = stop or self.start
         self.pause_time = pause_time
+        self.direct = direct
         self.old_skills = old_skills or [
             (skill.id, int(skill_level(skill.time_spent))) for skill in task.skill_ids
         ]
-
         self.task_desc.setText(task.do)
-        # let's ask the DB for previous sessions and add the current time
-        current_session_time = self.stop - self.start
+        if not direct:
+            # let's ask the DB for previous sessions and add the current time
+            current_session_time = self.stop - self.start
 
-        self.total = task.time_spent + task.adjust_time_spent + current_session_time - self.pause_time
-        rst, days = modf(self.total / (60 * 60 * 24))
-        rst, hours = modf(self.total / (60 * 60))
-        rst, minutes = modf(rst * 60)
+            self.total = task.time_spent + task.adjust_time_spent + current_session_time - self.pause_time
+            rst, days = modf(self.total / (60 * 60 * 24))
+            rst, hours = modf(self.total / (60 * 60))
+            rst, minutes = modf(rst * 60)
 
-        self.days.setValue(int(days))
-        self.hours.setValue(int(hours))
-        self.minutes.setValue(int(minutes))
+            self.days.setValue(int(days))
+            self.hours.setValue(int(hours))
+            self.minutes.setValue(int(minutes))
 
     def accept(self):
         super().accept()

@@ -125,6 +125,9 @@
               <number>10000</number>
              </property>
              <property name="value">
+              <number>5</number>
+             </property>
+             <property name="displayIntegerBase">
               <number>10</number>
              </property>
             </widget>
