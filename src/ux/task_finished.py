@@ -1,17 +1,30 @@
+import winsound
 from math import modf
+from pathlib import Path
 from time import time
 
+import use
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import QThread, QUrl
 from PyQt6.QtWidgets import QMessageBox
 
-import ui
-from classes import ILK, Skill, Task
-from logic import skill_level
-from stuff import app, db
-from ux import task_editor
+import src.ui as ui
+from src.classes import ILK, Skill, Task
+from src.logic import skill_level
+from src.stuff import app, config, db
+from src.ux import task_editor
 
 
-class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
+# use QThread to play sound in background
+class PlaySound(QThread):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        winsound.PlaySound(str(config.base_path / "extra/success1.wav"), winsound.SND_FILENAME)
+
+
+class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
     def __init__(
         self,
         task: Task,
@@ -59,6 +72,10 @@ class Task_Finished(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
 
     def accept(self):
         super().accept()
+
+        sound = PlaySound()
+        sound.start()
+
         if self.task.ilk not in (ILK.habit, ILK.routine):  # ? is that right?
             total = self.hours.value() * 60 * 60 + self.minutes.value() * 60 - self.pause_time
         else:
