@@ -6,6 +6,7 @@ _translate = QCoreApplication.translate
 import src.ui as ui
 import src.ux as ux
 from src.stuff import app, db
+from src.classes import ACTIVITY
 
 
 class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
@@ -14,15 +15,12 @@ class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
         self.setupUi(self)
 
         # defaults
-        query = db.execute(
-            """
-        SELECT activity_id, name FROM activities;
-        """
-        )
 
-        for activity_id, name in query.fetchall():
-            self.primary_activity.addItem(name, QVariant(activity_id))
-            self.secondary_activity.addItem(name, QVariant(activity_id))
+        for item in ACTIVITY:
+            if item == ACTIVITY.unspecified:
+                continue
+            self.primary_activity.addItem(item.name, QVariant(item.value))
+            self.secondary_activity.addItem(item.name, QVariant(item.value))
 
         query = db.execute(
             "SELECT primary_activity_id, secondary_activity_id FROM spaces WHERE name=?",
@@ -53,16 +51,16 @@ class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
         if self.name_edit.text() != self.former_name:
             db.execute("UPDATE spaces SET name=? WHERE name=?", (self.name_edit.text(), self.former_name))
             for win in app.list_of_task_lists:
-                ux.task_list.build_space_list(win)
+                ux.task_list.ux.task_list.build_space_list(win)
                 if win.space.currentText() == self.name_edit.text():
                     win.space.setCurrentText(self.name_edit.text())
             for win in app.list_of_task_editors:
-                ux.task_list.build_space_list(win)
+                ux.task_list.ux.task_list.build_space_list(win)
                 if win.space.currentText() == self.name_edit.text():
                     win.space.setCurrentText(self.name_edit.text())
 
             for win in app.list_of_task_organizers:
-                ux.task_list.build_space_list(win)
+                ux.task_list.ux.task_list.build_space_list(win)
                 if win.space.currentText() == self.name_edit.text():
                     win.space.setCurrentText(self.name_edit.text())
 

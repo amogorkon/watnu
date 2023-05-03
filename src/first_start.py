@@ -15,12 +15,7 @@ def run() -> None:
     ### CREATE SQL TABLES ###
     db.executescript(
         """
-CREATE TABLE "activities" (
-    "activity_id"	INTEGER NOT NULL UNIQUE,
-    "name"	VARCHAR(255) NOT NULL UNIQUE,
-    "adjust_time_spent"	INTEGER DEFAULT 0,
-    PRIMARY KEY("activity_id" AUTOINCREMENT)
-);
+
 CREATE TABLE "constraints" (
     "flags"	TEXT NOT NULL DEFAULT 0,
     "task_id"	INTEGER NOT NULL,

@@ -1,10 +1,9 @@
-import use
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-import ui
+import src.ui as ui
 
-from configuration import Config
+from src.configuration import Config
 config: Config
 _translate = QCoreApplication.translate
 
