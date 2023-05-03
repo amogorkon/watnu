@@ -12,8 +12,8 @@ import use
 from beartype import beartype
 from Levenshtein import ratio, seqratio, setratio
 
-from classes import EVERY, ILK, Task, retrieve_tasks
-from stuff import app
+from src.classes import EVERY, ILK, Task, retrieve_tasks
+from src.stuff import app
 
 fuzzy = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
@@ -79,8 +79,8 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> deque[Tas
         tasks,
         key=lambda t: (
             max(
-                activity_time_spent[t.primary_activity_id],
-                1.618 * activity_time_spent[t.secondary_activity_id],
+                activity_time_spent[t.primary_activity.value],
+                1.618 * activity_time_spent[t.secondary_activity.value],
             ),
             weight(  # lightest weights float to the top!
                 t.time_spent,
@@ -92,11 +92,32 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> deque[Tas
     return deque(sorted_tasks)
 
 
+def sum_of_timeslots_per_year(task: Task) -> int:
+    """Timeslots are based on boolean numpy arrays.
+    The sum of the array is the number of timeslots."""
+
+    constraints = task.constraints or np.ones((7, 288))
+    constraints_over_the_year = np.tile(constraints, (52, 1))
+
+    # cut the array if the deadline is within the same year
+    if task.deadline != float("inf"):
+        deadline = datetime.fromtimestamp(task.deadline)
+        days_until_deadline = (deadline - datetime.now()).days
+        if days_until_deadline < 365:
+            constraints_over_the_year = constraints_over_the_year[:days_until_deadline]
+
+    return np.sum(constraints_over_the_year)
+
+
+@pipes
 def schedule(tasks: list) -> deque[Task]:
-    filtered_by_infinity = filter(lambda t: not isinf(float(t.deadline)) or t.ilk is ILK.routine, tasks)
-    sorted_by_last_checked = sorted(filtered_by_infinity, key=lambda t: t.last_checked)
-    sorted_by_deadline = sorted(sorted_by_last_checked, key=lambda t: float(t.deadline))
-    return deque(sorted_by_deadline)
+    return (
+        tasks
+        >> sorted(key=lambda t: sum_of_timeslots_per_year(t), reverse=True)
+        >> sorted(key=lambda t: t.last_checked)
+        >> sorted(key=lambda t: float(t.deadline))
+        >> deque
+    )
 
 
 def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
@@ -331,9 +352,37 @@ def filter_filter_history_if_included(history: Iterable[str]):
         seen.add(text)
         yield text
 
+
 @pipes
 def filter_filter_history(history: Iterable[str]):
-    return (history
-            >> filter_filter_history_whitespace 
-            >> filter_filter_history_if_included
-    )
+    return history >> filter_filter_history_whitespace >> filter_filter_history_if_included
+
+
+@pipes
+def calculate_sum_of_timeslots_for_next_year(constraints: np.array):
+    """
+    Calculate the sum of timeslots allocated for this task for the next 52 weeks (~365 days).
+
+    Args:
+        constraints (np.array): 5 min timeslots per week
+    """
+    sum(constraints) * 52
+
+
+def cycle_in_task_dependencies(tasks: dict[int, Task]) -> list[Task]:
+    """Return a list of tasks that are involved in a cycle in their dependencies."""
+    visited = set()
+    path = []
+
+    def visit(task: Task) -> bool:
+        if task in visited:
+            return False
+        visited.add(task)
+        path.append(task)
+        for subtask in task.doable_supertasks:
+            if subtask in path or visit(subtask):
+                return True
+        path.pop()
+        return False
+
+    return [task for task in tasks.values() if visit(task)]
