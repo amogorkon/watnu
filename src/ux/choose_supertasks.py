@@ -8,7 +8,7 @@ from PyQt6.QtSql import QSqlTableModel
 
 import ui
 from classes import EVERY, Every, Task
-from stuff import __version__
+from src.stuff import __version__
 
 
 class SuperTaskChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):

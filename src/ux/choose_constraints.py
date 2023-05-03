@@ -6,9 +6,9 @@ from PyQt6.QtCore import QKeyCombination, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
 
-import ui
-import ux
-from classes import EVERY, Every, Task
+import src.ui as ui
+import src.ux as ux
+from src.classes import EVERY, Every, Task
 
 
 class ConstraintChooser(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):

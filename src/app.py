@@ -1,5 +1,5 @@
 from bisect import bisect_right
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 
 from PyQt6 import QtWidgets
@@ -19,6 +19,16 @@ class Application(QtWidgets.QApplication):
     def setUp(self, config_, db_):
         self.db_last_modified = 0
         global config, db
+
+        # Task requires app, so we would end up going in circles if we imported it at the top.
+        from src.classes import Task
+
+        class TaskDict(dict):
+            def __missing__(self, key):
+                value = Task.from_id(key)
+                self[key] = value
+                return value
+
         config = config_
         db = db_
         path = config.base_path / "filter_history.stay"
@@ -26,7 +36,7 @@ class Application(QtWidgets.QApplication):
         with open(path, "r") as f:
             self.filter_history = deque(f.readlines(), maxlen=100)
 
-        import ux
+        import src.ux as ux
 
         self.list_of_task_lists: list[ux.task_table.TaskList] = []
         "Multiple TaskLists can be open at the same time."
@@ -41,6 +51,17 @@ class Application(QtWidgets.QApplication):
 
         self.win_main.setWindowIcon(self.icon)
         self.win_main.statusBar.show()
+
+        self.tasks: dict[str, Task] = TaskDict()
+
+        self.task_timer = QTimer()
+        # start the timer on the clock of the next minute in msec
+        QTimer.singleShot(int((60 - datetime.now().timestamp() % 60) * 1000), self.task_timer.start)
+        self.task_timer.start(60_000)
+
+        @self.task_timer.timeout.connect
+        def task_timer_timeout():
+            pass
 
         greet_time = [
             "N'Abend",

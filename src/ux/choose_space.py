@@ -1,7 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-import ui
-from ux.task_list import build_space_list, get_space_id
+import src.ui as ui
+from src.ux.task_list import build_space_list, get_space_id
 
 
 class Space_Selection(QtWidgets.QDialog, ui.choose_space.Ui_Dialog):

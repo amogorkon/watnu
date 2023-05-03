@@ -3,8 +3,8 @@ from PyQt6.QtCore import QCoreApplication
 
 _translate = QCoreApplication.translate
 
-import ui
-from stuff import __version__
+import src.ui as ui
+from src.stuff import __version__
 
 
 class About(QtWidgets.QDialog, ui.about.Ui_Dialog):

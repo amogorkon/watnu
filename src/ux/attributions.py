@@ -4,7 +4,7 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
-import ui
+import src.ui as ui
 
 
 class Attributions(QtWidgets.QDialog, ui.attributions.Ui_Dialog):

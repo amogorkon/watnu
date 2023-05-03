@@ -6,8 +6,9 @@ from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QDate, QDateTime, QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 
-import ui, ux
-from classes import EVERY, Every, Task
+import src.ui as ui
+import src.ux as ux
+from src.classes import EVERY, Every, Task
 
 
 class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):

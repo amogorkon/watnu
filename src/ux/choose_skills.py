@@ -6,9 +6,9 @@ from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QDate, QDateTime, QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 
-import ui
-from classes import EVERY, Every, Task
-from stuff import __version__
+import src.ui as ui
+from src.classes import EVERY, Every, Task
+from src.stuff import __version__
 
 
 class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
@@ -39,4 +39,4 @@ class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
         ]
 
 
-import ux
+import src.ux as ux

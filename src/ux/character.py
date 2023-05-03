@@ -3,9 +3,9 @@ from collections import defaultdict
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
-import ui
-from classes import cached_getter, Task
-from stuff import db
+import src.ui as ui
+from src.classes import Task, cached_getter
+from src.stuff import app, db
 
 
 class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):
@@ -58,10 +58,7 @@ DELETE FROM task_trains_skill WHERE skill_id=={skill_id} AND {task_id} NOT IN (S
             self.skills_table.setItem(i, 1, item)
 
             item = QtWidgets.QTableWidgetItem(
-                str(
-                    sum(Task.from_id(x).total_time_spent for x in skills_trained_by[skill])
-                    // (60 * 60)
-                )
+                str(sum(app.tasks[x].total_time_spent for x in skills_trained_by[skill]) // (60 * 60))
             )
             self.skills_table.setItem(i, 2, item)
 

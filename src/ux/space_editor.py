@@ -1,13 +1,11 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, QSize, Qt, QTimer, QVariant
 
-import ui
-from stuff import __version__
-
 _translate = QCoreApplication.translate
 
-import ux
-from stuff import app, db
+import src.ui as ui
+import src.ux as ux
+from src.stuff import app, db
 
 
 class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):

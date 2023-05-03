@@ -4,9 +4,9 @@ from PyQt6.QtCore import QCoreApplication, Qt, QVariant
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox
 
-import ui
-from classes import Task, typed, typed_row
-from stuff import __version__, app, db
+import src.ui as ui
+from src.classes import Task, typed, typed_row
+from src.stuff import __version__, app, db
 
 _translate = QCoreApplication.translate
 

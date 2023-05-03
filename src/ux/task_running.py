@@ -8,11 +8,11 @@ from time import time
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
 
-import ui
-import ux
-from classes import Task, typed
-from logic import skill_level
-from stuff import __version__, app, config, db
+import src.ui as ui
+import src.ux as ux
+from src.classes import Task, typed
+from src.logic import skill_level
+from src.stuff import __version__, app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
@@ -184,9 +184,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         def finish_task_button():
             if timer_was_running := self.timer.isActive():
                 self.timer.stop()
-            win = ux.task_finished.Task_Finished(
-                self.task, start=self.start_time, pause_time=self.paused_ticks
-            )
+            win = ux.task_finished.Finisher(self.task, start=self.start_time, pause_time=self.paused_ticks)
             if not win.exec():
                 if timer_was_running:
                     self.timer.start()

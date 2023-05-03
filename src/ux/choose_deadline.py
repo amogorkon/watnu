@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QDate, QDateTime
 
-import ui
+import src.ui as ui
 
 
 class DeadlineChooser(QtWidgets.QDialog, ui.choose_deadline.Ui_Dialog):
