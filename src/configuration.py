@@ -67,6 +67,7 @@ class boolean:
 )
 class Config:
     # bool("False") is a non-empty string -> True :|
+    config_path: Path = Path("config.stay")
     first_start: boolean = True
     db_path: str = "watnu.sqlite"
     mantras: Path = "mantras.stay"
@@ -78,7 +79,7 @@ class Config:
     tictoc_volume: int = 50
     activity_color_body: str = "darkred"
     activity_color_mind: str = "darkblue"
-    activity_color_spirit: str = "indigo"
+    activity_color_soul: str = "indigo"
     generated_faces_token: str = None
     tutorial_active: boolean = True
     run_sql_stuff: boolean = False
@@ -87,10 +88,10 @@ class Config:
     autostart: boolean = False
     call_name: str = ""
     last_selected_space: str = ""
-    base_path: Path = ""
+    base_path: Path = Path(__file__).parent
 
     def save(self):
-        (self.base_path / "config.stay").write_text(dump(attrs.asdict(self)))
+        self.config_path.write_text(dump(attrs.asdict(self)))
 
 
 def read(file) -> Config:

@@ -130,6 +130,7 @@ path = Path(__file__).resolve().parent
 config_path = path / "config-testing.stay"
 config_path.touch()
 config = configuration.read(config_path)
+config.config_path = config_path
 print("using config:", config_path)
 config.base_path = path
 
@@ -262,9 +263,9 @@ if drafts := [t for t in app.tasks.values() if t.draft]:
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
 
-from src.logic import cycle_in_task_dependencies2
+from src.logic import cycle_in_task_dependencies
 
-while cycle := cycle_in_task_dependencies2(app.tasks):
+while cycle := cycle_in_task_dependencies(app.tasks):
     msgBox = QMessageBox()
     msgBox.setWindowTitle("Jetzt bearbeiten?")
     msgBox.setText(

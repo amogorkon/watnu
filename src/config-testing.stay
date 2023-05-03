@@ -1,5 +1,6 @@
+config_path: E:\Dropbox\code\watnu\master\src\config-testing.stay
 first_start: False
-db_path: E:/Dropbox/TODO/watnu.sqlite
+db_path: E:/Dropbox/TODO/watnu-testing.sqlite
 mantras: mantras.stay
 coin: 22595283873795899387526213581
 lucky_num: 8
