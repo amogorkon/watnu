@@ -1,4 +1,4 @@
-config_path: E:\Dropbox\code\watnu\master\src\config-testing.stay
+config_path: E:\Dropbox\code\watnu\master\src\config-experimental.stay
 first_start: False
 db_path: E:/Dropbox/TODO/watnu-testing.sqlite
 mantras: mantras.stay

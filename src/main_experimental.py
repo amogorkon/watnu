@@ -1,9 +1,9 @@
-"""The entry point for watnu.
+"""The experimental entry point for watnu.
 
 Run with py main.py and watch the Magik happen!
 """
 
-print("=== RUNNING WATNU IN TESTING MODE ===")
+print("=== RUNNING WATNU IN EXPERIMENTAL MODE ===")
 import ctypes
 import sqlite3
 import sys
@@ -127,7 +127,7 @@ import contextlib
 path = Path(__file__).resolve().parent
 # touch, just in case user killed the config or first start
 
-config_path = path / "config-testing.stay"
+config_path = path / "config-experimental.stay"
 config_path.touch()
 config = configuration.read(config_path)
 config.config_path = config_path
