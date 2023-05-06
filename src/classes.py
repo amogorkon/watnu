@@ -10,7 +10,7 @@ from typing import Any, NamedTuple
 import use
 from beartype import beartype
 
-from stuff import app, config, db
+from src.functions import cached_func_noarg, cached_property, typed_row, typed, cached_getter
 
 np = use(
     "numpy",
@@ -33,7 +33,6 @@ q = use(
 last_sql_access = 0
 
 ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
-ACTIVITY = Enum("ACTIVITY", "body mind spirit")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 
 
@@ -54,19 +53,17 @@ def cached_func_noarg(func):
     last_called = 0
     last_result = ...
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        nonlocal last_called, last_result
-        if app.db_last_modified >= last_called:
-            res = func(*args, **kwargs)
-            last_result = res
-        else:
-            res = last_result
 
         last_called = time()
         return res
 
-    return wrapper
+    @cached_property
+    def time_spent(self):
+        query = db.execute(f"""SELECT task_id from task_trains_skill where skill_id={self.id}""")
+        tasks = (app.tasks[ID] for ID in query.fetchall())
+        return sum(
+            task.time_spent for task in tasks if not task.deleted and not task.draft and not task.inactive
+        )
 
 
 def cached_property(func):
@@ -88,54 +85,7 @@ def cached_property(func):
 
     return property(wrapper)
 
-
-def cached_getter(func):
-    last_called = 0
-    last_results = {}
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        self = args[0]
-        nonlocal last_called, last_results
-        if app.db_last_modified >= last_called or self not in last_results:
-            res = func(*args, **kwargs)
-            last_results[self] = res
-        else:
-            res = last_results[self]
-
-        last_called = time()
-        return res
-
-    return wrapper
-
-
-def typed(thing, kind, default=...):
-    if isinstance(thing, kind):
-        return thing
-    elif default is not ...:
-        return default
-    else:
-        raise ValueError(f"Expected {kind} but got {type(thing)}")
-
-
-def typed_row(row: tuple, idx: int, kind: type, default=..., debugging=False):
-    if debugging and row is None:
-        breakpoint()
-
-    if row is None and default is not ...:
-        return default
-
-    res = row[idx] if isinstance(row, tuple) else row
-    if isinstance(res, kind):
-        return res
-    if res is None and default is not None:
-        return default
-
-    raise ValueError(f"Expected {kind} but got {type(res)}")
-
-
-class Skill(NamedTuple):
-    id: int
+        return ACTIVITY(self.secondary_activity_id) if self.secondary_activity_id else ACTIVITY.unspecified
 
     @cached_property
     def time_spent(self):
