@@ -15,6 +15,7 @@ box
 config.stay
 src/watnu/logs/*
 config.stay
+config-experimental.stay
 
 
 =======
@@ -125,3 +126,4 @@ src/.vscode/extensions.json
 src/.vscode/settings.json
 watnu-master.code-workspace
 filter_history.stay
+src/config-experimental.stay
