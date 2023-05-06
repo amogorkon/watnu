@@ -10,6 +10,7 @@ from typing import Any, NamedTuple
 import use
 from beartype import beartype
 
+from src.stuff import app, config, db
 from src.functions import cached_func_noarg, cached_property, typed_row, typed, cached_getter
 
 np = use(
@@ -46,16 +47,18 @@ class EVERY(Enum):
     year = 6
 
 
+class ACTIVITY(Enum):
+    unspecified = -1
+    MIND = 1
+    BODY = 2
+    SOUL = 3
+
+
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
 
 
-def cached_func_noarg(func):
-    last_called = 0
-    last_result = ...
-
-
-        last_called = time()
-        return res
+class Skill(NamedTuple):
+    id: int
 
     @cached_property
     def time_spent(self):
@@ -66,42 +69,47 @@ def cached_func_noarg(func):
         )
 
 
-def cached_property(func):
-    last_called = 0
-    last_results = {}
+class Space:
+    __slots__ = ("space_id", "name", "priority", "primary_activity_id", "secondary_activity_id")
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        self = args[0]
-        nonlocal last_called, last_results
-        if app.db_last_modified >= last_called or self not in last_results:
-            res = func(*args, **kwargs)
-            last_results[self] = res
-        else:
-            res = last_results[self]
+    def __init__(self, **kwargs) -> None:
+        for k, v in kwargs.items():
+            object.__setattr__(self, k, v)
 
-        last_called = time()
-        return res
+    @classmethod
+    def from_id(cls, ID: int) -> "Space":
+        return retrieve_space_by_id(db, ID)
 
-    return property(wrapper)
+    @cached_property
+    def primary_activity(self) -> ACTIVITY:
+        """Get the primary activity of the space if not set."""
+        return ACTIVITY(self.primary_activity_id) if self.primary_activity_id else ACTIVITY.unspecified
 
+    @cached_property
+    def secondary_activity(self) -> ACTIVITY:
+        """Get the secondary activity of the space if not set."""
         return ACTIVITY(self.secondary_activity_id) if self.secondary_activity_id else ACTIVITY.unspecified
 
     @cached_property
-    def time_spent(self):
-        query = db.execute(
-            f"""
-SELECT time_spent, adjust_time_spent
-FROM tasks
-INNER JOIN task_trains_skill
-ON tasks.id = task_trains_skill.task_id
-WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
-"""
-        )
-        return sum(
-            typed(time_spent, int) + typed(adjust_time_spent, int)
-            for time_spent, adjust_time_spent in query.fetchall()
-        )
+    def number_of_tasks(self) -> int:
+        """Get the number of tasks in the space."""
+        return db.execute(
+            """
+            SELECT COUNT(*) FROM tasks WHERE space_id=?;
+            """,
+            (self.space_id,),
+        ).fetchone()[0]
+
+
+@cached_getter
+def retrieve_space_by_id(db, ID: int | None) -> Space | None:
+    if ID is None:
+        return None
+    query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces WHERE space_id == {ID};")
+    res = query.fetchone()
+    assert res is not None, breakpoint()
+    kwargs = dict(zip(Space.__slots__, res))
+    return Space(**kwargs)
 
 
 class Task:
@@ -112,8 +120,6 @@ class Task:
         "draft",
         "inactive",
         "done",
-        "primary_activity_id",
-        "secondary_activity_id",
         "space_id",
         "priority",
         "level_id",
@@ -122,7 +128,6 @@ class Task:
         "fear",
         "embarrassment",
         "last_checked",
-        "workload",
         "ilk",
         "notes",
     )
@@ -132,7 +137,7 @@ class Task:
             self.set_(name, value, to_db=False)
 
     @cached_property
-    def repeats(self) -> Every[EVERY, int]|None:
+    def repeats(self) -> Every[EVERY, int] | None:
         """
         Return the repeats for this task.
 
@@ -184,48 +189,71 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
 
     @cached_property
     def space_priority(self) -> float:
-        if self.space_id:
-            return typed_row(
-                db.execute(
-                    f"""
-            SELECT priority FROM spaces WHERE space_id={self.space_id};
-            """
-                ).fetchone(),
-                0,
-                float,
-            )
-        else:
-            return 0
+        return self.space.priority if self.space else 0
 
     @cached_property
-    def space(self) -> str:
-        return get_space_name(self.space_id)
+    def space(self) -> Space | None:
+        return retrieve_space_by_id(db, self.space_id)
 
     @cached_property
-    def time_spent(self):
-        query = db.execute(
-            f"""
-SELECT time_spent, adjust_time_spent
-FROM tasks
-INNER JOIN task_trains_skill
-ON tasks.id = task_trains_skill.task_id
-WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
-"""
-        )
-        return sum(
-            typed(time_spent, int) + typed(adjust_time_spent, int)
-            for time_spent, adjust_time_spent in query.fetchall()
-        )
+    def time_spent(self) -> int:
+        """Return the time spent on this task in seconds from all sessions."""
+        query = db.execute(f"""SELECT start, stop, pause_time FROM sessions WHERE task_id={self.id}""")
+        return sum((stop - start) - pause_time for start, stop, pause_time in query.fetchall())
+
+    @cached_property
+    def printable_percentage(self) -> str:
+        """Return the percentage of the task that is done as a printable str."""
+        return f"{(self.time_spent / self.workload)*100:.2}%" if self.workload else ""
 
     @cached_property
     def deadline(self) -> float:
+        return min([task.deadline for task in self.doable_supertasks] + [self.own_deadline]) - (
+            self.workload or 0
+        )
+
+    @cached_property
+    def printable_deadline(self) -> str:
+        return (
+            f"{datetime.fromtimestamp(self.deadline).strftime('%d/%m/%Y')}"
+            if self.deadline != float("inf")
+            else ""
+        )
+
+    @cached_property
+    def own_deadline(self) -> float:
         query = db.execute(
             f"""
         SELECT time_of_reference FROM deadlines WHERE task_id={self.id}
         """
         )
-        own_deadline = typed_row(query.fetchone(), 0, float, default=float("inf"))
-        return min([t.deadline for t in self.supertasks] + [own_deadline]) - (self.workload or 0)
+        return typed_row(query.fetchone(), 0, float, default=float("inf"))
+
+    @cached_property
+    def time_buffer(self) -> float:
+        """Calculate how much time is left for a task to complete considering its deadline and workload and constraints."""
+        if self.deadline == float("inf"):
+            return float("inf")
+
+        now = datetime.now()
+
+        if self.constraints is None:
+            return (self.deadline - now.timestamp()) - self.workload
+
+        deadline = datetime.fromtimestamp(self.deadline)
+        days_until_deadline = (deadline - now).days
+        rest = (deadline - now).days % 7
+        weeks = (days_until_deadline // 7) + (1 if rest else 0)
+
+        timeslots_until_deadline = np.tile(self.constraints, (weeks, 1))
+
+        return np.sum(timeslots_until_deadline[:days_until_deadline]) * 5 - self.workload
+
+    @cached_property
+    def workload(self) -> int:
+        """Workload in minutes."""
+        query = db.execute("SELECT workload FROM tasks WHERE id=?", (self.id,))
+        return typed_row(query.fetchone(), 0, int, default=0)
 
     def set_deadline(self, deadline: float) -> float:
         # removing deadline
@@ -251,6 +279,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
+
         return [retrieve_task_by_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
 
     @cached_property
@@ -265,8 +294,15 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
     def set_adjust_time_spent(self, value) -> None:
         self.set_("adjust_time_spent", value)
 
-    @property
+    @cached_property
+    def doable_supertasks(self) -> set["Task"]:
+        return {
+            task for task in self.supertasks if not (task.done or task.deleted or task.inactive or task.draft)
+        }
+
+    @cached_property
     def total_time_spent(self) -> int:
+        """Return the time spent on this task in seconds, including adjustment."""
         return self.adjust_time_spent + self.time_spent
 
     def get_total_priority(self, priority=None, space_priority=None) -> float:
@@ -274,7 +310,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
             self.space_priority if space_priority is None else space_priority
         )
 
-        max_supertask = max(self.supertasks, key=lambda t: t.get_total_priority(), default=None)
+        max_supertask = max(self.doable_supertasks, key=lambda t: t.get_total_priority(), default=None)
         sibling_priorities = (
             {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
         )
@@ -312,6 +348,7 @@ WHERE skill_id = {self.id} AND NOT (deleted OR draft or inactive)
         """
         )
         db.commit()
+        del app.tasks[self.id]
 
     @cached_property
     def resources(self) -> list[str]:
@@ -332,7 +369,7 @@ WHERE tasks.id = {self.id}
 
     @cached_property
     def level(self) -> str:
-        actual_level = max(t.level_id for t in self.supertasks | {self})
+        actual_level = max(t.level_id for t in self.doable_supertasks | {self})
         return get_level_name(actual_level)
 
     @cached_property
@@ -356,7 +393,32 @@ WHERE tasks.id = {self.id}
 SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
-        return {retrieve_task_by_id(db, typed_row(row, 0, int)) for row in query.fetchall()}
+        return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall()}
+
+    @cached_property
+    def primary_activity(self) -> ACTIVITY:
+        """
+        Get the primary activity for the task and default to the activity of the space if not set.
+
+        Returns:
+            ACTIVITY: _description_
+        """
+        if own_activity := db.execute(
+            "SELECT primary_activity_id FROM tasks WHERE id=?", (self.id,)
+        ).fetchone()[0]:
+            return ACTIVITY(own_activity)
+        else:
+            return self.space.primary_activity if self.space else ACTIVITY.unspecified
+
+    @cached_property
+    def secondary_activity(self) -> ACTIVITY:
+        """Get the secondary activity for the task and default to the activity of the space if not set."""
+        if own_activity := db.execute(
+            "SELECT secondary_activity_id FROM tasks WHERE id=?", (self.id,)
+        ).fetchone()[0]:
+            return ACTIVITY(own_activity)
+        else:
+            return self.space.secondary_activity if self.space else ACTIVITY.unspecified
 
     @cached_property
     def subtasks(self) -> set["Task"]:
@@ -365,7 +427,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
-        return {retrieve_task_by_id(db, typed_row(row, 0, int)) for row in query.fetchall()}
+        return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall() if row is not None}
 
     def set_subtasks(self, tasks: set["Task"]) -> None:
         db.executemany(
@@ -381,8 +443,8 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         )
         db.commit()
 
-    def set_primary_activity_id(self, activity_id: int) -> None:
-        self.set_("primary_activity_id", activity_id)
+    def set_primary_activity(self, activity: ACTIVITY) -> None:
+        self.set_("primary_activity_id", activity.value)
 
     def set_last_checked(self, time_: float) -> None:
         self.set_("last_checked", time_)
@@ -419,7 +481,11 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return retrieve_task_by_id(db, ID)
 
     def reload(self):
-        self = retrieve_task_by_id(db, self.id)
+        print("reloading task")
+        new = retrieve_task_by_id(db, self.id)
+        for k in self.__slots__:
+            self.set_(k, getattr(new, k), to_db=False)
+        print(repr(self))
         return self
 
 
@@ -435,8 +501,13 @@ def retrieve_task_by_id(db, ID: int) -> Task:
 def retrieve_tasks(db) -> list[Task]:
     """Load all tasks from the database."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks;")
-
     return [Task(**dict(zip(Task.__slots__, res))) for res in query.fetchall()]
+
+
+def retrieve_spaces(db) -> list[Space]:
+    """Load all spaces from the database."""
+    query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces;")
+    return [Space(**dict(zip(Space.__slots__, res))) for res in query.fetchall()]
 
 
 @cached_getter
@@ -449,33 +520,6 @@ SELECT name FROM levels WHERE level_id={level_id};
     return typed_row(query.fetchone(), 0, str)
 
 
-@cached_getter
-def get_space_name(space_id) -> str:
-    if space_id is not None:
-        return typed_row(
-            db.execute(
-                f"""
-    SELECT name FROM spaces WHERE space_id={space_id};
-    """
-            ).fetchone(),
-            0,
-            str,
-        )
-    else:
-        return ""
-
-
-def get_activity_name(activity_id) -> str:
-    if activity_id is None:
-        return ""
-    query = db.execute(
-        f"""
-        SELECT name FROM activities WHERE activity_id={activity_id};
-        """
-    )
-    return typed_row(query.fetchone(), 0, str, default="")
-
-
 def disemvowel(text: str) -> str:
     for word in text.split():
         yield disemvowel(word)
@@ -483,3 +527,6 @@ def disemvowel(text: str) -> str:
 
     ascii_text = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
     return first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last
+
+
+from src.stuff import app, config, db

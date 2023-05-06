@@ -12,7 +12,7 @@ import src.ui as ui
 from src.classes import ILK, Skill, Task
 from src.logic import skill_level
 from src.stuff import app, config, db
-from src.ux import task_editor
+from src.ux import task_editor, statistics, main_window
 
 
 # use QThread to play sound in background
@@ -134,4 +134,6 @@ Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den 
                     app.list_of_task_editors.append(win)
                     app.list_of_windows.append(win)
                     win.exec()
+
+        app.win_main.set_statistics_icon()
         return True

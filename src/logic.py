@@ -224,11 +224,11 @@ def skill_level(seconds):
 
 
 @pipes
-def get_doable_tasks(db: Connection) -> list[Task]:
-    """Get all viable tasks from the database."""
+def get_doable_tasks(tasks: list[Task]) -> list[Task]:
+    """Get all tasks that are doable at this moment."""
     now = datetime.now()
     return (
-        retrieve_tasks(db)
+        tasks
         >> check_tasks(now=now)
         >> filter_tasks_by_requirements
         >> filter_tasks_by_constraints(now=now)

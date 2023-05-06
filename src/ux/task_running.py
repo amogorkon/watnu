@@ -66,7 +66,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
             text = "; ".join(url for url, ID in self.task.resources)
             self.open_resources.setText(str(text))
 
-        self.task_space.setText(task.space)
+        self.task_space.setText(task.space.name)
 
         self.show()
         self.start_task()

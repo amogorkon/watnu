@@ -13,9 +13,9 @@ from PyQt6.QtCore import QDataStream, QIODevice, QKeyCombination, Qt, QTimer, QV
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QMenu, QStatusBar, QTableWidgetItem
 
-import ui
-from classes import Task, typed, typed_row
-from logic import (
+import src.ui as ui
+from src.classes import Task, typed, typed_row
+from src.logic import (
     filter_tasks_by_constraints,
     filter_tasks_by_content,
     filter_tasks_by_ilk,
@@ -24,13 +24,13 @@ from logic import (
     pipes,
     retrieve_tasks,
 )
-from stuff import app, config, db
-from ux import choose_space, task_editor, task_finished, task_list, task_running
+from src.stuff import app, config, db
+from src.ux import choose_space, task_editor, task_finished, task_list, task_running
 
 _translate = QtCore.QCoreApplication.translate
 
-OK = QIcon(str(config.base_path / "src/extra/check.svg"))
-NOK = QIcon(str(config.base_path / "src/extra/cross.svg"))
+OK = QIcon(str(config.base_path / "extra/check.svg"))
+NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
 ARROW_DOWN = QIcon()
 ARROW_DOWN.addPixmap(
@@ -84,9 +84,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         self._drag_info: list[Task] = []
         self.statusBar = QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
-        self.db_timer = QTimer()
-        "Timer for polling if the db has changed and regenerate the list."
-        self.db_timer.start(100)
+        self.gui_timer = QTimer()
+        "Timer for polling if things changed and regenerate the GUI."
+        self.gui_timer.start(100)
         self.last_generated = 0
 
         self.tasks: list[Task] = []
@@ -131,7 +131,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         for _, check, _ in self.columns:
             check.stateChanged.connect(self.rearrange_list)
 
-        @self.db_timer.timeout.connect
+        @self.gui_timer.timeout.connect
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_table()
@@ -172,7 +172,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         task_list.build_space_list(self)
         self.space.setCurrentIndex(
-            x if (x := self.space.findText(app.last_edited_space or config.last_selected_space)) > -1 else 0
+            x if (x := self.space.findText(config.last_selected_space)) > -1 else 0
         )
 
         @self.space.currentIndexChanged.connect
@@ -528,16 +528,10 @@ font-size: 12pt;
         app.list_of_task_organizers.remove(self)
         app.list_of_windows.remove(self)
 
-        for win in app.list_of_windows:
-            win.show()
-            win.raise_()
-
-        if app.win_running:
-            app.win_running.show()
-            app.win_running.raise_()
-
-        if self.editor:
-            self.editor.raise_()
+        if not app.win_what.isHidden():
+            app.win_what.raise_()
+        else:
+            app.list_of_windows[-1].raise_()
 
     def accept(self):
         super().accept()
@@ -546,14 +540,10 @@ font-size: 12pt;
 
         save_task(self.task, self.subtasks, self.supertasks)
 
-        if app.win_running:
-            app.win_running.show()
-            app.win_running.raise_()
-            return
-
-        for win in app.list_of_windows:
-            win.show()
-            win.raise_()
+        if not app.win_what.isHidden():
+            app.win_what.raise_()
+        else:
+            app.list_of_windows[-1].raise_()
 
     def rearrange_list(self):
         """Callback for easy rearranging of the list, no filtering."""
