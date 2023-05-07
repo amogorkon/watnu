@@ -60,9 +60,14 @@ class boolean:
 # use.apply_aspect(attrs, use.woody_logger)  # BUG
 
 
+def print_attr(self, attribute, value):
+    print(f"config: setting {attribute.name} to {value!r}")
+    return value
+
+
 @attrs.define(
     auto_attribs=True,
-    on_setattr=attrs.setters.convert,
+    on_setattr=[attrs.setters.convert, print_attr],
     field_transformer=lambda cls, fields: [field.evolve(converter=field.type) for field in fields],
 )
 class Config:
@@ -88,9 +93,11 @@ class Config:
     autostart: boolean = False
     call_name: str = ""
     last_selected_space: str = ""
+    last_edited_space: str = ""
     base_path: Path = Path(__file__).parent
 
     def save(self):
+        print("saving config")
         self.config_path.write_text(dump(attrs.asdict(self)))
 
 
