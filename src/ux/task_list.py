@@ -9,12 +9,12 @@ from time import time, time_ns
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PyQt6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QCompleter, QMessageBox, QTableWidgetItem
 
-import ui
-from classes import Task, typed, typed_row
-from logic import (
+import src.ui as ui
+from src.classes import Task, typed, typed_row
+from src.logic import (
     filter_tasks_by_constraints,
     filter_tasks_by_content,
     filter_tasks_by_ilk,
@@ -23,15 +23,15 @@ from logic import (
     pipes,
     retrieve_tasks,
 )
-from stuff import app, config, db
-from ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
+from src.stuff import app, config, db
+from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
 
 _translate = QtCore.QCoreApplication.translate
 
 from beartype import beartype
 
-OK = QIcon(str(config.base_path / "src/extra/check.svg"))
-NOK = QIcon(str(config.base_path / "src/extra/cross.svg"))
+OK = QIcon(str(config.base_path / "extra/check.svg"))
+NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
@@ -44,9 +44,9 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         super().__init__()
         self.setupUi(self)
 
-        self.db_timer = QTimer()
-        "Timer for polling if the db has changed and regenerate the list."
-        self.db_timer.start(100)
+        self.gui_timer = QTimer()
+        "Timer for polling if something has changed and regenerate the GUI."
+        self.gui_timer.start(100)
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
@@ -71,7 +71,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         for _, check, _ in self.columns:
             check.stateChanged.connect(self.rearrange_list)
 
-        @self.db_timer.timeout.connect
+        @self.gui_timer.timeout.connect
         def db_changed_check():
             if Path(config.db_path).stat().st_mtime > self.last_generated:
                 self.build_task_table()
@@ -105,6 +105,24 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
+        def copy_to_clipboard():
+            if not (selected := self.get_selected_tasks()):
+                return
+
+            clipboard = QGuiApplication.clipboard()
+            text = "\n\n".join(
+                f"=== Task {task.id} {task.printable_deadline} {task.printable_percentage} ===\n{task.do}"
+                for task in selected
+            )
+            clipboard.setText(text)
+
+        QShortcut(
+            QKeySequence(
+                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_C),
+            ),
+            self,
+        ).activated.connect(copy_to_clipboard)
+
         QShortcut(
             QKeySequence(
                 QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
@@ -114,7 +132,9 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         build_space_list(self)
         self.space.setCurrentIndex(
-            x if (x := self.space.findText(app.last_edited_space or config.last_selected_space)) > -1 else 0
+            x
+            if (x := self.space.findText(config.last_edited_space or config.last_selected_space)) > -1
+            else 0
         )
 
         @self.space.currentIndexChanged.connect
@@ -179,7 +199,7 @@ VALUES ('{text}')
 
         def space_delete():
             space_name = self.space.currentText()
-            if self.task_table.rowCount() > 0:
+            if [task for task in app.tasks if task.space.name == space_name]:
                 QtWidgets.QMessageBox.information(
                     self,
                     "Sorry..",
@@ -251,7 +271,7 @@ DELETE FROM spaces where name=='{space_name}'
                 match self.status.currentIndex():
                     # open
                     case 0:
-                        task.set_("done", True)
+                        task_finished.Finisher(task, direct=True).exec()
                     # draft
                     case 1:
                         task.set_("draft", False)
@@ -317,10 +337,10 @@ DELETE FROM spaces where name=='{space_name}'
             mb.setWindowTitle("Hmm..")
             if x == "Kopf":
                 mb.setText("Du hast Kopf geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-heads.svg"))
+                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
             else:
                 mb.setText("Du hast Zahl geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap("extra/feathericons/coin-tails.svg"))
+                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
             mb.exec()
 
         @self.ilk.currentIndexChanged.connect
@@ -389,7 +409,7 @@ WHERE id == {task.id}
 
         for task in selected:
             if property == "done" and set_flag:
-                task_finished.Task_Finished(task).exec()
+                task_finished.Finisher(task).exec()
             else:
                 db.execute(
                     f"""
@@ -438,7 +458,9 @@ font-size: 12pt;
         self.task_table.setSortingEnabled(False)
         self.task_table.setRowCount(len(tasks))
 
-        ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
+        ID = QFontDatabase.addApplicationFont(
+            str(config.base_path / "./extra/Fira_Sans/FiraSans-Regular.ttf")
+        )
         family = QFontDatabase.applicationFontFamilies(ID)
         item_font = QFont(family)
         header_font = QFont("Segoi UI")
@@ -577,13 +599,11 @@ font-size: 12pt;
         super().reject()
         app.list_of_task_lists.remove(self)
         app.list_of_windows.remove(self)
-        if app.win_running:
-            app.win_running.show()
-            app.win_running.raise_()
-            return
-        for win in app.list_of_windows:
-            win.show()
-            win.raise_()
+
+        if not app.win_what.isHidden():
+            app.win_what.raise_()
+        else:
+            app.list_of_windows[-1].raise_()
 
     def get_selected_tasks(self) -> set[Task]:
         return {
@@ -646,6 +666,7 @@ def deadline_as_str(deadline: float) -> str:
 
 
 def build_space_list(parent, first_item_text="alle Räume") -> None:
+    print(1)
     parent.space.clear()
     parent.space.addItem(first_item_text, QVariant(None))
     # set font of first item to bold
@@ -679,3 +700,4 @@ def build_space_list(parent, first_item_text="alle Räume") -> None:
     sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
     for space_id, name in sorted_spaces_by_name:
         parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
+    print(2)
