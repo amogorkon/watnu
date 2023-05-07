@@ -10,7 +10,7 @@ from time import time, time_ns
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QCompleter, QMessageBox, QTableWidgetItem
+from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetItem, QVBoxLayout, QWidget
 
 import src.ui as ui
 from src.classes import Task, typed, typed_row
@@ -34,8 +34,50 @@ OK = QIcon(str(config.base_path / "extra/check.svg"))
 NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
 
+class Checklist(QWidget):
+    """Must be a separate class because you can only setWindowFlags on top-level widgets (those without parent)."""
+
+    def __init__(self, tasklist, column_names: list[QtWidgets.QCheckBox]):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowType.Popup | QtCore.Qt.WindowType.FramelessWindowHint)
+
+        self.checkboxes = QListWidget(self)
+        sizePolicy = self.checkboxes.sizePolicy()
+        sizePolicy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.Maximum)
+        sizePolicy.setHorizontalPolicy(QtWidgets.QSizePolicy.Policy.Maximum)
+        self.checkboxes.setSizePolicy(sizePolicy)
+
+        # TODO: fix this sizeing mess..
+
+        maxWidth = 0
+
+        for name in column_names:
+            item = QtWidgets.QListWidgetItem(name)
+            item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+            item.setText(_translate("Dialog", name))
+            self.checkboxes.addItem(item)
+            setattr(tasklist, f"check_{name}", item)
+
+            maxWidth = max(maxWidth, self.checkboxes.sizeHintForColumn(0)) * 1.05
+
+        self.checkboxes.setMaximumWidth(int(maxWidth))
+
+        itemHeight = self.checkboxes.sizeHintForRow(0)
+        itemCount = self.checkboxes.count()
+        maxHeight = itemHeight * itemCount * 1.05
+        self.checkboxes.setMaximumHeight(int(maxHeight))
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.checkboxes)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # self.adjustSize()
+
+
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
-    def rearrange_list(self):
+    def rearrange_list(self, item):
         """Callback for easy rearranging of the list, no filtering."""
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
@@ -50,26 +92,44 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
-        # to make it compatible with the rest of the code
-        self.check_do = QtWidgets.QCheckBox()
-        self.check_do.setChecked(True)
 
         # displayed columns: tuple[Header, displayed, how to get value]
 
         self.columns = (
-            ("space", self.check_space, lambda t: str(t.space)),
-            ("level", self.check_level, lambda t: str(t.level)),
-            ("priority", self.check_priority, lambda t: str(t.get_total_priority())),
-            ("deadline", self.check_deadline, lambda t: deadline_as_str(t.deadline)),
-            ("done", self.check_done, lambda t: OK if t.done else NOK),
-            ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
-            ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
-            ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
-            ("do", self.check_do, lambda t: t.get_short_do()),
+            ("space", lambda t: str(t.space.name)),
+            ("level", lambda t: str(t.level)),
+            ("priority", lambda t: str(t.get_total_priority())),
+            ("deadline", lambda t: deadline_as_str(t.deadline)),
+            ("done", lambda t: OK if t.done else NOK),
+            ("draft", lambda t: OK if t.draft else NOK),
+            ("inactive", lambda t: OK if t.inactive else NOK),
+            ("deleted", lambda t: OK if t.deleted else NOK),
+            ("do", lambda t: t.get_short_do()),
         )
 
-        for _, check, _ in self.columns:
-            check.stateChanged.connect(self.rearrange_list)
+        self.column_selection = Checklist(self, [name for name, _ in self.columns[:-1]])
+        self.column_selection.setHidden(True)
+
+        # to make it compatible with the rest of the code
+        self.check_do = QtWidgets.QListWidgetItem("do")
+        self.check_do.setCheckState(QtCore.Qt.CheckState.Checked)
+
+        self.column_selection.checkboxes.itemChanged.connect(self.rearrange_list)
+
+        def show_column_selection():
+            self.column_selection.setHidden(False)
+            # mouse cursor position
+            global_pos = QtGui.QCursor.pos()
+            self.column_selection.move(global_pos)
+
+            screen_geometry = app.primaryScreen().geometry()
+            if self.column_selection.frameGeometry().right() > screen_geometry.right():
+                self.column_selection.move(global_pos.x() - self.column_selection.width(), global_pos.y())
+            if self.column_selection.frameGeometry().bottom() > screen_geometry.bottom():
+                self.column_selection.move(global_pos.x(), global_pos.y() - self.column_selection.height())
+
+        self.task_table.horizontalHeader().setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.task_table.horizontalHeader().customContextMenuRequested.connect(show_column_selection)
 
         @self.gui_timer.timeout.connect
         def db_changed_check():
@@ -467,7 +527,16 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.task_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
+        self.task_table.setColumnCount(
+            len(
+                list(
+                    filter(
+                        lambda c: getattr(self, f"check_{c[0]}").checkState() == QtCore.Qt.CheckState.Checked,
+                        self.columns,
+                    )
+                )
+            )
+        )
 
         # TODO: use _translate
         translation = {
@@ -484,13 +553,18 @@ font-size: 12pt;
 
         currently_selected_rows = self.task_table.selectionModel()
 
-        selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
+        selected_columns = list(
+            filter(
+                lambda c: getattr(self, f"check_{c[0]}").checkState() == QtCore.Qt.CheckState.Checked,
+                self.columns,
+            )
+        )
 
         for column_number, column in enumerate(selected_columns):
             self.set_header(translation[column[0]], header_font, column_number)
 
         for i, task in enumerate(tasks):
-            for column_number, (header, displayed, func) in enumerate(selected_columns):
+            for column_number, (header, func) in enumerate(selected_columns):
                 content = func(task)
                 if isinstance(content, str):
                     item = QtWidgets.QTableWidgetItem(content)

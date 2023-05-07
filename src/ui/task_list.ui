@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>624</width>
+    <width>655</width>
     <height>502</height>
    </rect>
   </property>
@@ -179,74 +179,6 @@
           <string>Routine</string>
          </property>
         </item>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="horizontalGroupBox">
-     <property name="title">
-      <string>Spalten</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="topMargin">
-       <number>10</number>
-      </property>
-      <item>
-       <widget class="QCheckBox" name="check_level">
-        <property name="text">
-         <string>Level</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_priority">
-        <property name="text">
-         <string>Priorität</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_space">
-        <property name="text">
-         <string>Raum</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_deadline">
-        <property name="text">
-         <string>Deadline</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_done">
-        <property name="text">
-         <string>erledigt</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_draft">
-        <property name="text">
-         <string>Entwurf</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_inactive">
-        <property name="text">
-         <string>inactiv</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="check_deleted">
-        <property name="text">
-         <string>gelöscht</string>
-        </property>
        </widget>
       </item>
      </layout>
