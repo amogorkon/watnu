@@ -191,9 +191,10 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         ).activated.connect(lambda: self.field_filter.setFocus())
 
         build_space_list(self)
+        self._first_space_switch = True
         self.space.setCurrentIndex(
             x
-            if (x := self.space.findText(config.last_edited_space or config.last_selected_space)) > -1
+            if (x := self.space.findText(config.last_selected_space or config.last_edited_space)) > -1
             else 0
         )
 
@@ -497,9 +498,6 @@ WHERE id == {task.id}
         """Prepare for filtering the tasks, then fetch and display them."""
 
         self.last_generated = time()
-
-        config.last_selected_space = self.space.currentText() or ""
-        config.save()
         self.tasks = get_filtered_tasks(self)
 
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
