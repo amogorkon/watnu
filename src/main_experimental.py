@@ -4,6 +4,10 @@ Run with py main.py and watch the Magik happen!
 """
 
 print("=== RUNNING WATNU IN EXPERIMENTAL MODE ===")
+"""The entry point for watnu.
+
+Run with py main.py and watch the Magik happen!
+"""
 import ctypes
 import sqlite3
 import sys
@@ -163,7 +167,6 @@ if config.first_start:
 # with open("encrypted_file.txt", "wb") as encrypted_file:
 #     encrypted_file.write(encrypted)
 
-
 db = sqlite3.connect(config.db_path, factory=DB)
 if config.debugging:
     db.set_trace_callback(q)
@@ -179,7 +182,7 @@ initial_globals = {
 
 # push all the globals into 'src.stuff' so we can import them properly and getting all the perks of IDE autocompletion
 use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
-from src.classes import Task, retrieve_tasks
+from src.classes import Task, retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
 from src.ux import landing, task_editor
@@ -203,12 +206,6 @@ if config.run_sql_stuff:
     use("sql_stuff.py", initial_globals={"config": config})
     config.run_sql_stuff = False
     config.save()
-
-app.activity_color = {
-    1: config.activity_color_body,
-    2: config.activity_color_mind,
-    3: config.activity_color_soul,
-}
 
 app.win_main.show()
 
@@ -240,6 +237,9 @@ else:
         winreg.DeleteValue(key, "Watnu")
         winreg.CloseKey(key)
 
+# get all spaces from the db
+app.spaces = {s.space_id: s for s in retrieve_spaces(db)}
+
 # get all tasks from the db
 app.tasks = {t.id: t for t in retrieve_tasks(db)}
 
@@ -263,28 +263,50 @@ if drafts := [t for t in app.tasks.values() if t.draft]:
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
 
+
 from src.logic import cycle_in_task_dependencies
 
 while cycle := cycle_in_task_dependencies(app.tasks):
     msgBox = QMessageBox()
     msgBox.setWindowTitle("Jetzt bearbeiten?")
     msgBox.setText(
-        "Zyklus gefunden in Aufgaben-Abhängigkeiten, bitte beheben oder Aufgaben als Entwurf markieren!"
+        "Zyklus gefunden in Aufgaben-Abhängigkeiten! Aufgaben wurden als Entwurf markiert! Jetzt bearbeiten?"
     )
+    for task in cycle:
+        task.set_("draft", True)
     editButton = msgBox.addButton("Edit now", QMessageBox.ButtonRole.AcceptRole)
-    draftButton = msgBox.addButton("Mark as draft", QMessageBox.ButtonRole.RejectRole)
+    cancelButton = msgBox.addButton(QMessageBox.StandardButton.Ignore)
 
-    match msgBox.exec().msgBox.clickedButton():
-        case QMessageBox.ButtonRole.AcceptRole:
+    match msgBox.exec():
+        case QMessageBox.ButtonRole.AcceptRole.value:
             for task in cycle:
                 win = task_editor.Editor(task)
                 win.show()
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
-        case QMessageBox.ButtonRole.RejectRole:
-            for task in cycle:
-                task.set_as("draft", True)
 
+# let's check if tasks have a deadline without workloud
+if tasks := [
+    task
+    for task in app.tasks.values()
+    if task.own_deadline != float("inf")
+    and task.workload == 0
+    and not task.done
+    and not task.deleted
+    and not task.draft
+    and not task.inactive
+]:
+    match QMessageBox.question(
+        app.win_main,
+        "Jetzt bearbeiten?",
+        f"Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 else 'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?",
+    ):
+        case QMessageBox.StandardButton.Yes:
+            for task in tasks:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
 
 # let's check for overdue tasks
 if overdue := [
