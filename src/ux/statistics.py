@@ -11,7 +11,7 @@ from PyQt6.QtGui import QIcon
 from pyqtgraph import PlotWidget
 
 import src.ui as ui
-from src.classes import cached_func_noarg, typed, typed_row
+from src.classes import cached_func_static, typed, typed_row
 from src.stuff import __version__, config, db
 
 _translate = QCoreApplication.translate
@@ -193,7 +193,7 @@ sessions
             self.session_stats.setItem(i, 5, item)
 
 
-@cached_func_noarg
+@cached_func_static
 def collect_statistics() -> statistics:
     now = datetime.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -231,7 +231,7 @@ def collect_statistics() -> statistics:
     )
 
 
-@cached_func_noarg
+@cached_func_static
 def aggregate():
     query = db.execute("SELECT task_id, stop FROM sessions WHERE finished")
     sessions = query.fetchall()

@@ -719,7 +719,7 @@ def get_space_id(name, index) -> int | None:
 def get_filtered_tasks(self):
     """Filter tasks according to the current filter settings."""
     return (
-        retrieve_tasks(db)
+        retrieve_tasks()
         >> filter_tasks_by_space(get_space_id(self.space.currentText(), self.space.currentIndex()))
         >> filter_tasks_by_status(self.status.currentIndex())
         >> filter_tasks_by_ilk(self.ilk.currentIndex())

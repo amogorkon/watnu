@@ -229,10 +229,10 @@ else:
         winreg.CloseKey(key)
 
 # get all spaces from the db
-app.spaces = {s.space_id: s for s in retrieve_spaces(db)}
+app.spaces = {s.space_id: s for s in retrieve_spaces()}
 
 # get all tasks from the db
-app.tasks = {t.id: t for t in retrieve_tasks(db)}
+app.tasks = {t.id: t for t in retrieve_tasks()}
 
 # first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
 for task in list(app.tasks.values()):

@@ -10,8 +10,8 @@ from typing import Any, NamedTuple
 import use
 from beartype import beartype
 
+from src.functions import cached_func_static, cached_getter, cached_property, typed, typed_row
 from src.stuff import app, config, db
-from src.functions import cached_func_noarg, cached_property, typed_row, typed, cached_getter
 
 np = use(
     "numpy",
@@ -78,7 +78,7 @@ class Space:
 
     @classmethod
     def from_id(cls, ID: int) -> "Space":
-        return retrieve_space_by_id(db, ID)
+        return retrieve_space_by_id(ID)
 
     @cached_property
     def primary_activity(self) -> ACTIVITY:
@@ -102,7 +102,7 @@ class Space:
 
 
 @cached_getter
-def retrieve_space_by_id(db, ID: int | None) -> Space | None:
+def retrieve_space_by_id(ID: int | None, db=db) -> Space | None:
     if ID is None:
         return None
     query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces WHERE space_id == {ID};")
@@ -193,7 +193,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
 
     @cached_property
     def space(self) -> Space | None:
-        return retrieve_space_by_id(db, self.space_id)
+        return retrieve_space_by_id(self.space_id)
 
     @cached_property
     def time_spent(self) -> int:
@@ -497,14 +497,15 @@ def retrieve_task_by_id(db, ID: int) -> Task:
     return Task(**kwargs)
 
 
-@cached_func_noarg
-def retrieve_tasks(db) -> list[Task]:
+@cached_func_static
+def retrieve_tasks(db=db) -> list[Task]:
     """Load all tasks from the database."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks;")
     return [Task(**dict(zip(Task.__slots__, res))) for res in query.fetchall()]
 
 
-def retrieve_spaces(db) -> list[Space]:
+@cached_func_static
+def retrieve_spaces(db=db) -> list[Space]:
     """Load all spaces from the database."""
     query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces;")
     return [Space(**dict(zip(Space.__slots__, res))) for res in query.fetchall()]

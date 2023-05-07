@@ -1,37 +1,18 @@
-from time import time
 from functools import wraps
+from time import time
 
 from src.stuff import app, config, db
 
 
-def cached_func_noarg(func):
+def cached_func_static(func):
     last_called = 0
     last_result = ...
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(**kwargs):
         nonlocal last_called, last_result
         if app.db_last_modified >= last_called:
-            res = func(*args, **kwargs)
-            last_result = res
-        else:
-            res = last_result
-
-        last_called = time()
-        return res
-
-    return wrapper
-
-
-def cached_func_single_arg(func):
-    last_called = 0
-    last_result = ...
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        nonlocal last_called, last_result
-        if app.db_last_modified >= last_called:
-            res = func(*args, **kwargs)
+            res = func(**kwargs)
             last_result = res
         else:
             res = last_result
@@ -50,7 +31,6 @@ def cached_property(func):
     def wrapper(*args, **kwargs):
         self = args[0]
         nonlocal last_called, last_results
-        # print(3223, last_results)
         if app.db_last_modified >= last_called or self not in last_results:
             res = func(*args, **kwargs)
             last_results[self] = res
@@ -68,14 +48,13 @@ def cached_getter(func):
     last_results = {}
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
-        self = args[0]
+    def wrapper(arg, **kwargs):
         nonlocal last_called, last_results
-        if app.db_last_modified >= last_called or self not in last_results:
-            res = func(*args, **kwargs)
-            last_results[self] = res
+        if app.db_last_modified >= last_called or arg not in last_results:
+            res = func(arg, **kwargs)
+            last_results[arg] = res
         else:
-            res = last_results[self]
+            res = last_results[arg]
 
         last_called = time()
         return res

@@ -32,6 +32,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         draft: bool = False,
     ):
         super().__init__()
+        print(repr(task), cloning, templating, as_sup, current_space, draft)
         self.setupUi(self)
         self.original_window_title = self.windowTitle()
         self.statusBar = QtWidgets.QStatusBar()
@@ -98,6 +99,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.level.setCurrentIndex(2)
 
         self.page.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
+        assert self.task.space_id == self.task.space.space_id, breakpoint()
+
         # editing a task - need to set all values accordingly
         if task:
             self.deadline = task.deadline
