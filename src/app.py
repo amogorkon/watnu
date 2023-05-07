@@ -19,11 +19,25 @@ class Application(QtWidgets.QApplication):
     def setUp(self, config_, db_):
         self.db_last_modified = 0
         global config, db
+        config = config_
+        db = db_
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
-        from src.classes import Task
+        from src.classes import Task, Space
+
+        self.activity_color = {
+            1: config.activity_color_mind,  # darkblue
+            2: config.activity_color_body,  # darkred
+            3: config.activity_color_soul,  # indigo
+        }
 
         class TaskDict(dict):
+            def __missing__(self, key):
+                value = Task.from_id(key)
+                self[key] = value
+                return value
+
+        class SpaceDict(dict):
             def __missing__(self, key):
                 value = Task.from_id(key)
                 self[key] = value
@@ -52,16 +66,17 @@ class Application(QtWidgets.QApplication):
         self.win_main.setWindowIcon(self.icon)
         self.win_main.statusBar.show()
 
-        self.tasks: dict[str, Task] = TaskDict()
+        self.tasks: dict[int, Task] = TaskDict()
+        self.spaces: dict[int, Space] = SpaceDict()
 
-        self.task_timer = QTimer()
+        self.app_timer = QTimer()
         # start the timer on the clock of the next minute in msec
-        QTimer.singleShot(int((60 - datetime.now().timestamp() % 60) * 1000), self.task_timer.start)
-        self.task_timer.start(60_000)
+        QTimer.singleShot(int((60 - datetime.now().timestamp() % 60) * 1000), self.app_timer.start)
+        self.app_timer.start(60_000)
 
-        @self.task_timer.timeout.connect
+        @self.app_timer.timeout.connect
         def task_timer_timeout():
-            pass
+            self.win_main.set_statistics_icon()
 
         greet_time = [
             "N'Abend",
