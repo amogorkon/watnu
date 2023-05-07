@@ -19,9 +19,6 @@ from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon, QTableWidgetItem
 
 import src.app as app
 
-# show startup screen before loading anything heavy
-import src.startup as startup
-
 app = app.Application(sys.argv)
 
 import use
