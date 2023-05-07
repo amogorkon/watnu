@@ -1,26 +1,65 @@
-from datetime import datetime
+from collections import Counter
+from datetime import datetime, timedelta
+from typing import NamedTuple
 
-from PyQt6 import QtWidgets
+import numpy as np
+import pyqtgraph as pg
+from beartype import beartype
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtGui import QIcon
+from pyqtgraph import PlotWidget
 
-import ui
-from classes import typed, typed_row
-from stuff import __version__, config, db
+import src.ui as ui
+from src.classes import cached_func_noarg, typed, typed_row
+from src.stuff import __version__, config, db
 
 _translate = QCoreApplication.translate
 
-ok = QIcon(str(config.base_path / "src/extra/feathericons/check.svg"))
-nok = QIcon(str(config.base_path / "src/extra/feathericons/x.svg"))
+ok = QIcon(str(config.base_path / "extra/feathericons/check.svg"))
+nok = QIcon(str(config.base_path / "extra/feathericons/x.svg"))
+
+
+@beartype
+class statistics(NamedTuple):
+    total_added: int
+    total_finished: int
+    today_added: int
+    today_finished: int
+    yesterday_added: int
+    yesterday_finished: int
+    aggregated_data: np.ndarray
 
 
 class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        res = db.execute("SELECT count(*) from tasks")
-        self.total_num_tasks.setText(str(typed_row(res.fetchone(), 0, int, default=0)))
 
+        self.gui_timer = QtCore.QTimer()
+        self.setup_tabs()
+
+        self.gui_timer.timeout.connect(self.update_gui)
+
+        self.today_added_label.hide()
+        self.yesterday_added_label.hide()
+
+    def show(self):
+        super().show()
+        self.gui_timer.start(100)
+
+    def hide(self):
+        super().hide()
+        self.gui_timer.stop()
+
+    def update_gui(self):
+        stats = collect_statistics()
+        self.total_num_tasks_outlabel.setText(str(stats.total_added))
+        self.total_finished_outlabel.setText(str(stats.total_finished))
+        self.yesterday_finished_outlabel.setText(str(stats.yesterday_finished))
+        self.today_finished_outlabel.setText(str(stats.today_finished))
+
+    def setup_tabs(self):
         res = db.execute("SELECT space_id, name FROM spaces")
         for i, (space_id, name) in enumerate(res.fetchall()):
             self.space_stats.setRowCount(i + 1)
@@ -68,12 +107,7 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             self.level_stats.setItem(i, 0, item)
             inner_query = db.execute(
                 f"""SELECT count(id) FROM tasks WHERE level_id == {level_id} 
-                AND done 
-                AND NOT 
-                deleted 
-                AND NOT inactive 
-                AND NOT draft
-"""
+                AND done AND NOT deleted AND NOT inactive AND NOT draft"""
             )
             item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, default=0)))
             self.level_stats.setItem(i, 1, item)
@@ -126,13 +160,13 @@ sessions
         ):
             inner_query = db.execute(
                 f"""
-SELECT
-    do
-FROM
-    tasks
-WHERE
-    id == {task_id}
-"""
+                SELECT
+                    do
+                FROM
+                    tasks
+                WHERE
+                    id == {task_id}
+                """
             )
             # sanitizing..
             row = inner_query.fetchone()
@@ -157,3 +191,65 @@ WHERE
             self.session_stats.setItem(i, 4, item)
             item = QtWidgets.QTableWidgetItem(f"{pause_time // 60:04}")
             self.session_stats.setItem(i, 5, item)
+
+
+@cached_func_noarg
+def collect_statistics() -> statistics:
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+    yesterday_start = today_start - timedelta(days=1)
+    yesterday_end = today_end - timedelta(days=1)
+
+    total_added = typed_row(
+        db.execute("SELECT count(*) from tasks WHERE not draft").fetchone(), 0, int, default=0
+    )
+    total_finished = typed_row(
+        db.execute(
+            "SELECT count(*) from tasks WHERE done AND not deleted AND not inactive AND not draft"
+        ).fetchone(),
+        0,
+        int,
+        default=0,
+    )
+    yesterday_added = 0
+    today_added = 0
+    yesterday_finished = db.execute(
+        """SELECT count(*) from sessions WHERE ? < stop AND stop < ? AND finished""",
+        (yesterday_start.timestamp(), yesterday_end.timestamp()),
+    ).fetchone()[0]
+    aggregate()
+
+    return statistics(
+        total_added=total_added,
+        total_finished=total_finished,
+        yesterday_added=yesterday_added,
+        yesterday_finished=yesterday_finished,
+        today_added=today_added,
+        today_finished=get_today_finished(),
+        aggregated_data=np.zeros((0, 0)),
+    )
+
+
+@cached_func_noarg
+def aggregate():
+    query = db.execute("SELECT task_id, stop FROM sessions WHERE finished")
+    sessions = query.fetchall()
+    oldest = min(sessions, key=lambda x: x[1])[1]
+    days_ago = abs((datetime.fromtimestamp(oldest) - datetime.now()).days)
+    task_counter = Counter()
+    for task_id, stop in sessions:
+        task_counter[datetime.fromtimestamp(stop).replace(hour=0, minute=0, second=0, microsecond=0)] += 1
+    calendar_data = np.zeros((days_ago + 1,), dtype=int)
+    for day, count in task_counter.items():
+        calendar_data[
+            abs((day - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days)
+        ] = count
+
+
+def get_today_finished():
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return db.execute(
+        """SELECT count(*) from sessions WHERE ? < stop AND finished""", (today_start.timestamp(),)
+    ).fetchone()[0]

@@ -52,10 +52,6 @@
         <property name="text">
          <string/>
         </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/file-plus.svg</normaloff>../extra/feathericons/file-plus.svg</iconset>
-        </property>
         <property name="iconSize">
          <size>
           <width>30</width>
@@ -89,10 +85,6 @@
         </property>
         <property name="text">
          <string/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/list.svg</normaloff>../extra/feathericons/list.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -130,10 +122,6 @@
         </property>
         <property name="text">
          <string/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/play-circle.svg</normaloff>../extra/feathericons/play-circle.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -177,10 +165,6 @@
         </property>
         <property name="text">
          <string/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/companions2.svg</normaloff>../extra/feathericons/companions2.svg</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -256,10 +240,6 @@
         <property name="text">
          <string/>
         </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/message-square.svg</normaloff>../extra/feathericons/message-square.svg</iconset>
-        </property>
         <property name="iconSize">
          <size>
           <width>30</width>
@@ -309,10 +289,6 @@
         <property name="text">
          <string/>
         </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/superhero - attribute to Freepik.svg</normaloff>../extra/feathericons/superhero - attribute to Freepik.svg</iconset>
-        </property>
         <property name="iconSize">
          <size>
           <width>30</width>
@@ -350,10 +326,6 @@
         <property name="text">
          <string/>
         </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/inventory.svg</normaloff>../extra/feathericons/inventory.svg</iconset>
-        </property>
         <property name="iconSize">
          <size>
           <width>30</width>
@@ -390,10 +362,6 @@
         </property>
         <property name="text">
          <string/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../extra/feathericons/trending-up.svg</normaloff>../extra/feathericons/trending-up.svg</iconset>
         </property>
         <property name="iconSize">
          <size>

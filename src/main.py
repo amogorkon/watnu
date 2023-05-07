@@ -5,29 +5,43 @@ Run with py main.py and watch the Magik happen!
 import ctypes
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 from time import time
 
-# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
-from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlDatabase
 
+# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon, QTableWidgetItem
+
+import src.app as app
 
 # show startup screen before loading anything heavy
-import startup, app
+import src.startup as startup
 
 app = app.Application(sys.argv)
 
 import use
 
-
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
 ).Q()
+
+
+# FIX: won't work with justuse :(
+# use(
+#     "cryptography",
+#     version="40.0.2",
+#     modes=use.auto_install,
+#     hash_algo=use.Hash.sha256,
+#     hashes={
+#         "S䅅䢒呹㞙叆鲟懕䘃嗷˱㸸蔐䞬鯯㧬㿐禳",  # pp39-win_amd64
+#         "Z巃猔ȣ㣀㱟䢖忢菠沆奿橗遬閶熌㗐鮥Ɛ",  # None-None
+#     },
+# )
 
 use(
     "numpy",
@@ -37,6 +51,18 @@ use(
     hashes={
         "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
     },
+    import_as="numpy",
+)
+
+use(
+    "pyqtgraph",
+    version="0.13.3",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "l䦘顳䑅葃弤㷗萧䃱翟僅㤏冈湞䤸茑胛啙",  # py3-any
+    },
+    import_as="pyqtgraph",
 )
 
 use(
@@ -65,7 +91,7 @@ flux = use(
 
 
 load = stay.Decoder()
-import configuration
+import src.configuration as configuration
 
 __version__ = use.Version("0.2.2")
 __author__ = "Anselm Kiefner"
@@ -78,7 +104,7 @@ ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 _translate = QCoreApplication.translate
 
 
-class TrayIcon(QtWidgets.QSystemTrayIcon):
+class TrayIcon(QSystemTrayIcon):
     def __init__(self, icon, parent):
         super().__init__(icon, parent)
 
@@ -96,79 +122,104 @@ class DB(sqlite3.Connection):
 
 import contextlib
 
-if __name__ == "__main__":
-    path = Path(__file__).resolve().parents[1]
-    # touch, just in case user killed the config or first start
-    config_path = path / "config.stay"
-    config_path.touch()
-    config = configuration.read(config_path)
-    print("using config:", config_path)
-    config.base_path = path
+path = Path(__file__).resolve().parent
+# touch, just in case user killed the config or first start
 
-    app.icon = QIcon(config.icon)
-    app.setWindowIcon(app.icon)
+config_path = path / "config.stay"
+config_path.touch()
+config = configuration.read(config_path)
+config.config_path = config_path
+print("using config:", config_path)
+config.base_path = path
 
-    # split tutorial from landing wizard, so the user can do the tutorial at any time
-    if config.first_start:
-        win_landing = use(
-            use.Path("ux/landing.py"), initial_globals={"config": config}, import_as="ux.landing"
-        ).Landing()
-        concluded = win_landing.exec()
+app.icon = QIcon(str(config.base_path / "extra/feathericons/watnu1.png"))
+app.setWindowIcon(app.icon)
 
-    db = sqlite3.connect(config.db_path, factory=DB)
-    if config.debugging:
-        db.set_trace_callback(q)
+# split tutorial from landing wizard, so the user can do the tutorial at any time
+if config.first_start:
+    win_landing = use(
+        use.Path("ux/landing.py"), initial_globals={"config": config}, import_as="ux.landing"
+    ).Landing()
+    concluded = win_landing.exec()
 
-    qdb = QSqlDatabase.addDatabase("QSQLITE")
 
-    initial_globals = {
-        "config": config,
-        "app": app,
-        "__version__": __version__,
-        "db": db,
-    }
+# # Load the key
+# with open("filekey.key", "rb") as filekey:
+#     key = filekey.read()
 
-    # push all the globals into 'stuff' so we can import them properly and getting all the perks of IDE autocompletion
-    use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="stuff")
+# # Create a Fernet object
+# fernet = Fernet(key)
 
-    from classes import Task, retrieve_tasks
+# # Open the file to encrypt
+# with open("file_to_encrypt.txt", "rb") as file:
+#     original = file.read()
 
-    app.setUp(config, db)
-    from ux import landing, task_editor
+# # Encrypt the file
+# encrypted = fernet.encrypt(original)
 
-    qdb.setDatabaseName(config.db_path)
-    if not qdb.open() or not qdb.tables():
-        config.first_start = True
-        config.save()
-        QtWidgets.QMessageBox.critical(
-            None,
-            "Restart required",
-            "No viable DB found. Everything has been reset. Shutting down - please restart!",
-        )
-        app.tray.hide()
-        sys.exit()
+# # Write the encrypted data to a new file
+# with open("encrypted_file.txt", "wb") as encrypted_file:
+#     encrypted_file.write(encrypted)
 
-    if config.run_sql_stuff:
-        # just in case..
-        (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
+db = sqlite3.connect(config.db_path, factory=DB)
+if config.debugging:
+    db.set_trace_callback(q)
 
-        use("sql_stuff.py", initial_globals={"config": config})
-        config.run_sql_stuff = False
-        config.save()
+qdb = QSqlDatabase.addDatabase("QSQLITE")
 
-    app.activity_color = {
-        0: config.activity_color_body,
-        1: config.activity_color_mind,
-        2: config.activity_color_spirit,
-    }
+initial_globals = {
+    "config": config,
+    "app": app,
+    "__version__": __version__,
+    "db": db,
+}
 
-    app.win_main.show()
+# push all the globals into 'src.stuff' so we can import them properly and getting all the perks of IDE autocompletion
+use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
+from src.classes import Task, retrieve_spaces, retrieve_tasks
 
-    app.tray = TrayIcon(app.icon, app.win_main)
-    app.tray.show()
+app.setUp(config, db)
+from src.ux import landing, task_editor
 
-    # windows autostart
-    if config.autostart:
+qdb.setDatabaseName(config.db_path)
+if not qdb.open() or not qdb.tables():
+    config.first_start = True
+    config.save()
+    QMessageBox.critical(
+        None,
+        "Restart required",
+        "No viable DB found. Everything has been reset. Shutting down - please restart!",
+    )
+    app.tray.hide()
+    sys.exit()
+
+if config.run_sql_stuff:
+    # just in case..
+    (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
+
+    use("sql_stuff.py", initial_globals={"config": config})
+    config.run_sql_stuff = False
+    config.save()
+
+app.win_main.show()
+
+app.tray = TrayIcon(app.icon, app.win_main)
+app.tray.show()
+
+# windows autostart
+if config.autostart:
+    import winreg
+
+    key = winreg.OpenKey(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Microsoft\Windows\CurrentVersion\Run",
+        0,
+        winreg.KEY_ALL_ACCESS,
+    )
+    winreg.SetValueEx(key, "Watnu", 0, winreg.REG_SZ, f"{sys.executable} {config.base_path / 'watnu.py'}")
+    winreg.CloseKey(key)
+else:
+    with contextlib.suppress(FileNotFoundError):
         import winreg
 
         key = winreg.OpenKey(
@@ -177,41 +228,120 @@ if __name__ == "__main__":
             0,
             winreg.KEY_ALL_ACCESS,
         )
-        winreg.SetValueEx(
-            key, "Watnu", 0, winreg.REG_SZ, f"{sys.executable} {config.base_path / 'src/main.py'}"
-        )
+        winreg.DeleteValue(key, "Watnu")
         winreg.CloseKey(key)
-    else:
-        with contextlib.suppress(FileNotFoundError):
-            import winreg
 
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Run",
-                0,
-                winreg.KEY_ALL_ACCESS,
-            )
-            winreg.DeleteValue(key, "Watnu")
-            winreg.CloseKey(key)
+# get all spaces from the db
+app.spaces = {s.space_id: s for s in retrieve_spaces(db)}
 
-    tasks: list[Task] = retrieve_tasks(db)
-    # first, let's clean up empty ones
-    for task in tasks:
-        if task.do == "" and task.notes in ("", None):
-            task.really_delete()
-    tasks = retrieve_tasks(db)
-    if drafts := [t for t in tasks if t.draft]:
-        match QtWidgets.QMessageBox.question(
-            app.win_main,
-            "Jetzt bearbeiten?",
-            f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",
-        ):
-            case QtWidgets.QMessageBox.StandardButton.Yes:
-                for task in drafts:
-                    win = task_editor.Editor(task)
-                    win.show()
-                    win.raise_()
-                    app.list_of_task_editors.append(win)
-                    app.list_of_windows.append(win)
+# get all tasks from the db
+app.tasks = {t.id: t for t in retrieve_tasks(db)}
 
-    sys.exit(app.exec())
+# first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
+for task in list(app.tasks.values()):
+    if task.do == "" and task.notes in ("", None):
+        task.really_delete()
+
+
+# then, let's check for drafts
+if drafts := [t for t in app.tasks.values() if t.draft]:
+    match QMessageBox.question(
+        app.win_main,
+        "Jetzt bearbeiten?",
+        f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",
+    ):
+        case QMessageBox.StandardButton.Yes:
+            for task in drafts:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+
+
+from src.logic import cycle_in_task_dependencies
+
+while cycle := cycle_in_task_dependencies(app.tasks):
+    msgBox = QMessageBox()
+    msgBox.setWindowTitle("Jetzt bearbeiten?")
+    msgBox.setText(
+        "Zyklus gefunden in Aufgaben-Abhängigkeiten! Aufgaben wurden als Entwurf markiert! Jetzt bearbeiten?"
+    )
+    for task in cycle:
+        task.set_("draft", True)
+    editButton = msgBox.addButton("Edit now", QMessageBox.ButtonRole.AcceptRole)
+    cancelButton = msgBox.addButton(QMessageBox.StandardButton.Ignore)
+
+    match msgBox.exec():
+        case QMessageBox.ButtonRole.AcceptRole.value:
+            for task in cycle:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+
+# let's check if tasks have a deadline without workloud
+if tasks := [
+    task
+    for task in app.tasks.values()
+    if task.own_deadline != float("inf")
+    and task.workload == 0
+    and not task.done
+    and not task.deleted
+    and not task.draft
+    and not task.inactive
+]:
+    match QMessageBox.question(
+        app.win_main,
+        "Jetzt bearbeiten?",
+        f"Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 else 'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?",
+    ):
+        case QMessageBox.StandardButton.Yes:
+            for task in tasks:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+
+# let's check for overdue tasks
+if overdue := [
+    task
+    for task in app.tasks.values()
+    if task.own_deadline != float("inf")
+    and datetime.fromtimestamp(task.deadline) < datetime.now()
+    and not task.done
+    and not task.deleted
+    and not task.draft
+    and not task.inactive
+]:
+    match QMessageBox.question(
+        app.win_main,
+        "Jetzt bearbeiten?",
+        f"Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1 else 'eine überfällige Aufgabe'} - jetzt bearbeiten?",
+    ):
+        case QMessageBox.StandardButton.Yes:
+            for task in overdue:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+
+# let's check for tasks that are incompleteable
+if incompleteable := [
+    task
+    for task in app.tasks.values()
+    if task.time_buffer <= 0 and not task.done and not task.draft and not task.inactive and not task.deleted
+]:
+    match QMessageBox.question(
+        app.win_main,
+        "Jetzt bearbeiten?",
+        f"Es gibt {f'{len(incompleteable)} Aufgaben, die nicht innerhalb der gegebenen Zeit abgeschlossen werden können' if len(incompleteable) > 1 else 'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'} - jetzt bearbeiten?",
+    ):
+        case QMessageBox.StandardButton.Yes:
+            for task in incompleteable:
+                win = task_editor.Editor(task)
+                win.show()
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+
+
+sys.exit(app.exec())
