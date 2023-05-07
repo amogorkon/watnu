@@ -738,7 +738,6 @@ def deadline_as_str(deadline: float) -> str:
 
 
 def build_space_list(parent, first_item_text="alle Räume") -> None:
-    print(1)
     parent.space.clear()
     parent.space.addItem(first_item_text, QVariant(None))
     # set font of first item to bold
@@ -772,4 +771,4 @@ def build_space_list(parent, first_item_text="alle Räume") -> None:
     sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
     for space_id, name in sorted_spaces_by_name:
         parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
-    print(2)
+    parent.space.adjustSize()

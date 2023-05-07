@@ -81,11 +81,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            config.last_edited_space = self.space.currentText() or config.last_edited_space
-            config.save()
-
         task_list.build_space_list(self, first_item_text="")
 
         for item in ACTIVITY:
@@ -421,8 +416,12 @@ WHERE space_id = {space_id}
                 )
             )
 
+        @self.space.currentIndexChanged.connect
+        def space_switched():
+            config.last_edited_space = self.space.currentText() or config.last_edited_space
+            config.save()
+
     def save(self):
-        config.last_edited_space = self.space.currentText()
         config.save()
 
         self.save_task_details()
