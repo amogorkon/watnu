@@ -12,7 +12,6 @@ from time import time
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlDatabase
-
 # ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon, QTableWidgetItem
@@ -77,13 +76,6 @@ stay = use(
     hash_algo=use.Hash.sha256,
     hash_value="47e11e8de6b07f24c95233fba1e7281c385b049f771f74c5647a837b51bd7ff4",
     import_as="stay",
-)
-
-
-flux = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/flux/master/flux/flux.py"),
-    hash_algo=use.Hash.sha256,
-    hash_value="d1361e4925b74fa864f0b218977ee34dd6b2d86e2e681dda7cae8cfcd46eff1a",
 )
 
 

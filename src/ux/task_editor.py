@@ -99,7 +99,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.level.setCurrentIndex(2)
 
         self.page.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
-        assert self.task.space_id == self.task.space.space_id, breakpoint()
+
 
         # editing a task - need to set all values accordingly
         if task:
@@ -138,6 +138,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
             self.task = Task.from_id(query.lastrowid)
             app.tasks[self.task.id] = self.task
             self.draft = True
+
+        assert self.task.space_id == self.task.space.space_id, breakpoint()
 
         self.gui_timer = QTimer()
         self.gui_timer.start(100)
