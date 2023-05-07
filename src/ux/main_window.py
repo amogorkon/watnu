@@ -6,31 +6,19 @@ from pathlib import Path
 
 import q
 import stay
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-import src.ui as ui
-from src.classes import retrieve_tasks
-from src.logic import filter_filter_history
-from src.stuff import __version__, app, config, db
-from src.ux import about, attributions, task_editor, task_list, statistics
+import ui
+from classes import retrieve_tasks
+from logic import filter_filter_history
+from stuff import __version__, app, config, db
+from ux import about, attributions, task_editor, task_list
 
 _translate = QCoreApplication.translate
 
 dump = stay.Encoder()
 load = stay.Decoder()
-
-
-def set_icon(button, icon_path):
-    icon = QtGui.QIcon()
-
-    icon.addPixmap(
-        QtGui.QPixmap(str(config.base_path / icon_path)),
-        QtGui.QIcon.Mode.Normal,
-        QtGui.QIcon.State.Off,
-    )
-    button.setIcon(icon)
-    button.setIconSize(QtCore.QSize(30, 30))
 
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
@@ -43,30 +31,10 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.gui_timer = QtCore.QTimer()
-        self.statusBar.setSizeGripEnabled(False)
-
-        self.set_statistics_icon()
-        set_icon(self.button2, "extra/superhero - attribute to Freepik.svg")
-        set_icon(self.button3, "extra/feathericons/inventory.svg")
-        set_icon(self.button4, "extra/feathericons/list.svg")
-        set_icon(self.button5, "extra/feathericons/play-circle.svg")
-        set_icon(self.button6, "extra/feathericons/file-plus.svg")
-        # set_icon(self.button7, "extra/feathericons/info.svg")
-        set_icon(self.button8, "extra/feathericons/companions2.svg")
-        set_icon(self.button9, "extra/feathericons/message-square.svg")
-
-        self.button7.setEnabled(True)  # TODO: remove this line
         self.killed = False
 
         # catch ctrl+c and register it as a quit
         signal.signal(signal.SIGINT, self.quit)
-
-        self.gui_timer.start(100)
-
-        @self.gui_timer.timeout.connect
-        def _():
-            pass
 
         @self.about.triggered.connect
         def _():
@@ -82,7 +50,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button7.clicked.connect
         def _():
-            breakpoint()
+            pass
 
         @self.button8.clicked.connect
         def companions():
@@ -235,28 +203,3 @@ VALUES ('{d["do"]}',
         config.save()
         with open(config.base_path / "filter_history.stay", "w") as f:
             f.write("\n".join(filter_filter_history(app.filter_history)))
-
-    def set_statistics_icon(self):
-        match statistics.get_today_finished():
-            case 0:
-                set_icon(self.button1, "extra/trending-up.svg")
-            case 1:
-                set_icon(self.button1, "extra/trending-up-1.svg")
-            case 2:
-                set_icon(self.button1, "extra/trending-up-2.svg")
-            case 3:
-                set_icon(self.button1, "extra/trending-up-3.svg")
-            case 4:
-                set_icon(self.button1, "extra/trending-up-4.svg")
-            case 5:
-                set_icon(self.button1, "extra/trending-up-5.svg")
-            case 6:
-                set_icon(self.button1, "extra/trending-up-6.svg")
-            case 7:
-                set_icon(self.button1, "extra/trending-up-7.svg")
-            case 8:
-                set_icon(self.button1, "extra/trending-up-8.svg")
-            case 9:
-                set_icon(self.button1, "extra/trending-up-9.svg")
-            case _:
-                set_icon(self.button1, "extra/trending-up-more.svg")

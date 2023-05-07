@@ -19,10 +19,6 @@
   <property name="windowTitle">
    <string>Was jetzt?</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>../extra/watnu1.png</normaloff>../extra/watnu1.png</iconset>
-  </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
   </property>
