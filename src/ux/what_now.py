@@ -214,15 +214,18 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         @self.button7.clicked.connect
         def done_priority_clicked():
-            task_finished.Finisher(self.task_priority).exec()
+            if task_finished.Finisher(self.task_priority).exec():
+                self.lets_check_whats_next()
 
         @self.button9.clicked.connect
         def done_balanced_clicked():
-            task_finished.Finisher(self.task_balanced).exec()
+            if task_finished.Finisher(self.task_balanced).exec():
+                self.lets_check_whats_next()
 
         @self.button8.clicked.connect
         def done_timing_clicked():
-            task_finished.Finisher(self.task_timing).exec()
+            if task_finished.Finisher(self.task_timing).exec():
+                self.lets_check_whats_next()
 
     def lets_check_whats_next(self):
         seed((config.coin ^ config.lucky_num) * config.count)

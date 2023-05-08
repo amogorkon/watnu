@@ -63,7 +63,7 @@ class Skill(NamedTuple):
     @cached_property
     def time_spent(self):
         query = db.execute(f"""SELECT task_id from task_trains_skill where skill_id={self.id}""")
-        tasks = (app.tasks[ID] for ID in query.fetchall())
+        tasks = (app.tasks[ID] for ID, in query.fetchall())
         return sum(
             task.time_spent for task in tasks if not task.deleted and not task.draft and not task.inactive
         )
