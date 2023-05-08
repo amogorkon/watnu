@@ -15,6 +15,7 @@ from src.classes import ACTIVITY, ILK, Task
 from src.functions import typed
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished, task_list
+from src.ux.helper_functions import get_space_priority, build_space_list
 
 _translate = QCoreApplication.translate
 
@@ -82,7 +83,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
-        task_list.build_space_list(self, first_item_text="")
+        build_space_list(self, first_item_text="")
 
         for item in ACTIVITY:
             if item == ACTIVITY.unspecified:
@@ -333,9 +334,9 @@ VALUES ('{text}')
                 space_editor.Space_Editor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
-                    task_list.build_space_list(win)
+                    build_space_list(win)
                 for win in app.list_of_task_lists:
-                    task_list.build_space_list(win)
+                    build_space_list(win)
 
         menu = QtWidgets.QMenu()
         menu.addAction("hinzufügen", space_add)
@@ -363,15 +364,15 @@ DELETE FROM spaces where name=='{space_name}'
                         db.commit()
                         self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                         for win in app.list_of_task_lists:
-                            task_list.build_space_list(win)
+                            build_space_list(win)
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_editors:
-                            task_list.build_space_list(win)
+                            build_space_list(win)
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_organizers:
-                            task_list.build_space_list(win)
+                            build_space_list(win)
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
 
@@ -680,30 +681,3 @@ from src.ux import (
     task_organizer,
     task_running,
 )
-
-
-def get_space_priority(space_id) -> float:
-    try:
-        return float(db.execute("SELECT priority FROM spaces WHERE space_id = ?", (space_id,)).fetchone()[0])
-    except TypeError:
-        return 0
-
-
-def _build_space_list(parent, first_item_text="alle Räume") -> None:
-    parent.space.clear()
-    parent.space.addItem(first_item_text, QVariant(None))
-    # set font of first item to bold
-    # parent.space.setItemData(0, QFont("Arial", 10, QFont.setBold(True)), Qt.FontRole)
-
-    parent.space.insertSeparator(1)
-
-    # spaces = query.fetchall()
-    # sorted_spaces_by_number = sorted(spaces, key=number_of_tasks_in_space, reverse=True)
-    # for space_id, name in sorted_spaces_by_number[:3]:
-    #     parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
-
-    # parent.space.insertSeparator(5)
-
-    # sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
-    # for space_id, name in sorted_spaces_by_name:
-    #     parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))

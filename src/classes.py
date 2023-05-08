@@ -1,14 +1,10 @@
 import unicodedata
 from collections import namedtuple
 from datetime import datetime
-from enum import Enum, Flag
-from functools import wraps
-from pathlib import Path
-from time import time
+from enum import Enum
 from typing import Any, NamedTuple
 
 import use
-from beartype import beartype
 
 from src.functions import cached_func_static, cached_getter, cached_property, typed, typed_row
 from src.stuff import app, config, db
@@ -73,6 +69,12 @@ class Space:
     __slots__ = ("space_id", "name", "priority", "primary_activity_id", "secondary_activity_id")
 
     def __init__(self, **kwargs) -> None:
+        self.space_id = None
+        self.name = None
+        self.priority = 0
+        self.primary_activity_id = None
+        self.secondary_activity_id = None
+
         for k, v in kwargs.items():
             object.__setattr__(self, k, v)
 
@@ -273,14 +275,14 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         db.commit()
 
     @cached_property
-    def supertasks(self):
+    def supertasks(self) -> list["Task"]:
         query = db.execute(
             f"""
         SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
 
-        return [retrieve_task_by_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
+        return [Task.from_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
 
     @cached_property
     def skill_ids(self) -> list[int]:
@@ -427,7 +429,18 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
 SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
-        return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall() if row is not None}
+        ids = [typed_row(row, 0, int) for row in query.fetchall() if row is not None]
+        # TODO: this should not be necessary
+        for id_ in ids:
+            if id_ not in app.tasks:
+                # clean up the database (this should not happen, but it does)
+                db.execute(
+                    "DELETE FROM task_requires_task WHERE required_task=? or task_of_concern=?", (id_, id_)
+                )
+                ids.remove(id_)
+        db.commit()
+
+        return {app.tasks[id_] for id_ in ids}
 
     def set_subtasks(self, tasks: set["Task"]) -> None:
         db.executemany(
@@ -477,19 +490,20 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             yield k, getattr(self, k)
 
     @classmethod
-    def from_id(cls, ID: int) -> "Task":
-        return retrieve_task_by_id(db, ID)
+    def from_id(cls, ID: int, db=db) -> "Task":
+        return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
     def reload(self):
         print("reloading task")
-        new = retrieve_task_by_id(db, self.id)
+        new = _retrieve_task_by_id(db, self.id)
         for k in self.__slots__:
             self.set_(k, getattr(new, k), to_db=False)
         print(repr(self))
         return self
 
 
-def retrieve_task_by_id(db, ID: int) -> Task:
+def _retrieve_task_by_id(ID: int, db=db) -> Task:
+    """Load a task directly from the database by its ID."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks WHERE id == {ID};")
     res = query.fetchone()
     assert res is not None, breakpoint()

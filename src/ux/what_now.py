@@ -306,7 +306,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         activity_time_spent[None] = max(activity_time_spent.values())
 
         self.balanced_tasks = balance(self.tasks, activity_time_spent)
-
+        if not self.balanced_tasks:
+            return
         self.task_balanced = self.balanced_tasks[0]
         self.task_desc_balanced.setText(self.task_balanced.do)
         self.task_desc_balanced.adjustSize()

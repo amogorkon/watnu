@@ -4,7 +4,8 @@ import webbrowser
 from collections import defaultdict
 from pathlib import Path
 
-import q
+import use
+
 import stay
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication
@@ -19,6 +20,10 @@ _translate = QCoreApplication.translate
 
 dump = stay.Encoder()
 load = stay.Decoder()
+
+q = use(
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+).Q()
 
 
 def set_icon(button, icon_path):
