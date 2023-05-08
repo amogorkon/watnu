@@ -132,3 +132,12 @@ class Application(QtWidgets.QApplication):
         import q
 
         q(i + 1 if i is not None else "Nothing found, so no", "unused resources deleted.")
+
+    def editor_opened(self, editor):
+        self.list_of_task_editors.append(editor)
+        self.list_of_windows.append(editor)
+
+    def editor_closed(self, editor):
+        self.list_of_task_editors.remove(editor)
+        self.list_of_windows.remove(editor)
+        return bool(self.list_of_task_editors)

@@ -495,7 +495,7 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     def reload(self):
         print("reloading task")
-        new = _retrieve_task_by_id(db, self.id)
+        new = _retrieve_task_by_id(self.id)
         for k in self.__slots__:
             self.set_(k, getattr(new, k), to_db=False)
         print(repr(self))

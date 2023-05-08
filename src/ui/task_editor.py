@@ -138,6 +138,7 @@ class Ui_Wizard(object):
         self.space.setEnabled(True)
         self.space.setCurrentText("")
         self.space.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.NoInsert)
+        self.space.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
         self.space.setFrame(True)
         self.space.setModelColumn(0)
         self.space.setObjectName("space")

@@ -260,7 +260,7 @@ VALUES ('{text}')
 
         def space_delete():
             space_name = self.space.currentText()
-            if [task for task in app.tasks if task.space.name == space_name]:
+            if [task for task in app.tasks.values() if task.space.name == space_name]:
                 QtWidgets.QMessageBox.information(
                     self,
                     "Sorry..",

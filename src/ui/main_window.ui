@@ -35,7 +35,7 @@
       <item row="1" column="2">
        <widget class="QPushButton" name="button6">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -74,6 +74,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="button4">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -102,6 +105,9 @@
       </item>
       <item row="1" column="1">
        <widget class="QPushButton" name="button5">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -149,7 +155,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="button8">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -223,7 +229,7 @@
       <item row="0" column="2">
        <widget class="QPushButton" name="button9">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -269,7 +275,7 @@
       <item row="2" column="1">
        <widget class="QPushButton" name="button2">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -309,7 +315,7 @@
       <item row="2" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -346,7 +352,7 @@
       <item row="2" column="0">
        <widget class="QPushButton" name="button1">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">

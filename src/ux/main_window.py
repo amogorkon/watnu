@@ -4,9 +4,8 @@ import webbrowser
 from collections import defaultdict
 from pathlib import Path
 
-import use
-
 import stay
+import use
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
@@ -14,7 +13,7 @@ import src.ui as ui
 from src.classes import retrieve_tasks
 from src.logic import filter_filter_history
 from src.stuff import __version__, app, config, db
-from src.ux import about, attributions, task_editor, task_list, statistics
+from src.ux import about, attributions, statistics, task_editor, task_list
 
 _translate = QCoreApplication.translate
 
@@ -50,6 +49,17 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         self.setupUi(self)
         self.gui_timer = QtCore.QTimer()
         self.statusBar.setSizeGripEnabled(False)
+        self.num_buttons = [
+            self.button1,
+            self.button2,
+            self.button3,
+            self.button4,
+            self.button5,
+            self.button6,
+            # self.button7,
+            self.button8,
+            self.button9,
+        ]
 
         self.set_statistics_icon()
         set_icon(self.button2, "extra/superhero - attribute to Freepik.svg")
@@ -265,3 +275,7 @@ VALUES ('{d["do"]}',
                 set_icon(self.button1, "extra/trending-up-9.svg")
             case _:
                 set_icon(self.button1, "extra/trending-up-more.svg")
+
+    def unlock(self):
+        for button in self.num_buttons:
+            button.setEnabled(True)

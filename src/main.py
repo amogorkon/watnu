@@ -221,6 +221,8 @@ else:
         winreg.DeleteValue(key, "Watnu")
         winreg.CloseKey(key)
 
+from time import sleep
+
 # get all spaces from the db
 app.spaces = {s.space_id: s for s in retrieve_spaces()}
 
@@ -233,7 +235,7 @@ for task in list(app.tasks.values()):
         task.really_delete()
 
 
-# then, let's check for drafts
+# let's check for drafts
 if drafts := [t for t in app.tasks.values() if t.draft]:
     match QMessageBox.question(
         app.win_main,
@@ -248,6 +250,34 @@ if drafts := [t for t in app.tasks.values() if t.draft]:
                 app.list_of_windows.append(win)
 
 
+# let's check for duplicates
+
+# for task1 in app.tasks.values():
+#     duplicates = set()
+#     for task2 in app.tasks.values():
+#         if task1 == task2:
+#             continue
+#         if task1.do == task2.do and task1.space == task2.space:
+#             duplicates.add(task1)
+#             duplicates.add(task2)
+
+#     if duplicates:
+#         match QMessageBox.question(
+#             app.win_main,
+#             "Jetzt bearbeiten?",
+#             "Es gibt Duplikate - jetzt bearbeiten/löschen?",
+#         ):
+#             case QMessageBox.StandardButton.Yes:
+#                 for task in duplicates:
+#                     win = task_editor.Editor(task)
+#                     win.show()
+#                     app.list_of_task_editors.append(win)
+#                     app.list_of_windows.append(win)
+
+# TODO: OMG THIS IS HEADACHE INDUCING
+
+
+# let's check for cycles
 from src.logic import cycle_in_task_dependencies
 
 while cycle := cycle_in_task_dependencies(app.tasks):
@@ -333,5 +363,7 @@ if incompleteable := [
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
 
+
+app.win_main.unlock()
 
 sys.exit(app.exec())
