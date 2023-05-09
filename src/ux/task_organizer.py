@@ -9,23 +9,21 @@ from time import time, time_ns
 
 from beartype import beartype
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QDataStream, QIODevice, QKeyCombination, Qt, QTimer, QVariant
+from PyQt6.QtCore import (QDataStream, QIODevice, QKeyCombination, Qt, QTimer,
+                          QVariant)
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QMenu, QStatusBar, QTableWidgetItem
+from PyQt6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QMenu,
+                             QStatusBar, QTableWidgetItem)
 
 import src.ui as ui
 from src.classes import Task, typed, typed_row
-from src.logic import (
-    filter_tasks_by_constraints,
-    filter_tasks_by_content,
-    filter_tasks_by_ilk,
-    filter_tasks_by_space,
-    filter_tasks_by_status,
-    pipes,
-    retrieve_tasks,
-)
+from src.logic import (filter_tasks_by_constraints, filter_tasks_by_content,
+                       filter_tasks_by_ilk, filter_tasks_by_space,
+                       filter_tasks_by_status, pipes)
 from src.stuff import app, config, db
-from src.ux import choose_space, task_editor, task_finished, task_list, task_running
+from src.ux import (choose_space, task_editor, task_finished, task_list,
+                    task_running)
+
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -171,9 +169,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         )
 
         task_list.build_space_list(self)
-        self.space.setCurrentIndex(
-            x if (x := self.space.findText(config.last_selected_space)) > -1 else 0
-        )
+        self.space.setCurrentIndex(x if (x := self.space.findText(config.last_selected_space)) > -1 else 0)
 
         @self.space.currentIndexChanged.connect
         def space_switched():
@@ -302,7 +298,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         def print_as_mermaid():
             print("mermaid")
             print("graph LR")
-            for task in retrieve_tasks():
+            for task in app.tasks.values():
                 for supertask in task.supertasks:
                     print(
                         f"{supertask.id}:{supertask.get_short_do(15)} --> {task.id}:{task.get_short_do(15)}"
@@ -352,13 +348,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
     def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
-
+        from src.ux.task_list import filter_tasks
         self.last_generated = time()
 
         config.last_selected_space = self.space.currentText() or ""
         config.save()
         # exclude tasks that are in the concerned_tasks list
-        self.tasks = task_list.get_filtered_tasks(self)
+        self.tasks = filter_tasks(self, app.tasks.values())
 
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()

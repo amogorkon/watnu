@@ -10,7 +10,6 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
 import src.ui as ui
-from src.classes import retrieve_tasks
 from src.logic import filter_filter_history
 from src.stuff import __version__, app, config, db
 from src.ux import about, attributions, statistics, task_editor, task_list
@@ -175,7 +174,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             if filename:
                 path = Path(filename)
                 with open(path, "w") as f:
-                    f.writelines(dump(dict(task) for task in retrieve_tasks()))
+                    f.writelines(dump(dict(task) for task in app.tasks.values()))
 
         @self.actionImport.triggered.connect
         def actionImport():

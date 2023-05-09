@@ -12,7 +12,7 @@ import use
 from beartype import beartype
 from Levenshtein import ratio, seqratio, setratio
 
-from src.classes import EVERY, ILK, Task, retrieve_tasks
+from src.classes import EVERY, ILK, Task
 from src.stuff import app
 
 fuzzy = use(

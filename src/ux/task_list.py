@@ -13,18 +13,11 @@ from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetIt
 
 import src.ui as ui
 from src.classes import Task, typed, typed_row
-from src.logic import (
-    filter_tasks_by_constraints,
-    filter_tasks_by_content,
-    filter_tasks_by_ilk,
-    filter_tasks_by_space,
-    filter_tasks_by_status,
-    pipes,
-    retrieve_tasks,
-)
+from src.logic import filter_tasks_by_content
+
 from src.stuff import app, config, db
 from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
-from src.ux.helper_functions import deadline_as_str, get_space_id, build_space_list
+from src.ux_helper_functions import deadline_as_str, get_space_id, build_space_list, filter_tasks
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -82,7 +75,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
-    def __init__(self):
+    def __init__(self, selected_tasks=None):
         super().__init__()
         self.setupUi(self)
 
@@ -92,6 +85,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
+        self.selected_tasks = selected_tasks or []
 
         # displayed columns: tuple[Header, displayed, how to get value]
 
@@ -441,7 +435,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         def filter_changed():
             text = self.field_filter.text().casefold()
-            self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
+            self.arrange_table(list(filter_tasks_by_content(self.atasks, text.casefold())))
             if len(text) > 3 and text not in app.filter_history and not text.isspace():
                 app.filter_history.appendleft(self.field_filter.text())
             self.field_filter.completer().setModel(QStringListModel(app.filter_history))
@@ -498,7 +492,11 @@ WHERE id == {task.id}
         """Prepare for filtering the tasks, then fetch and display them."""
 
         self.last_generated = time()
-        self.tasks = get_filtered_tasks(self)
+
+        if self.selected_tasks:
+            self.tasks = filter_tasks(self, self.selected_tasks)
+        else:
+            self.tasks = filter_tasks(self, app.tasks.values())
 
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
@@ -696,15 +694,3 @@ font-size: 12pt;
             win.build_task_list()
             win.subtasks.remove
             win.arrange_sub_sup_task_table()
-
-
-@pipes
-def get_filtered_tasks(self):
-    """Filter tasks according to the current filter settings."""
-    return (
-        retrieve_tasks()
-        >> filter_tasks_by_space(get_space_id(self.space.currentText(), self.space.currentIndex()))
-        >> filter_tasks_by_status(self.status.currentIndex())
-        >> filter_tasks_by_ilk(self.ilk.currentIndex())
-        >> list
-    )

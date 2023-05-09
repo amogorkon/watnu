@@ -1,7 +1,17 @@
-from src.stuff import db
-from src.classes import Task, typed, typed_row
 from datetime import datetime
+
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
+
+from src.classes import Task, typed, typed_row
+from src.logic import (
+    filter_tasks_by_constraints,
+    filter_tasks_by_content,
+    filter_tasks_by_ilk,
+    filter_tasks_by_space,
+    filter_tasks_by_status,
+    pipes,
+)
+from src.stuff import db
 
 
 def get_space_id(name, index) -> int | None:
@@ -73,3 +83,15 @@ def get_space_priority(space_id) -> float:
         return float(db.execute("SELECT priority FROM spaces WHERE space_id = ?", (space_id,)).fetchone()[0])
     except TypeError:
         return 0
+
+
+@pipes
+def filter_tasks(self, tasks: list[Task]) -> list[Task]:
+    """Filter tasks according to the current filter settings."""
+    return (
+        tasks
+        >> filter_tasks_by_space(get_space_id(self.space.currentText(), self.space.currentIndex()))
+        >> filter_tasks_by_status(self.status.currentIndex())
+        >> filter_tasks_by_ilk(self.ilk.currentIndex())
+        >> list
+    )

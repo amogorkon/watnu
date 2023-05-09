@@ -15,7 +15,7 @@ from src.classes import ACTIVITY, ILK, Task
 from src.functions import typed
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished, task_list
-from src.ux.helper_functions import get_space_priority, build_space_list
+from src.ux_helper_functions import get_space_priority, build_space_list
 
 _translate = QCoreApplication.translate
 
