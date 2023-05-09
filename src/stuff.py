@@ -1,8 +1,10 @@
-import sqlite3
-from src.configuration import Config
-from src.app import Application
+# assigned from main.py via use()
 
-# assigned from main.py by use()
+
+import sqlite3
+
+from src.app import Application
+from src.configuration import Config
 
 app: Application
 config: Config

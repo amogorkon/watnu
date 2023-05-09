@@ -1,7 +1,7 @@
 from functools import wraps
 from time import time
 
-from src.stuff import app, config, db
+from src.stuff import app
 
 
 def cached_func_static(func):
