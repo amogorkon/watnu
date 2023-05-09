@@ -45,10 +45,10 @@ class EVERY(Enum):
 
 class ACTIVITY(Enum):
     unspecified = -1  # when the user didn't make up their mind yet
+    undefined = 0  # when it's really none of the above, specifically
     MIND = 1
     BODY = 2
     SOUL = 3
-    undefined = 4  # when it's really none of the above
 
 
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")
@@ -404,14 +404,14 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         Get the primary activity for the task and default to the activity of the space if not set.
 
         Returns:
-            ACTIVITY: _description_
+            ACTIVITY: ACTIVITY enum value
         """
-        if own_activity := db.execute(
-            "SELECT primary_activity_id FROM tasks WHERE id=?", (self.id,)
-        ).fetchone()[0]:
-            return ACTIVITY(own_activity)
-        else:
-            return self.space.primary_activity if self.space else ACTIVITY.unspecified
+        query = db.execute("SELECT primary_activity_id FROM tasks WHERE id=?", (self.id,))
+        own_activity_id = typed_row(query.fetchone(), 0, int, default=ACTIVITY.unspecified.value)
+        own_activity = ACTIVITY(own_activity_id)
+        space_activity = self.space.primary_activity if self.space else ACTIVITY.unspecified
+
+        return self.space.primary_activity if self.space else own_activity
 
     @cached_property
     def secondary_activity(self) -> ACTIVITY:
@@ -543,6 +543,3 @@ def disemvowel(text: str) -> str:
 
     ascii_text = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
     return first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last
-
-
-from src.stuff import app, config, db
