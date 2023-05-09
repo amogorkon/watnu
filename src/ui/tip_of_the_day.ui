@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>tips</class>
+ <widget class="QWizard" name="tips">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>360</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Did you know...?</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../extra/watnu1.png</normaloff>../extra/watnu1.png</iconset>
+  </property>
+  <property name="wizardStyle">
+   <enum>QWizard::ModernStyle</enum>
+  </property>
+  <property name="options">
+   <set>QWizard::HaveCustomButton1|QWizard::HaveNextButtonOnLastPage|QWizard::IndependentPages|QWizard::NoCancelButton|QWizard::NoCancelButtonOnLastPage</set>
+  </property>
+  <widget class="QWizardPage" name="wizardPage1">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="tip_text">
+      <property name="text">
+       <string notr="true"/>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="tip_visual">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage2"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
