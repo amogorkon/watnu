@@ -44,10 +44,11 @@ class EVERY(Enum):
 
 
 class ACTIVITY(Enum):
-    unspecified = -1
+    unspecified = -1  # when the user didn't make up their mind yet
     MIND = 1
     BODY = 2
     SOUL = 3
+    undefined = 4  # when it's really none of the above
 
 
 Every = namedtuple("Every", "every_ilk x_every per_ilk x_per")

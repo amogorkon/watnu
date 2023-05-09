@@ -23,6 +23,10 @@ app = app.Application(sys.argv)
 
 import use
 
+import src.tip_of_the_day as tip
+
+# new_tips = use("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.py")
+
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
 ).Q()
