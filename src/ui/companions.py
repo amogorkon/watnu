@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\companions.ui'
+# Form implementation generated from reading ui file 'src\ui\companions.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -17,12 +17,12 @@ class Ui_Dialog(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.face_left = QtWidgets.QLabel(parent=Dialog)
         self.face_left.setText("")
-        self.face_left.setPixmap(QtGui.QPixmap("ui\\../extra/faces/face1.png"))
+        self.face_left.setPixmap(QtGui.QPixmap("src\\ui\\../extra/faces/face1.png"))
         self.face_left.setObjectName("face_left")
         self.horizontalLayout.addWidget(self.face_left)
         self.face_right = QtWidgets.QLabel(parent=Dialog)
         self.face_right.setText("")
-        self.face_right.setPixmap(QtGui.QPixmap("ui\\../extra/faces/face3.png"))
+        self.face_right.setPixmap(QtGui.QPixmap("src\\ui\\../extra/faces/face3.png"))
         self.face_right.setObjectName("face_right")
         self.horizontalLayout.addWidget(self.face_right)
 

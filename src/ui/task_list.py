@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\task_list.ui'
+# Form implementation generated from reading ui file 'src\ui\task_list.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -177,7 +177,7 @@ class Ui_Dialog(object):
         sizePolicy.setHeightForWidth(self.button8.sizePolicy().hasHeightForWidth())
         self.button8.setSizePolicy(sizePolicy)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/feathericons/coin.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/coin.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.button8.setIcon(icon)
         self.button8.setObjectName("button8")
         self.buttonLayout.addWidget(self.button8, 1, 2, 1, 1)

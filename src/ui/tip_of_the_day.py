@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\tip_of_the_day.ui'
+# Form implementation generated from reading ui file 'src\ui\tip_of_the_day.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -14,7 +14,7 @@ class Ui_tips(object):
         tips.setObjectName("tips")
         tips.resize(500, 360)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         tips.setWindowIcon(icon)
         tips.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
         tips.setOptions(QtWidgets.QWizard.WizardOption.HaveCustomButton1|QtWidgets.QWizard.WizardOption.HaveNextButtonOnLastPage|QtWidgets.QWizard.WizardOption.IndependentPages|QtWidgets.QWizard.WizardOption.NoCancelButton|QtWidgets.QWizard.WizardOption.NoCancelButtonOnLastPage)

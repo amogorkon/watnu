@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\space_editor.ui'
+# Form implementation generated from reading ui file 'src\ui\space_editor.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -14,7 +14,7 @@ class Ui_Dialog(object):
         Dialog.setObjectName("Dialog")
         Dialog.resize(400, 163)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         Dialog.setWindowIcon(icon)
         Dialog.setModal(True)
         self.formLayout = QtWidgets.QFormLayout(Dialog)

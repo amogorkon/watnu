@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\what_now.ui'
+# Form implementation generated from reading ui file 'src\ui\what_now.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -16,7 +16,7 @@ class Ui_Dialog(object):
         Dialog.setEnabled(True)
         Dialog.resize(765, 458)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         Dialog.setWindowIcon(icon)
         Dialog.setSizeGripEnabled(False)
         Dialog.setModal(False)
@@ -140,7 +140,7 @@ class Ui_Dialog(object):
         self.edit_priority = QtWidgets.QPushButton(parent=self.frame_priority)
         self.edit_priority.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("ui\\../extra/feathericons/edit.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon1.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/edit.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.edit_priority.setIcon(icon1)
         self.edit_priority.setObjectName("edit_priority")
         self.horizontalLayout.addWidget(self.edit_priority)

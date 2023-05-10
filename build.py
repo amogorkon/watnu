@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import copyfile, make_archive, rmtree
 from time import time
 
-from main import __version__
+from src.main import __version__
 
 before = time()
 
@@ -24,21 +24,23 @@ except FileExistsError:
     rmtree(dst)
     dst.mkdir(parents=True)
 
-exclude = ["watnu.sqlite", 
-            "config.stay", 
-            "qt2py.py", 
-            "build.py", 
-            "*.ipynb*", 
-            "*checkpoint*",
-            ]
+exclude = [
+    "watnu.sqlite",
+    "config.stay",
+    "qt2py.py",
+    "build.py",
+    "*.ipynb*",
+    "*checkpoint*",
+]
 
-exclude_folders = [".ropeproject", 
-                    "__pycache__",
-                    "exo 2", 
-                    "build", 
-                    "logs", 
-                    "Include",
-                    ]
+exclude_folders = [
+    ".ropeproject",
+    "__pycache__",
+    "exo 2",
+    "build",
+    "logs",
+    "Include",
+]
 
 src = Path(".")
 
@@ -51,7 +53,9 @@ for p in src.glob("**/*"):
         copyfile(p, dst / p)
 
 
-subprocess.run(["pyinstaller", "--distpath", "G:/Watnu-dist", "--workpath", "G:/Watnu-build", "G:/Watnu/main.spec", "-y"])
+subprocess.run(
+    ["pyinstaller", "--distpath", "G:/Watnu-dist", "--workpath", "G:/Watnu-build", "G:/Watnu/main.spec", "-y"]
+)
 
 print("building zip..")
 from datetime import date
@@ -62,10 +66,16 @@ from time import localtime
 
 def timestamp2fragday(x):
     now = localtime(x)
-    seconds = now.tm_hour*60*60 + now.tm_min*60 + now.tm_sec
-    total_seconds = 24*60*60
+    seconds = now.tm_hour * 60 * 60 + now.tm_min * 60 + now.tm_sec
+    total_seconds = 24 * 60 * 60
     return f"{modf(seconds/total_seconds)[0]:.4f}"[1:]
+
+
 now = time()
-make_archive(f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)} (nightly {date.fromtimestamp(now)}{timestamp2fragday(now)})", "zip", "G:/Watnu-dist/main")
+make_archive(
+    f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)} (nightly {date.fromtimestamp(now)}{timestamp2fragday(now)})",
+    "zip",
+    "G:/Watnu-dist/main",
+)
 
 print(f"\nFinished building in {time() - before:.2f} seconds.")

@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\landing.ui'
+# Form implementation generated from reading ui file 'src\ui\landing.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -23,7 +23,7 @@ class Ui_Wizard(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.face = QtWidgets.QLabel(parent=self.wizardPage_1)
         self.face.setText("")
-        self.face.setPixmap(QtGui.QPixmap("ui\\../extra/faces/alexa.png"))
+        self.face.setPixmap(QtGui.QPixmap("src\\ui\\../extra/faces/alexa.png"))
         self.face.setScaledContents(False)
         self.face.setObjectName("face")
         self.horizontalLayout.addWidget(self.face)
@@ -41,7 +41,7 @@ class Ui_Wizard(object):
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.face_2 = QtWidgets.QLabel(parent=self.horizontalLayoutWidget)
         self.face_2.setText("")
-        self.face_2.setPixmap(QtGui.QPixmap("ui\\../extra/faces/alexa.png"))
+        self.face_2.setPixmap(QtGui.QPixmap("src\\ui\\../extra/faces/alexa.png"))
         self.face_2.setScaledContents(False)
         self.face_2.setObjectName("face_2")
         self.horizontalLayout_2.addWidget(self.face_2)

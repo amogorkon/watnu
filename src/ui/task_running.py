@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\task_running.ui'
+# Form implementation generated from reading ui file 'src\ui\task_running.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #

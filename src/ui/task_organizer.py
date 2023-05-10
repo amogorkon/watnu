@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'ui\task_organizer.ui'
+# Form implementation generated from reading ui file 'src\ui\task_organizer.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -216,7 +216,7 @@ class Ui_Dialog(object):
         self.verticalLayout.addWidget(self.concerned_task_table)
         self.relationship_button = QtWidgets.QPushButton(parent=self.groupBox_3)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("ui\\../extra/arrow-down.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/arrow-down.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.relationship_button.setIcon(icon)
         self.relationship_button.setCheckable(False)
         self.relationship_button.setAutoExclusive(False)
