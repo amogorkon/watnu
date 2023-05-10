@@ -2,16 +2,10 @@ print("FIRST START")
 
 import sqlite3
 
-import use
-
-from configuration import Config
-
-config: Config
-
-db: sqlite3.Connection
+from stuff import config, db
 
 
-def run() -> None:
+def setUp(db: sqlite3.Connection) -> None:
     ### CREATE SQL TABLES ###
     db.executescript(
         """
@@ -83,8 +77,6 @@ CREATE TABLE "spaces" (
     "priority"	REAL DEFAULT 0,
     "primary_activity_id"	INTEGER,
     "secondary_activity_id"	INTEGER,
-    FOREIGN KEY("secondary_activity_id") REFERENCES "activities"("activity_id"),
-    FOREIGN KEY("primary_activity_id") REFERENCES "activities"("activity_id"),
     PRIMARY KEY("space_id" AUTOINCREMENT)
 );
 
@@ -135,8 +127,6 @@ CREATE TABLE "tasks" (
     FOREIGN KEY("template") REFERENCES "tasks"("id"),
     FOREIGN KEY("space_id") REFERENCES "spaces"("space_id") ON DELETE SET NULL,
     FOREIGN KEY("level_id") REFERENCES "spaces"("level_id") ON DELETE SET NULL,
-    FOREIGN KEY("secondary_activity_id") REFERENCES "activities"("activity_id") ON DELETE SET NULL,
-    FOREIGN KEY("primary_activity_id") REFERENCES "activities"("activity_id") ON DELETE SET NULL,
     PRIMARY KEY("id" AUTOINCREMENT)
 )
 """
@@ -149,14 +139,6 @@ CREATE TABLE "tasks" (
             f"""
         INSERT INTO levels (name, level_id)
         VALUES ('{name}', {level_id})
-        """
-        )
-
-    for name, activity_id in zip(["BODY", "SPIRIT", "MIND"], [0, 1, 2]):
-        db.execute(
-            f"""
-        INSERT INTO activities (name, activity_id)
-        VALUES ('{name}', {activity_id})
         """
         )
 
