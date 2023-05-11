@@ -39,7 +39,7 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
             verticalLayout.setObjectName("verticalLayout")
             tip_text = QtWidgets.QLabel(parent=page)
             tip_text.setObjectName("tip_text")
-            tip_text.setText(tip.de)
+            tip_text.setText(getattr(tip, config.language))
             verticalLayout.addWidget(tip_text)
             tip_visual = QtWidgets.QLabel(parent=page)
             # tip.img_url is a str url to the image, so we load it from the web and display it as pixmap
