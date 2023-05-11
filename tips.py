@@ -18,7 +18,7 @@ class tips(Enum):
     main1 = Tip(
         en="The buttons are not arranged into a grid by chance! Use the NumPad Keys to activate them!",
         de="Die Knöpfe sind nicht zufällig in einem Raster angeordnet! Benutze die NumPad Tasten um sie zu aktivieren!",
-        img_url=None,
+        img_url="https://www.dropbox.com/s/i1x5n6q209tjxu5/Screenshot%202023-05-11%20um%2013.39.20.png?dl=1",
     )
     list1 = Tip(
         en="You can change the columns by rightlicking on the header",
