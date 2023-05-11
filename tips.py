@@ -14,7 +14,7 @@ class Tip(NamedTuple):
 version = use.Version(major=1, minor=0, patch=0)
 
 
-class tips(Enum):
+class TIPS(Enum):
     main1 = Tip(
         en="The buttons are not arranged into a grid by chance! Use the NumPad Keys to activate them!",
         de="Die Knöpfe sind nicht zufällig in einem Raster angeordnet! Benutze die NumPad Tasten um sie zu aktivieren!",

@@ -11,7 +11,7 @@ online_tips = use(use.URL("https://raw.githubusercontent.com/amogorkon/watnu/mai
 actual_tips = max(current_tips, online_tips, key=lambda mod: mod.version)
 
 already_checked = set(config.read_totds)
-available_tips = {tip.name for tip in actual_tips.tips} - already_checked
+available_tips = {tip.name for tip in actual_tips.TIPS} - already_checked
 
 
 class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
@@ -32,7 +32,7 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
 
         # set up the wizard pages based on the tips
         for name in available_tips:
-            tip = getattr(actual_tips.tips, name)
+            tip = getattr(actual_tips.TIPS, name)
             page = QtWidgets.QWizardPage()
             page.setObjectName(f"wizardPage_{tip.name}")
             verticalLayout = QtWidgets.QVBoxLayout(page)
