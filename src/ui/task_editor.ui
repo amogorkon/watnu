@@ -533,6 +533,10 @@
            <property name="text">
             <string/>
            </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/soul.svg</normaloff>../extra/soul.svg</iconset>
+           </property>
           </widget>
          </item>
          <item row="0" column="0">
@@ -595,6 +599,17 @@
            </property>
            <property name="shortcut">
             <string>9</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/body.svg</normaloff>../extra/body.svg</iconset>
            </property>
           </widget>
          </item>

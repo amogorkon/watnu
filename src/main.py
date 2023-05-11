@@ -23,8 +23,6 @@ app = app.Application(sys.argv)
 
 import use
 
-import src.tip_of_the_day as tip
-
 # new_tips = use("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.py")
 
 q = use(
@@ -173,7 +171,7 @@ use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff"
 from src.classes import Task, retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
-from src.ux import landing, task_editor
+from src.ux import landing, task_editor, tip_of_the_day
 
 qdb.setDatabaseName(config.db_path)
 if not qdb.open() or not qdb.tables():
@@ -369,5 +367,8 @@ if incompleteable := [
 
 
 app.win_main.unlock()
+
+app.win_tip = tip_of_the_day.TipOfTheDay()
+app.win_tip.show()
 
 sys.exit(app.exec())

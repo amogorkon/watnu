@@ -95,6 +95,7 @@ class Config:
     last_selected_space: str = ""
     last_edited_space: str = ""
     base_path: Path = Path(__file__).parent
+    read_totds: list[str] = []
 
     def save(self):
         print("saving config")

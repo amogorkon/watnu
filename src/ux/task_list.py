@@ -14,10 +14,9 @@ from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetIt
 import src.ui as ui
 from src.classes import Task, typed, typed_row
 from src.logic import filter_tasks_by_content
-
 from src.stuff import app, config, db
 from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
-from src.ux_helper_functions import deadline_as_str, get_space_id, build_space_list, filter_tasks
+from src.ux_helper_functions import build_space_list, deadline_as_str, filter_tasks, get_space_id
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -86,6 +85,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
         self.selected_tasks = selected_tasks or []
+        if self.selected_tasks:
+            self.setWindowTitle(f"Aufgabenliste ( auf {len(self.selected_tasks)} Aufgaben gefiltert)")
 
         # displayed columns: tuple[Header, displayed, how to get value]
 
@@ -435,7 +436,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         def filter_changed():
             text = self.field_filter.text().casefold()
-            self.arrange_table(list(filter_tasks_by_content(self.atasks, text.casefold())))
+            self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
             if len(text) > 3 and text not in app.filter_history and not text.isspace():
                 app.filter_history.appendleft(self.field_filter.text())
             self.field_filter.completer().setModel(QStringListModel(app.filter_history))
