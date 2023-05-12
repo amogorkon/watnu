@@ -12,6 +12,7 @@ import use
 from beartype import beartype
 from Levenshtein import ratio, seqratio, setratio
 
+from src.functions import cached_func_static, cached_getter, cached_property
 from src.classes import EVERY, ILK, Task
 from src.stuff import app
 
@@ -92,6 +93,7 @@ def balance(tasks: list[Task], activity_time_spent: dict[int, int]) -> deque[Tas
     return deque(sorted_tasks)
 
 
+@cached_getter
 def sum_of_timeslots_per_year(task: Task) -> int:
     """Timeslots are based on boolean numpy arrays.
     The sum of the array is the number of timeslots."""
@@ -109,10 +111,17 @@ def sum_of_timeslots_per_year(task: Task) -> int:
     return np.sum(constraints_over_the_year)
 
 
+def filter_by_timeslots(tasks: list[Task]) -> list[Task]:
+    """Filter if there is any timing restriction at all."""
+    # 7*288 (slots per week) * 52 (weeks per year) = 104832
+    return [task for task in tasks if sum_of_timeslots_per_year(task) < 104832]
+
+
 @pipes
 def schedule(tasks: list) -> deque[Task]:
     return (
         tasks
+        >> filter_by_timeslots
         >> sorted(key=lambda t: sum_of_timeslots_per_year(t), reverse=True)
         >> sorted(key=lambda t: t.last_checked)
         >> sorted(key=lambda t: float(t.deadline))

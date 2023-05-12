@@ -12,6 +12,7 @@ from src.classes import ACTIVITY
 from src.logic import balance, get_doable_tasks, prioritize, schedule
 from src.stuff import app, config, db
 from src.ux import task_editor, task_finished, task_running
+from src.functions import cached_func_static, cached_getter, cached_property
 
 _translate = QCoreApplication.translate
 
@@ -227,6 +228,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if task_finished.Finisher(self.task_timing).exec():
                 self.lets_check_whats_next()
 
+    @cached_getter
     def lets_check_whats_next(self):
         seed((config.coin ^ config.lucky_num) * config.count)
         config.count += 1

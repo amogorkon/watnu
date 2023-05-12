@@ -24,6 +24,14 @@ def cached_func_static(func):
 
 
 def cached_property(func):
+    """
+    Cache the return value of a property for the lifetime of the object, update only if the DB is modified.
+
+    Args:
+
+    Returns:
+        Any: the cached return value of the property
+    """
     last_called = 0
     last_results = {}
 
@@ -44,6 +52,15 @@ def cached_property(func):
 
 
 def cached_getter(func):
+    """
+    Cache a single value for a single argument. Ignore kwargs.
+
+    Args:
+        func (callable): a module-level function
+
+    Returns:
+        Any: the cached return value of the function for the given argument
+    """
     last_called = 0
     last_results = {}
 

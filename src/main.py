@@ -358,6 +358,7 @@ if incompleteable := [
         "Jetzt bearbeiten?",
         f"Es gibt {f'{len(incompleteable)} Aufgaben, die nicht innerhalb der gegebenen Zeit abgeschlossen werden können' if len(incompleteable) > 1 else 'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'} - jetzt bearbeiten?",
     ):
+
         case QMessageBox.StandardButton.Yes:
             for task in incompleteable:
                 win = task_editor.Editor(task)
@@ -365,7 +366,7 @@ if incompleteable := [
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
 
-
+app.win_what.lets_check_whats_next()
 app.win_main.unlock()
 
 if config.show_totd:
