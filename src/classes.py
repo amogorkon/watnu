@@ -495,12 +495,18 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
     def reload(self):
-        print("reloading task")
         new = _retrieve_task_by_id(self.id)
         for k in self.__slots__:
             self.set_(k, getattr(new, k), to_db=False)
         print(repr(self))
+        for win in app.list_of_task_lists:
+            win.build_task_table()
+        for win in app.list_of_task_organizers:
+            win.build_task_table()
         return self
+
+    def get_status(self) -> tuple[bool, bool, bool, bool]:
+        return self.done, self.draft, self.inactive, self.deleted
 
 
 def _retrieve_task_by_id(ID: int, db=db) -> Task:

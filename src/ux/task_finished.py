@@ -89,16 +89,9 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
                 + self.minutes.value() * 60
             )
 
-        db.execute(
-            f"""
-    UPDATE tasks 
-    SET adjust_time_spent = {total - self.task.time_spent},     
-        done=TRUE
-    WHERE id={self.task.id};
-    """
-        )
+        self.task.set_("done", True)
+        self.task.set_adjust_time_spent(total - self.task.time_spent)
         self.task.set_last_checked(self.stop)
-        db.commit()
         app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
 
         new_skills = [

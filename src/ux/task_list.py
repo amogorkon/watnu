@@ -1,4 +1,5 @@
 import contextlib
+import urllib
 import webbrowser
 from functools import partial
 from itertools import count
@@ -20,10 +21,18 @@ from src.ux_helper_functions import build_space_list, deadline_as_str, filter_ta
 
 _translate = QtCore.QCoreApplication.translate
 
+from itertools import product
+
 from beartype import beartype
 
 OK = QIcon(str(config.base_path / "extra/check.svg"))
 NOK = QIcon(str(config.base_path / "extra/cross.svg"))
+
+
+status_icons = {
+    C: QIcon(str(config.base_path / f"extra/status_icons/{''.join(str(int(x)) for x in C)}.svg"))
+    for C in list(product([True, False], repeat=4))
+}
 
 
 class Checklist(QWidget):
@@ -38,8 +47,6 @@ class Checklist(QWidget):
         sizePolicy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalPolicy(QtWidgets.QSizePolicy.Policy.Maximum)
         self.checkboxes.setSizePolicy(sizePolicy)
-
-        # TODO: fix this sizeing mess..
 
         maxWidth = 0
 
@@ -99,6 +106,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             ("draft", lambda t: OK if t.draft else NOK),
             ("inactive", lambda t: OK if t.inactive else NOK),
             ("deleted", lambda t: OK if t.deleted else NOK),
+            ("status", lambda t: status_icons[t.get_status()]),
             ("do", lambda t: t.get_short_do()),
         )
 
@@ -108,6 +116,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         # to make it compatible with the rest of the code
         self.check_do = QtWidgets.QListWidgetItem("do")
         self.check_do.setCheckState(QtCore.Qt.CheckState.Checked)
+        self.check_status = QtWidgets.QListWidgetItem("status")
+        self.check_status.setCheckState(QtCore.Qt.CheckState.Checked)
 
         self.column_selection.checkboxes.itemChanged.connect(self.rearrange_list)
 
@@ -163,12 +173,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         def copy_to_clipboard():
             if not (selected := self.get_selected_tasks()):
                 return
-
+            text = turn_tasks_into_text(selected)
             clipboard = QGuiApplication.clipboard()
-            text = "\n\n".join(
-                f"=== Task {task.id} {task.printable_deadline} {task.printable_percentage} ===\n{task.do}"
-                for task in selected
-            )
             clipboard.setText(text)
 
         QShortcut(
@@ -184,6 +190,9 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             ),
             self,
         ).activated.connect(lambda: self.field_filter.setFocus())
+
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
 
         build_space_list(self)
         self._first_space_switch = True
@@ -511,6 +520,7 @@ background-color: #deffde;
 font-size: 12pt;
         """
         )
+
         self.task_table.ensurePolished()
         self.task_table.setSortingEnabled(False)
         self.task_table.setRowCount(len(tasks))
@@ -538,6 +548,7 @@ font-size: 12pt;
         # TODO: use _translate
         translation = {
             "do": "Beschreibung",
+            "status": "Status",
             "space": "Raum",
             "level": "Level",
             "priority": "Priorität",
@@ -566,11 +577,11 @@ font-size: 12pt;
                 if isinstance(content, str):
                     item = QtWidgets.QTableWidgetItem(content)
                     item.setFont(item_font)
-                    item.setData(Qt.ItemDataRole.UserRole, task)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
                     item = QtWidgets.QTableWidgetItem()
                     item.setIcon(content)
+                item.setData(Qt.ItemDataRole.UserRole, task)
                 self.task_table.setItem(i, column_number, item)
 
         self.task_table.setSortingEnabled(True)
@@ -695,3 +706,32 @@ font-size: 12pt;
             win.build_task_list()
             win.subtasks.remove
             win.arrange_sub_sup_task_table()
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == QtCore.Qt.RightButton:
+            print("Right-mouse double-click detected")
+        else:
+            super().mouseDoubleClickEvent(event)
+
+    # right click on a table item opens a menu with options to send the task via telegram
+    def showContextMenu(self, pos):
+        def send_task():
+            selected = self.get_selected_tasks()
+            if not selected:
+                return
+            text = turn_tasks_into_text(selected)
+            # escape characters in the text for http
+            text = urllib.parse.quote(text)
+            webbrowser.open(f"https://t.me/share/url?url= &text={text}")
+
+        menu = QtWidgets.QMenu()
+        icon = QtGui.QIcon(str(config.base_path / "extra/feathericons/send.svg"))
+        menu.addAction(icon, "Senden", send_task)
+        menu.exec(self.mapToGlobal(pos))
+
+
+def turn_tasks_into_text(tasks: list[Task]):
+    return "\n\n".join(
+        f"=== Task {task.id} {task.printable_deadline} {task.printable_percentage} ===\n{task.do}"
+        for task in tasks
+    )
