@@ -368,7 +368,10 @@ if incompleteable := [
 
 app.win_main.unlock()
 
-app.win_tip = tip_of_the_day.TipOfTheDay()
-app.win_tip.show()
+if config.show_totd:
+    app.win_tip = tip_of_the_day.TipOfTheDay()
+    app.win_tip.show()
+    app.win_main.raise_()
+    app.win_tip.raise_()
 
 sys.exit(app.exec())

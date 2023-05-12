@@ -97,6 +97,7 @@ class Config:
     base_path: Path = Path(__file__).parent
     read_totds: list[str] = []
     language: str = "en"
+    show_totd: boolean = True
 
     def save(self):
         print("saving config")

@@ -42,6 +42,7 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
             tip_text.setText(getattr(tip, config.language))
             verticalLayout.addWidget(tip_text)
             tip_visual = QtWidgets.QLabel(parent=page)
+            tip_visual.setObjectName("tip_visual")
             # tip.img_url is a str url to the image, so we load it from the web and display it as pixmap
             if tip.img_url is not None:
                 response = requests.get(tip.img_url)
@@ -49,10 +50,17 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
                 pixmap = QtGui.QPixmap()
                 loaded = pixmap.loadFromData(image_data, "PNG")
                 assert loaded, breakpoint()
-                tip_visual.setPixmap(pixmap)
-                tip_visual.setScaledContents(True)
-                tip_visual.setObjectName("tip_visual")
-                tip_visual.show()
+                # now that we are sure to have something to display, resize the label to the image size
+                tip_visual.setMaximumHeight(max(pixmap.width(), tip_text.width()))
+
+                tip_visual.setScaledContents(False)
+                tip_visual.setPixmap(
+                    pixmap.scaled(
+                        tip_visual.size(),
+                        QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                        QtCore.Qt.TransformationMode.SmoothTransformation,
+                    )
+                )
             verticalLayout.addWidget(tip_visual)
             spacerItem = QtWidgets.QSpacerItem(
                 20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding
