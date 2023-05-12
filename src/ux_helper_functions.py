@@ -86,12 +86,12 @@ def get_space_priority(space_id) -> float:
 
 
 @pipes
-def filter_tasks(self, tasks: list[Task]) -> list[Task]:
+def filter_tasks(widget, tasks: list[Task]) -> list[Task]:
     """Filter tasks according to the current filter settings."""
     return (
         tasks
-        >> filter_tasks_by_space(get_space_id(self.space.currentText(), self.space.currentIndex()))
-        >> filter_tasks_by_status(self.status.currentIndex())
-        >> filter_tasks_by_ilk(self.ilk.currentIndex())
+        >> filter_tasks_by_space(get_space_id(widget.space.currentText(), widget.space.currentIndex()))
+        >> filter_tasks_by_status(widget.status.currentIndex())
+        >> filter_tasks_by_ilk(widget.ilk.currentIndex())
         >> list
     )

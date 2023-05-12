@@ -23,7 +23,7 @@ class Application(QtWidgets.QApplication):
         db = db_
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
-        from src.classes import Task, Space
+        from src.classes import Space, Task
 
         self.activity_color = {
             1: config.activity_color_mind,  # darkblue
@@ -50,16 +50,27 @@ class Application(QtWidgets.QApplication):
         with open(path, "r") as f:
             self.filter_history = deque(f.readlines(), maxlen=100)
 
-        import src.ux as ux
+        from src.ux import (
+            character,
+            companions,
+            inventory,
+            main_window,
+            settings,
+            statistics,
+            task_editor,
+            task_list,
+            task_organizer,
+            what_now,
+        )
 
-        self.list_of_task_lists: list[ux.task_table.TaskList] = []
+        self.list_of_task_lists: list[task_list.TaskList] = []
         "Multiple TaskLists can be open at the same time."
-        self.list_of_task_editors: list[ux.task_editor.Editor] = []
+        self.list_of_task_editors: list[task_editor.Editor] = []
         "Multiple Editors can be open at the same time."
-        self.list_of_task_organizers: list[ux.task_organizer.Organizer] = []
+        self.list_of_task_organizers: list[task_organizer.Organizer] = []
         "Multiple Organizers can be open at the same time."
         self.last_edited_space: str = None
-        self.win_main = ux.main_window.MainWindow()
+        self.win_main = main_window.MainWindow()
 
         self.list_of_windows: list[QtWidgets.QMainWindow | QtWidgets.QDialog] = [self.win_main]
 
@@ -89,13 +100,13 @@ class Application(QtWidgets.QApplication):
         self.win_main.statusBar.showMessage(
             f"{greet_time}, {f'{config.call_name}' if config.call_name else 'willkommen zurück'}!", 10000
         )
-        self.win_what = ux.what_now.What_Now()
-        self.win_character = ux.character.Character()
-        self.win_settings = ux.settings.Settings()
+        self.win_what = what_now.What_Now()
+        self.win_character = character.Character()
+        self.win_settings = settings.Settings()
         self.win_running = None
-        self.win_companions = ux.companions.Companions()
-        self.win_inventory = ux.inventory.Inventory()
-        self.win_statistics = ux.statistics.Statistics()
+        self.win_companions = companions.Companions()
+        self.win_inventory = inventory.Inventory()
+        self.win_statistics = statistics.Statistics()
 
     def mouseMoveEvent(self, event):
         event.ignore()

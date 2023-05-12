@@ -107,7 +107,6 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
 
         for x, y in zip(self.old_skills, new_skills):
             if x[1] < y[1]:
-
                 QtWidgets.QMessageBox.information(
                     self,
                     "⭐ LEVEL UP!⭐",

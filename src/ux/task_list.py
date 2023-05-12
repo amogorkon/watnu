@@ -84,7 +84,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
-        self.selected_tasks = selected_tasks or []
+        self.selected_tasks: list[Task] = selected_tasks or []
         if self.selected_tasks:
             self.setWindowTitle(f"Aufgabenliste ( auf {len(self.selected_tasks)} Aufgaben gefiltert)")
 
