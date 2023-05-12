@@ -639,6 +639,7 @@ font-size: 12pt;
         if not selected:
             self.statusBar.showMessage("Keine Aufgabe ausgewählt", 5000)
         for task in selected:
+            # breakpoint()
             for win in app.list_of_task_editors:
                 if win.task == task:
                     win.show()

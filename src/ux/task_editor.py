@@ -1,3 +1,4 @@
+import contextlib
 import webbrowser
 from collections import namedtuple
 from functools import partial
@@ -17,6 +18,7 @@ from src.stuff import app, config, db
 from src.ux import space_editor, task_finished, task_list
 from src.ux_helper_functions import build_space_list, get_space_priority
 
+_translate = QCoreApplication.translate
 _translate = QCoreApplication.translate
 
 
@@ -225,7 +227,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         if cloning:
             self.do.setPlaceholderText(self.task.do)
             self.do.setPlainText("")
-            self.statusBar().showMessage("Bearbeite Klon...", 5000)
+            self.statusBar.showMessage("Bearbeite Klon...", 5000)
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
 
         if templating:
@@ -239,8 +241,14 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         if as_sup == 1:
             self.subtasks = [self.task.id]
 
+        def create_task():
+            win = Editor(current_space=self.space.currentText())
+            app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
+            win.show()
+
         menu = QtWidgets.QMenu()
-        menu.addAction("ohne Vorlage", self.create_task)
+        menu.addAction("ohne Vorlage", create_task)
         menu.addAction("als Klon von dieser Aufgabe", self.clone)
         self.button6.setMenu(menu)
 
@@ -589,14 +597,12 @@ WHERE id={self.task.id}
         self.kill()
 
     def kill(self):
-        # sometimes Qt hides and then closes the window, so this is called twice
-        self.killed = True
-        if self.killed:
-            return
         self.gui_timer.stop()
-        app.list_of_task_editors.remove(self)
-        app.list_of_windows.remove(self)
-
+        # sometimes Qt hides and then closes the window, so this is called twice
+        with contextlib.suppress(ValueError):
+            app.list_of_task_editors.remove(self)
+        with contextlib.suppress(ValueError):
+            app.list_of_windows.remove(self)
         if self.task.do == "" and self.task.notes == "":  # TODO: this is a hack
             self.task.really_delete()
 
@@ -605,9 +611,8 @@ WHERE id={self.task.id}
         else:
             app.list_of_windows[-1].raise_()
 
-    def create_task(self):
-        win = Editor()
-        self.add_win_to_app(win)
+        self.close()
+        self.deleteLater()
 
     def clone(self):
         win = Editor()
