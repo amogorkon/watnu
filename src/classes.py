@@ -506,7 +506,13 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return self
 
     def get_status(self) -> tuple[bool, bool, bool, bool]:
-        return self.done, self.draft, self.inactive, self.deleted
+        return not self.done, not self.draft, not self.inactive, not self.deleted
+
+    def get_status_text(self):
+        return f"""{'done' if self.done else "not done"}
+{'draft' if self.draft else "not draft"}
+{'inactive' if self.inactive else "active"}
+{'deleted' if self.deleted else "not deleted"}"""
 
 
 def _retrieve_task_by_id(ID: int, db=db) -> Task:

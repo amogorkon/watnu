@@ -110,7 +110,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
             ("do", lambda t: t.get_short_do()),
         )
 
-        self.column_selection = Checklist(self, [name for name, _ in self.columns[:-1]])
+        self.column_selection = Checklist(self, [name for name, _ in self.columns[:-2]])
         self.column_selection.setHidden(True)
 
         # to make it compatible with the rest of the code
@@ -476,15 +476,8 @@ WHERE id == {task.id}
             if property == "done" and set_flag:
                 task_finished.Finisher(task).exec()
             else:
-                db.execute(
-                    f"""
-UPDATE tasks
-SET '{property}' = {set_flag}
-WHERE id == {task.id}
-"""
-                )
-        db.commit()
-        self.build_task_table()
+                task.set_(property, set_flag)
+            task.reload()
 
     def clone_as_is(self):
         for task in self.get_selected_tasks():
@@ -583,6 +576,8 @@ font-size: 12pt;
                     item.setIcon(content)
                 item.setData(Qt.ItemDataRole.UserRole, task)
                 self.task_table.setItem(i, column_number, item)
+                if header == "status":
+                    item.setToolTip(task.get_status_text())
 
         self.task_table.setSortingEnabled(True)
         self.task_table.resizeColumnsToContents()

@@ -15,7 +15,7 @@ from src.classes import ACTIVITY, ILK, Task
 from src.functions import typed
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished, task_list
-from src.ux_helper_functions import get_space_priority, build_space_list
+from src.ux_helper_functions import build_space_list, get_space_priority
 
 _translate = QCoreApplication.translate
 
@@ -223,6 +223,9 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         if cloning:
+            self.do.setPlaceholderText(self.task.do)
+            self.do.setPlainText("")
+            self.statusBar().showMessage("Bearbeite Klon...", 5000)
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
 
         if templating:
