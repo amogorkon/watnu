@@ -668,7 +668,7 @@ font-size: 12pt;
                 win.show()
 
     def open_editor(self, task, cloning=False, as_sup=0):
-        win = task_editor.Editor(task, cloning, as_sup)
+        win = task_editor.Editor(task, cloning=cloning, as_sup=as_sup)
         app.list_of_task_editors.append(win)
         app.list_of_windows.append(win)
         win.show()

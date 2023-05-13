@@ -28,6 +28,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
     def __init__(
         self,
         task: Task = None,
+        /,
+        *,  # positional only
         cloning: bool = False,
         templating: bool = False,
         as_sup: Literal[-1] | Literal[0] | Literal[1] = 0,
@@ -225,8 +227,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         if cloning:
-            self.do.setPlaceholderText(self.task.do)
-            self.do.setPlainText("")
             self.statusBar.showMessage("Bearbeite Klon...", 5000)
             self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
 
@@ -240,6 +240,13 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         # given task is a subtask of the new task
         if as_sup == 1:
             self.subtasks = [self.task.id]
+
+        # just a reminder for the user which task is sub-/supertask
+        if as_sup:
+            self.do.setPlaceholderText(self.task.do)
+            self.do.setPlainText("")
+            self.notes.setPlaceholderText(self.task.notes)
+            self.notes.setPlainText("")
 
         def create_task():
             win = Editor(current_space=self.space.currentText())
@@ -506,30 +513,30 @@ VALUES ({self.task.id}, '{self.deadline}')
 
     def save_subsup(self):
         db.executemany(
-            f"""
+            """
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
-VALUES ({self.task.id}, ?)
+VALUES (?, ?)
 ;
 """,
-            self.subtasks,
+            [(self.task.id, task_id) for task_id in self.subtasks],
         )
         db.executemany(
-            f"""
+            """
 INSERT OR IGNORE INTO task_requires_task
 (task_of_concern, required_task)
-VALUES (?, {self.task.id})
+VALUES (?, ?)
 ;
 """,
-            self.supertasks,
+            [(task_id, self.task.id) for task_id in self.supertasks],
         )
         db.executemany(
-            f"""
+            """
 INSERT INTO task_trains_skill
 (task_id, skill_id)
-VALUES ({self.task.id}, ?);
+VALUES (?, ?);
 """,
-            self.skill_ids,
+            [(self.task.id, skill_id) for skill_id in self.skill_ids],
         )
 
     def save_cleanup(self):

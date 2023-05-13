@@ -274,6 +274,6 @@ Alle ~25 Minuten kurz Stoßlüften & ausreichend Wasser trinken :)
 
     def restart_win(self, win):
         win.button5.setEnabled(True)
-        win.db_timer.start(100)
+        win.gui_timer.start(100)
         win.show()
         win.raise_()
