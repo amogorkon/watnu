@@ -81,7 +81,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
-    def __init__(self, selected_tasks=None):
+    def __init__(self, selected_tasks: set | None = None):
         super().__init__()
         self.setupUi(self)
 
@@ -91,7 +91,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.last_generated = 0
         self.field_filter.setCompleter(QCompleter(app.filter_history))
         self.tasks: list[Task] = []
-        self.selected_tasks: list[Task] = selected_tasks or []
+        self.selected_tasks: set[Task] = selected_tasks or {}
         if self.selected_tasks:
             self.setWindowTitle(f"Aufgabenliste ( auf {len(self.selected_tasks)} Aufgaben gefiltert)")
 
@@ -196,11 +196,14 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
 
         build_space_list(self)
         self._first_space_switch = True
-        self.space.setCurrentIndex(
-            x
-            if (x := self.space.findText(config.last_selected_space or config.last_edited_space)) > -1
-            else 0
-        )
+        if self.selected_tasks:
+            self.space.setCurrentIndex(0)
+        else:
+            self.space.setCurrentIndex(
+                x
+                if (x := self.space.findText(config.last_selected_space or config.last_edited_space)) > -1
+                else 0
+            )
 
         @self.space.currentIndexChanged.connect
         def space_switched():
@@ -435,9 +438,11 @@ DELETE FROM spaces where name=='{space_name}'
                 case 5:
                     self.button2.setEnabled(False)
                     self.button2.setText("")
-
             self.build_button1_menu()
             self.build_task_table()
+
+        if self.selected_tasks:
+            self.status.setCurrentIndex(5)
 
         # once we change the filter, we wait for 1 sec before applying the filter,
         # in order to avoid constant refiltering for something the user doesn't actually want.

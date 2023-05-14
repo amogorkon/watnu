@@ -11,8 +11,8 @@ from PyQt6.QtGui import QIcon
 from pyqtgraph import PlotWidget
 
 import src.ui as ui
-from src.classes import cached_func_static, typed, typed_row
-from src.stuff import __version__, config, db
+from src.classes import Task, cached_func_static, typed, typed_row
+from src.stuff import __version__, app, config, db
 
 _translate = QCoreApplication.translate
 
@@ -35,12 +35,25 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        from src.ux.task_list import TaskList
 
         self.gui_timer = QtCore.QTimer()
         self.setup_tabs()
 
         self.gui_timer.timeout.connect(self.update_gui)
 
+        def open_list_of_tasks(tasks: set[Task]):
+            win = TaskList(selected_tasks=tasks)
+            app.list_of_task_lists.append(win)
+            app.list_of_windows.append(win)
+            win.show()
+
+        self.today_finished_button_label.clicked.connect(
+            lambda: open_list_of_tasks(get_tasks_finished_today()())
+        )
+        self.yesterday_finished_button_label.clicked.connect(
+            lambda: open_list_of_tasks(get_tasks_finished_yesterday())
+        )
         self.today_added_label.hide()
         self.yesterday_added_label.hide()
 
@@ -54,6 +67,8 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
 
     def update_gui(self):
         stats = collect_statistics()
+        self.today_finished_button_label.setEnabled(stats.today_finished > 0)
+        self.yesterday_finished_button_label.setEnabled(stats.yesterday_finished > 0)
         self.total_num_tasks_outlabel.setText(str(stats.total_added))
         self.total_finished_outlabel.setText(str(stats.total_finished))
         self.yesterday_finished_outlabel.setText(str(stats.yesterday_finished))
@@ -253,3 +268,29 @@ def get_today_finished():
     return db.execute(
         """SELECT count(*) from sessions WHERE ? < stop AND finished""", (today_start.timestamp(),)
     ).fetchone()[0]
+
+
+def get_tasks_finished_today() -> list[Task]:
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return {
+        app.tasks[typed_row(row, 0, int)]
+        for row in db.execute(
+            """SELECT task_id from sessions WHERE ? < stop AND finished""",
+            (today_start.timestamp(),),
+        ).fetchall()
+    }
+
+
+def get_tasks_finished_yesterday() -> list[Task]:
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday_start = today_start - timedelta(days=1)
+    yesterday_end = today_start - timedelta(seconds=1)
+    return {
+        app.tasks[typed_row(row, 0, int)]
+        for row in db.execute(
+            """SELECT task_id from sessions WHERE ? < stop AND stop < ? AND finished""",
+            (yesterday_start.timestamp(), yesterday_end.timestamp()),
+        ).fetchall()
+    }
