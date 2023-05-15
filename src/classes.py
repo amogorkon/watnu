@@ -424,6 +424,30 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
             return self.space.secondary_activity if self.space else ACTIVITY.unspecified
 
     @cached_property
+    def primary_color(self) -> str:
+        match self.primary_activity:
+            case ACTIVITY.MIND:
+                return config.activity_color_mind
+            case ACTIVITY.BODY:
+                return config.activity_color_body
+            case ACTIVITY.SOUL:
+                return config.activity_color_soul
+            case ACTIVITY.unspecified:
+                return "black"
+
+    @cached_property
+    def secondary_color(self) -> str:
+        match self.secondary_activity:
+            case ACTIVITY.MIND:
+                return config.activity_color_mind
+            case ACTIVITY.BODY:
+                return config.activity_color_body
+            case ACTIVITY.SOUL:
+                return config.activity_color_soul
+            case ACTIVITY.unspecified:
+                return "black"
+
+    @cached_property
     def subtasks(self) -> set["Task"]:
         query = db.execute(
             f"""

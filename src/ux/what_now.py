@@ -41,7 +41,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.priority_tasks = None
         self.timing_tasks = None
 
-        @self.edit_priority.clicked.connect
+        #@self.edit_priority.clicked.connect
         def edit_priority():
             win = task_editor.Editor(self.task_priority)
             app.list_of_task_editors.append(win)
@@ -49,7 +49,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if win.exec():
                 self.lets_check_whats_next()
 
-        @self.edit_timing.clicked.connect
+        #@self.edit_timing.clicked.connect
         def edit_timing():
             win = task_editor.Editor(self.task_timing)
             app.list_of_task_editors.append(win)
@@ -57,7 +57,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if win.exec():
                 self.lets_check_whats_next()
 
-        @self.edit_balanced.clicked.connect
+        #@self.edit_balanced.clicked.connect
         def edit_balanced():
             win = task_editor.Editor(self.task_balanced)
             app.list_of_task_editors.append(win)
@@ -94,10 +94,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 stop:0 black, 
                 stop:1 white);
         background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-                stop:0 {app.activity_color.get(self.task_timing.primary_activity.value, "black")}, 
-                stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_timing.secondary_activity.value,
-                                                                    app.activity_color.get(
-                                                                        self.task_timing.primary_activity.value, "black"))},
+                stop:0 {self.task_timing.primary_color}, 
+                stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_timing.secondary_color},
                 stop:1 white);
         }}
         """
@@ -112,9 +110,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             stop:0 black, 
             stop:1 white);
     background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-            stop:0 {app.activity_color.get(self.task_priority.primary_activity.value, "black")},
-            stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_priority.secondary_activity.value,
-                                                                app.activity_color.get(self.task_priority.primary_activity.value, "black"))},
+            stop:0 {self.task_priority.primary_color},
+            stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_priority.secondary_color},
             stop:1 white);
     }}
     """
@@ -129,9 +126,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             stop:0 black, 
             stop:1 white);
     background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-            stop:0 {app.activity_color.get(self.task_balanced.primary_activity.value, "black")},
-            stop:{sin(T * 0.1) * 0.5 + 0.5} {app.activity_color.get(self.task_balanced.secondary_activity.value,
-                                                                app.activity_color.get(self.task_balanced.primary_activity.value, "black"))},
+            stop:0 {self.task_balanced.primary_color},
+            stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_balanced.secondary_color},
             stop:1 white);
     }}
     """

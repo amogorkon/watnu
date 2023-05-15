@@ -25,12 +25,6 @@ class Application(QtWidgets.QApplication):
         # Task requires app, so we would end up going in circles if we imported it at the top.
         from src.classes import Space, Task
 
-        self.activity_color = {
-            1: config.activity_color_mind,  # darkblue
-            2: config.activity_color_body,  # darkred
-            3: config.activity_color_soul,  # indigo
-        }
-
         class TaskDict(dict):
             def __missing__(self, key):
                 value = Task.from_id(key)

@@ -75,7 +75,6 @@ class Config:
     config_path: Path = Path("config.stay")
     first_start: boolean = True
     db_path: str = "watnu.sqlite"
-    mantras: Path = "mantras.stay"
     coin: int = 0b1
     lucky_num: int = 1
     count: int = 1

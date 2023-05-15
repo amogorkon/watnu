@@ -410,11 +410,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Wirf Münze</string>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>../extra/feathericons/coin.svg</normaloff>../extra/feathericons/coin.svg</iconset>
+        <string/>
        </property>
        <property name="shortcut">
         <string>8</string>

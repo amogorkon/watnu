@@ -64,7 +64,7 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         if self.task.resources:
             self.open_resources.setEnabled(True)
             text = "; ".join(url for url, ID in self.task.resources)
-            self.open_resources.setText(str(text))
+            self.open_resources.setText(text)
 
         self.task_space.setText(task.space.name)
 
@@ -83,9 +83,8 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
         stop:0 black, 
         stop:1 white);
 background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-        stop:0 {app.activity_color.get(self.task.primary_activity_id, "black")},
-        stop:{sin(T * 0.9) * 0.5 + 0.5} {app.activity_color.get(self.task.secondary_activity_id,
-                                                            app.activity_color.get(self.task.primary_activity_id, "black"))},
+        stop:0 {self.task.primary_color},
+        stop:{sin(T * 0.9) * 0.5 + 0.5} {self.task.secondary_color},
         stop:1 white);
 }}
 """
@@ -252,7 +251,7 @@ Checkliste für optimale Produktivität:
 - Das Richtige auf den Ohren?
 """,
             )
-        mantra = choice(config.mantras.read_text(encoding="utf8").splitlines())
+        mantra = choice((config.base_path / "mantras.stay").read_text(encoding="utf8").splitlines())
 
         QtWidgets.QMessageBox.information(
             self,
