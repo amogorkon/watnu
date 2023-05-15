@@ -1,18 +1,19 @@
 from collections import Counter, defaultdict
+from itertools import count
 from math import modf, sin
-from random import seed
-from time import time
+from random import choice, seed
+from time import time, time_ns
 
 import use
-from PyQt6 import QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
 import src.ui as ui
 from src.classes import ACTIVITY
+from src.functions import cached_func_static, cached_getter, cached_property
 from src.logic import balance, get_doable_tasks, prioritize, schedule
 from src.stuff import app, config, db
 from src.ux import task_editor, task_finished, task_running
-from src.functions import cached_func_static, cached_getter, cached_property
 
 _translate = QCoreApplication.translate
 
@@ -41,7 +42,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.priority_tasks = None
         self.timing_tasks = None
 
-        #@self.edit_priority.clicked.connect
+        # @self.edit_priority.clicked.connect
         def edit_priority():
             win = task_editor.Editor(self.task_priority)
             app.list_of_task_editors.append(win)
@@ -49,7 +50,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if win.exec():
                 self.lets_check_whats_next()
 
-        #@self.edit_timing.clicked.connect
+        # @self.edit_timing.clicked.connect
         def edit_timing():
             win = task_editor.Editor(self.task_timing)
             app.list_of_task_editors.append(win)
@@ -57,7 +58,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if win.exec():
                 self.lets_check_whats_next()
 
-        #@self.edit_balanced.clicked.connect
+        # @self.edit_balanced.clicked.connect
         def edit_balanced():
             win = task_editor.Editor(self.task_balanced)
             app.list_of_task_editors.append(win)
@@ -196,7 +197,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_desc_balanced.adjustSize()
             self.task_space_balanced.setText(self.task_balanced.space.name)
 
-        @self.button5.clicked.connect
         def go_timing_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_timing)
@@ -219,10 +219,35 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if task_finished.Finisher(self.task_balanced).exec():
                 self.lets_check_whats_next()
 
-        @self.button8.clicked.connect
-        def done_timing_clicked():
-            if task_finished.Finisher(self.task_timing).exec():
-                self.lets_check_whats_next()
+        @self.button5.clicked.connect
+        def throw_coins():
+            # vonNeumann!
+            i = 0
+            first = 0
+            for i in count():
+                # least significant bit of high-res time *should* give enough entropy
+                first = (time_ns() // 100) & 1
+                second = (time_ns() // 100) & 1
+                if first != second:
+                    break
+            # 'threw 31688 pairs!' - so much for "should"
+            # bitshift to the left
+            config.coin <<= 1
+            # then set the bit -
+            config.coin |= first
+            seed((config.coin ^ config.lucky_num) * config.count)
+            config.count += 1
+
+            x = choice(["Kopf", "Zahl"])
+            mb = QtWidgets.QMessageBox()
+            mb.setWindowTitle("Hmm..")
+            if x == "Kopf":
+                mb.setText("Du hast Kopf geworfen!")
+                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
+            else:
+                mb.setText("Du hast Zahl geworfen!")
+                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
+            mb.exec()
 
     @cached_getter
     def lets_check_whats_next(self):

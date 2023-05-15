@@ -410,7 +410,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string/>
+        <string>Aufgabe(n) vornehmen für...</string>
        </property>
        <property name="shortcut">
         <string>8</string>

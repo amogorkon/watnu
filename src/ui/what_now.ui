@@ -606,6 +606,9 @@
        <property name="shortcut">
         <string>9</string>
        </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item row="0" column="0">
@@ -621,6 +624,9 @@
        <property name="shortcut">
         <string>7</string>
        </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item row="0" column="1">
@@ -635,6 +641,9 @@
        </property>
        <property name="shortcut">
         <string>8</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
        </property>
       </widget>
      </item>

@@ -2,7 +2,7 @@ import contextlib
 import urllib
 import webbrowser
 from functools import partial
-from itertools import count
+
 from pathlib import Path
 from random import choice, seed
 from time import time, time_ns
@@ -381,35 +381,7 @@ DELETE FROM spaces where name=='{space_name}'
                 self.hide()
                 task_running.Running(selected.pop())
 
-        @self.button8.clicked.connect
-        def throw_coins():
-            # vonNeumann!
-            i = 0
-            first = 0
-            for i in count():
-                # least significant bit of high-res time *should* give enough entropy
-                first = (time_ns() // 100) & 1
-                second = (time_ns() // 100) & 1
-                if first != second:
-                    break
-            # 'threw 31688 pairs!' - so much for "should"
-            # bitshift to the left
-            config.coin <<= 1
-            # then set the bit -
-            config.coin |= first
-            seed((config.coin ^ config.lucky_num) * config.count)
-            config.count += 1
-
-            x = choice(["Kopf", "Zahl"])
-            mb = QtWidgets.QMessageBox()
-            mb.setWindowTitle("Hmm..")
-            if x == "Kopf":
-                mb.setText("Du hast Kopf geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
-            else:
-                mb.setText("Du hast Zahl geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
-            mb.exec()
+        # button8
 
         @self.ilk.currentIndexChanged.connect
         def ilk_switched():
