@@ -161,12 +161,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.task_desc_balanced.setText("Keine Aufgabe")
                 self.task_space_balanced.setText("")
 
-        @self.button4.clicked.connect
+        # @self.button4.clicked.connect
         def go_priority_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_priority)
 
-        @self.button1.clicked.connect
+        # @self.button1.clicked.connect
         def skip_priority_clicked():
             old_task = self.task_priority
             self.priority_tasks.rotate(-1)
@@ -183,12 +183,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                     "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!",
                 )
 
-        @self.button6.clicked.connect
+        # @self.button6.clicked.connect
         def go_balanced_clicked():
             self.hide()
             app.win_running = task_running.Running(self.task_balanced)
 
-        @self.button3.clicked.connect
+        # @self.button3.clicked.connect
         def skip_balanced_clicked():
             self.task_balanced.set_last_checked(time())
             self.balanced_tasks.rotate(-1)
@@ -201,7 +201,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.hide()
             app.win_running = task_running.Running(self.task_timing)
 
-        @self.button2.clicked.connect
+        # @self.button2.clicked.connect
         def skip_timing_clicked():
             self.timing_tasks.rotate(-1)
             self.task_timing.set_last_checked(time())
@@ -209,12 +209,12 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             self.task_desc_timing.setText(self.task_timing.do)
             self.task_space_timing.setText(self.task_timing.space.name)
 
-        @self.button7.clicked.connect
+        # @self.button7.clicked.connect
         def done_priority_clicked():
             if task_finished.Finisher(self.task_priority).exec():
                 self.lets_check_whats_next()
 
-        @self.button9.clicked.connect
+        # @self.button9.clicked.connect
         def done_balanced_clicked():
             if task_finished.Finisher(self.task_balanced).exec():
                 self.lets_check_whats_next()
