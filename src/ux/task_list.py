@@ -688,6 +688,9 @@ font-size: 12pt;
 
     # right click on a table item opens a menu with options to send the task via telegram
     def showContextMenu(self, pos):
+        if not self.task_table.rect().contains(pos):
+            return
+
         def send_task():
             selected = self.get_selected_tasks()
             if not selected:
