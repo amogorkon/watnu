@@ -4,15 +4,14 @@ from math import modf, sin
 from random import choice, seed
 from time import time, time_ns
 
-import use
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
 import src.ui as ui
 from src.classes import ACTIVITY
-from src.functions import cached_func_static, cached_getter, cached_property
+from src.functions import cached_getter
 from src.logic import balance, get_doable_tasks, prioritize, schedule
-from src.stuff import app, config, db
+from src.stuff import app, config
 from src.ux import task_editor, task_finished, task_running
 
 _translate = QCoreApplication.translate
@@ -180,7 +179,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 QtWidgets.QMessageBox.information(
                     self,
                     "Hmm..",
-                    "Sorry, es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.\nAuf gehts!",
+                    """Es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.
+Auf gehts!""",
                 )
 
         # @self.button6.clicked.connect

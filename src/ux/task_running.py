@@ -1,5 +1,4 @@
 import webbrowser
-from collections import defaultdict
 from datetime import datetime
 from math import modf, sin
 from random import choice
@@ -12,7 +11,7 @@ import src.ui as ui
 import src.ux as ux
 from src.classes import Task, typed
 from src.logic import skill_level
-from src.stuff import __version__, app, config, db
+from src.stuff import app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):

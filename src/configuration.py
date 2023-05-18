@@ -1,6 +1,6 @@
 from ast import literal_eval
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, cast
 
 import use
 
@@ -14,7 +14,7 @@ attrs = use(
     },
     import_as="attrs",
 )
-import attrs
+import attrs  # noqa: E402
 
 stay = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/stay/master/src/stay/stay.py"),
@@ -23,7 +23,6 @@ stay = use(
     import_as="stay",
 )
 
-from typing import Any, cast
 
 load = cast(Callable[[], dict[Any, Any]], stay.Decoder())
 dump = cast(Callable[[], None], stay.Encoder())

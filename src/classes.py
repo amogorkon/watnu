@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unicodedata
 from collections import namedtuple
 from datetime import datetime
@@ -20,7 +22,7 @@ np = use(
     import_as="np",
 )
 
-import numpy as np  # to make pylance happy - they don't know justuse YET :)
+import numpy as np  # to make pylance happy - they don't know justuse YET :)  # noqa: E402
 
 q = use(
     use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
@@ -80,7 +82,7 @@ class Space:
             object.__setattr__(self, k, v)
 
     @classmethod
-    def from_id(cls, ID: int) -> "Space":
+    def from_id(cls, ID: int) -> Space | None:
         return retrieve_space_by_id(ID)
 
     @cached_property
@@ -234,7 +236,8 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
 
     @cached_property
     def time_buffer(self) -> float:
-        """Calculate how much time is left for a task to complete considering its deadline and workload and constraints."""
+        """Calculate how much time is left for a task to complete.
+        Considering deadline and workload and constraints."""
         if self.deadline == float("inf"):
             return float("inf")
 
@@ -276,14 +279,13 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         db.commit()
 
     @cached_property
-    def supertasks(self) -> list["Task"]:
+    def supertasks(self) -> set["Task"]:
         query = db.execute(
             f"""
-        SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
+SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """
         )
-
-        return [Task.from_id(db, typed(task_of_concern, int)) for task_of_concern in query.fetchall()]
+        return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall()}
 
     @cached_property
     def skill_ids(self) -> list[int]:
@@ -330,7 +332,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         lines = self.do.split("\n")
         if not max_len:
             return lines[0] + ("" if len(lines) == 1 else " […]")
-        first_line_parts = lines[0].split()
+        # first_line_parts = lines[0].split()
         # line = (
         #     f"{first_line_parts[0]} "
         #     + disemvowel(" ".join(first_line_parts[1:-1]))
@@ -390,15 +392,6 @@ WHERE tasks.id = {self.id}
         return typed(query.fetchone(), 0, int, default=0)
 
     @cached_property
-    def supertasks(self) -> set["Task"]:
-        query = db.execute(
-            f"""
-SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
-        """
-        )
-        return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall()}
-
-    @cached_property
     def primary_activity(self) -> ACTIVITY:
         """
         Get the primary activity for the task and default to the activity of the space if not set.
@@ -411,7 +404,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         own_activity = ACTIVITY(own_activity_id)
         space_activity = self.space.primary_activity if self.space else ACTIVITY.unspecified
 
-        return self.space.primary_activity if self.space else own_activity
+        return space_activity if self.space else own_activity
 
     @cached_property
     def secondary_activity(self) -> ACTIVITY:

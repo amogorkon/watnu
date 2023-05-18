@@ -1,18 +1,16 @@
 import winsound
 from math import modf
-from pathlib import Path
 from time import time
 
-import use
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QThread, QUrl
+from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QMessageBox
 
 import src.ui as ui
 from src.classes import ILK, Skill, Task
 from src.logic import skill_level
-from src.stuff import app, config, db
-from src.ux import task_editor, statistics, main_window
+from src.stuff import app, config
+from src.ux import task_editor
 
 
 # use QThread to play sound in background
@@ -37,7 +35,8 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         """
         Window to finish a task.
 
-        Works either from Running or TaskList. Running will have a session open, so we need to close it, when the task really is finished.
+        Works either from Running or TaskList. Running will have a session open, so we need to close it,
+        when the task really is finished.
 
 
         Args:
@@ -117,7 +116,7 @@ YEAH! You made it to the next LEVEL in {y[0]}: {y[1]}!
                 self,
                 "Bitte bestätigen!",
                 """
-Die beendete Aufgabe ist eine Tradition - soll jetzt ein neuer Eintrag für den nächsten Stichtag erstellt werden?
+Die beendete Aufgabe ist eine Tradition - soll ein neuer Eintrag für den nächsten Stichtag erstellt werden?
 """,
             ):
                 case QMessageBox.StandardButton.Yes:

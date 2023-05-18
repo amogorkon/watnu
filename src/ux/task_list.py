@@ -1,29 +1,28 @@
-import contextlib
 import urllib
 import webbrowser
 from functools import partial
-
+from itertools import product
 from pathlib import Path
-from random import choice, seed
-from time import time, time_ns
+from time import time
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer
+from PyQt6.QtGui import (QFont, QFontDatabase, QGuiApplication, QIcon,
+                         QKeySequence, QShortcut)
+from PyQt6.QtWidgets import (QCompleter, QListWidget, QMessageBox,
+                             QTableWidgetItem, QVBoxLayout, QWidget)
 
 import src.ui as ui
-from src.classes import Task, typed, typed_row
+from src.classes import Task
 from src.logic import filter_tasks_by_content
 from src.stuff import app, config, db
-from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
-from src.ux_helper_functions import build_space_list, deadline_as_str, filter_tasks, get_space_id
+from src.ux import (choose_space, space_editor, task_editor, task_finished,
+                    task_organizer, task_running)
+from src.ux_helper_functions import (build_space_list, deadline_as_str,
+                                     filter_tasks, get_space_id)
 
 _translate = QtCore.QCoreApplication.translate
 
-from itertools import product
-
-from beartype import beartype
 
 OK = QIcon(str(config.base_path / "extra/check.svg"))
 NOK = QIcon(str(config.base_path / "extra/cross.svg"))
@@ -36,7 +35,7 @@ status_icons = {
 
 
 class Checklist(QWidget):
-    """Must be a separate class because you can only setWindowFlags on top-level widgets (those without parent)."""
+    """Must be a separate class because you can only setWindowFlags on top-level widgets."""
 
     def __init__(self, tasklist, column_names: list[QtWidgets.QCheckBox]):
         super().__init__()

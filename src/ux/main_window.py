@@ -8,11 +8,13 @@ import stay
 import use
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtWidgets import QPushButton
 
 import src.ui as ui
 from src.logic import filter_filter_history
-from src.stuff import __version__, app, config, db
-from src.ux import about, attributions, statistics, task_editor, task_list
+from src.stuff import app, config, db
+from src.ux import (about, attributions, statistics, task_editor, task_list, task_checklist,
+                    task_organizer)
 
 _translate = QCoreApplication.translate
 
@@ -36,6 +38,17 @@ def set_icon(button, icon_path):
     button.setIconSize(QtCore.QSize(30, 30))
 
 
+class MyButton(QPushButton):
+    def __init__(self):
+        super().__init__()
+
+    # def keyPressEvent(self, event):
+    #     if event.key() == QtCore.Qt.Key_Control:
+    #         print("control pressed")
+    #     else:
+    #         super().keyPressEvent(event)
+
+
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def quit(self, num, frame):
         self.killed = True
@@ -55,22 +68,29 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             self.button4,
             self.button5,
             self.button6,
-            # self.button7,
+            self.button7,
             self.button8,
             self.button9,
         ]
+        # breakpoint()
+        # for button in self.num_buttons:
+        #     button.__class__ = MyButton
 
         self.set_statistics_icon()
-        set_icon(self.button2, "extra/superhero - attribute to Freepik.svg")
+        # self.set_icon(self.button1, "statistics.svg")
+        set_icon(self.button2, "extra/organisation.svg")
         set_icon(self.button3, "extra/feathericons/inventory.svg")
         set_icon(self.button4, "extra/feathericons/list.svg")
         set_icon(self.button5, "extra/feathericons/play-circle.svg")
         set_icon(self.button6, "extra/feathericons/file-plus.svg")
-        # set_icon(self.button7, "extra/feathericons/info.svg")
-        set_icon(self.button8, "extra/feathericons/companions2.svg")
-        set_icon(self.button9, "extra/feathericons/message-square.svg")
+        self.movie = QtGui.QMovie(str(config.base_path / "extra/600-cell-unscreen.gif"))
+        # self.movie.frameChanged.connect(self.set_icon)
+        self.movie.start()
+        # set_icon(self.button7, "extra/600-cell.gif")
+        self.button7.setIconSize(QtCore.QSize(30, 30))
+        set_icon(self.button8, "extra/checklist.svg")
+        set_icon(self.button9, "extra/superhero - attribute to Freepik.svg")
 
-        self.button7.setEnabled(True)  # TODO: remove this line
         self.killed = False
 
         # catch ctrl+c and register it as a quit
@@ -80,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.gui_timer.timeout.connect
         def _():
-            pass
+            self.button7.setIcon(QtGui.QIcon(self.movie.currentPixmap()))
 
         @self.about.triggered.connect
         def _():
@@ -95,12 +115,17 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             attributions.Attributions().exec()
 
         @self.button7.clicked.connect
-        def _():
-            breakpoint()
-
-        @self.button8.clicked.connect
         def companions():
             app.win_companions.show()
+            webbrowser.open("https://github.com/amogorkon/tetraplex")
+
+        @self.button8.clicked.connect
+        def checklist():
+            win = task_checklist.Checklist()
+            app.list_of_task_checklists.append(win)
+            app.list_of_windows.append(win)
+            for win in app.list_of_task_checklists:
+                win.show()
 
         @self.button9.clicked.connect
         def community():
@@ -111,9 +136,10 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def list_tasks():
             """Task List."""
             win = task_list.TaskList()
-            win.show()
             app.list_of_task_lists.append(win)
             app.list_of_windows.append(win)
+            for win in app.list_of_task_lists:
+                win.show()
 
         @self.button5.clicked.connect
         def whatnow():
@@ -128,17 +154,22 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def add_new_task():
             """Add new Task."""
             win = task_editor.Editor()
-            win.show()
             app.list_of_task_editors.append(win)
             app.list_of_windows.append(win)
+            for win in app.list_of_task_editors:
+                win.show()
 
         @self.button1.clicked.connect
         def statistics():
             app.win_statistics.show()
 
         @self.button2.clicked.connect
-        def character():
-            app.win_character.show()
+        def organize():
+            win = task_organizer.Organizer()
+            app.list_of_task_organizers.append(win)
+            app.list_of_windows.append(win)
+            for win in app.list_of_task_organizers:
+                win.show()
 
         @self.button3.clicked.connect
         def inventory():

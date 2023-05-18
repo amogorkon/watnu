@@ -792,7 +792,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>organisiere Aufgabe</string>
+         <string>Raum...</string>
         </property>
         <property name="shortcut">
          <string>3</string>
@@ -868,10 +868,10 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="button8">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
-         <string/>
+         <string>Aufgabe vornehmen für...</string>
         </property>
        </widget>
       </item>
@@ -881,7 +881,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Raum...</string>
+         <string>organisiere Aufgabe</string>
         </property>
        </widget>
       </item>
