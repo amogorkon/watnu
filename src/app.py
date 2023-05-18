@@ -1,9 +1,9 @@
 from bisect import bisect_right
-from collections import defaultdict, deque
+from collections import deque
 from datetime import datetime
 
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, QEvent, QLocale, QSettings, Qt, QTimer
+from PyQt6.QtCore import QTimer
 
 # import startup
 
@@ -51,6 +51,7 @@ class Application(QtWidgets.QApplication):
             main_window,
             settings,
             statistics,
+            task_checklist,
             task_editor,
             task_list,
             task_organizer,
@@ -63,7 +64,8 @@ class Application(QtWidgets.QApplication):
         "Multiple Editors can be open at the same time."
         self.list_of_task_organizers: list[task_organizer.Organizer] = []
         "Multiple Organizers can be open at the same time."
-        self.last_edited_space: str = None
+        self.list_of_task_checklists: list[task_checklist.Checklist] = []
+        self.last_edited_space: str | None = None
         self.win_main = main_window.MainWindow()
 
         self.list_of_windows: list[QtWidgets.QMainWindow | QtWidgets.QDialog] = [self.win_main]

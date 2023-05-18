@@ -84,7 +84,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Aufgaben verwalten</string>
+         <string>Aufgaben</string>
         </property>
         <property name="text">
          <string/>
@@ -167,7 +167,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Companion Chat</string>
+         <string>Checkliste</string>
         </property>
         <property name="text">
          <string/>
@@ -204,7 +204,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>&lt;deine Idee?&gt;</string>
+         <string>TetraPlex</string>
         </property>
         <property name="text">
          <string/>
@@ -241,7 +241,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Community</string>
+         <string>Missionen und Fähigkeiten</string>
         </property>
         <property name="text">
          <string/>
@@ -287,7 +287,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Missionen und Fähigkeiten</string>
+         <string>Organisation</string>
         </property>
         <property name="statusTip">
          <string/>
