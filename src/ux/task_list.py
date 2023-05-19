@@ -7,7 +7,7 @@ from time import time
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer
-from PyQt6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QShortcut
+from PyQt6.QtGui import QFont, QGuiApplication, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetItem, QVBoxLayout, QWidget
 
 import src.ui as ui
@@ -493,11 +493,6 @@ font-size: 12pt;
         self.task_table.setSortingEnabled(False)
         self.task_table.setRowCount(len(tasks))
 
-        ID = QFontDatabase.addApplicationFont(
-            str(config.base_path / "./extra/Fira_Sans/FiraSans-Regular.ttf")
-        )
-        family = QFontDatabase.applicationFontFamilies(ID)
-        item_font = QFont(family)
         header_font = QFont("Segoi UI")
         header_font.setBold(True)
         header_font.setPixelSize(10)
@@ -544,7 +539,7 @@ font-size: 12pt;
                 content = func(task)
                 if isinstance(content, str):
                     item = QtWidgets.QTableWidgetItem(content)
-                    item.setFont(item_font)
+                    item.setFont(app.fira_font)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
                     item = QtWidgets.QTableWidgetItem()

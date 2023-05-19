@@ -3,7 +3,7 @@ from time import time
 
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QKeyCombination, Qt, QTimer
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PyQt6.QtGui import QFont, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QCheckBox, QDialog, QMenu, QStatusBar, QTableWidgetItem
 
 import src.ui as ui
@@ -13,7 +13,6 @@ from src.logic import (
 )
 from src.stuff import app, config
 from src.ux import task_editor, task_list
-
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -364,7 +363,6 @@ font-size: 12pt;
         self.tasks_table.setSortingEnabled(False)
         self.tasks_table.setRowCount(len(tasks))
 
-        item_font = self.get_fira_font()
         header_font = QFont("Segoi UI")
         header_font.setBold(True)
         header_font.setPixelSize(10)
@@ -383,7 +381,7 @@ font-size: 12pt;
                 content = func(task)
                 if isinstance(content, str):
                     item = QTableWidgetItem(content)
-                    item.setFont(item_font)
+                    item.setFont(app.fira_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
@@ -435,7 +433,6 @@ font-size: 12pt;
         self.sub_sup_tasks_table.setSortingEnabled(False)
         self.sub_sup_tasks_table.setRowCount(len(tasks))
 
-        item_font = self.get_fira_font()
         header_font = QFont("Segoi UI")
         header_font.setBold(True)
         header_font.setPixelSize(10)
@@ -454,7 +451,7 @@ font-size: 12pt;
                 content = func(task)
                 if isinstance(content, str):
                     item = QTableWidgetItem(content)
-                    item.setFont(item_font)
+                    item.setFont(app.fira_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 if isinstance(content, QIcon):
@@ -479,7 +476,6 @@ font-size: 12pt;
         """
         )
         self.concerned_task_table.ensurePolished()
-        item_font = self.get_fira_font()
         if not task:
             return
         self.concerned_task_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
@@ -490,7 +486,7 @@ font-size: 12pt;
             content = func(task)
             if isinstance(content, str):
                 item = QTableWidgetItem(content)
-                item.setFont(item_font)
+                item.setFont(app.fira_font)
                 item.setData(Qt.ItemDataRole.UserRole, task)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if isinstance(content, QIcon):
@@ -503,11 +499,6 @@ font-size: 12pt;
 
         self.concerned_task_table.show()
         self.update()
-
-    def get_fira_font(self):
-        ID = QFontDatabase.addApplicationFont("./extra/Fira_Sans/FiraSans-Regular.ttf")
-        family = QFontDatabase.applicationFontFamilies(ID)
-        return QFont(family)
 
     def reject(self):
         super().reject()

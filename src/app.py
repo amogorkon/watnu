@@ -4,6 +4,7 @@ from datetime import datetime
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QFontDatabase, QFont
 
 # import startup
 
@@ -103,6 +104,12 @@ class Application(QtWidgets.QApplication):
         self.win_companions = companions.Companions()
         self.win_inventory = inventory.Inventory()
         self.win_statistics = statistics.Statistics()
+
+        ID = QFontDatabase.addApplicationFont(
+            str(config.base_path / "./extra/Fira_Sans/FiraSans-Regular.ttf")
+        )
+        family = QFontDatabase.applicationFontFamilies(ID)
+        self.fira_font = QFont(family)
 
     def mouseMoveEvent(self, event):
         event.ignore()

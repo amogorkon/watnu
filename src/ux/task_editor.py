@@ -46,6 +46,9 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         self.statusBar = QtWidgets.QStatusBar()
         self.page_layout.addWidget(self.statusBar)
         self.statusBar.setSizeGripEnabled(False)
+        # fira rules!
+        self.do.setFont(app.fira_font)
+        self.notes.setFont(app.fira_font)
 
         # arguments passed in
 
@@ -688,10 +691,5 @@ WHERE id == {self.task.id}
         app.win_what.lets_check_whats_next()
 
 
-from src.ux import (  # noqa: E402
-    choose_constraints,
-    choose_deadline,
-    choose_repeats,
-    task_organizer,
-    task_running,
-)
+from src.ux import choose_deadline  # noqa: E402
+from src.ux import choose_constraints, choose_repeats, task_organizer, task_running
