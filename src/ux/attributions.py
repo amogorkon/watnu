@@ -1,4 +1,5 @@
-# This work is dedicated to my loving partner and (soon to be) wife Sarah, whom I respect and adore above anything else.
+# This work is dedicated to my loving partner and (soon to be) wife Sarah,
+# whom I respect and adore above anything else.
 
 
 from PyQt6 import QtWidgets
