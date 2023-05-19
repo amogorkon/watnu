@@ -691,5 +691,10 @@ WHERE id == {self.task.id}
         app.win_what.lets_check_whats_next()
 
 
-from src.ux import choose_deadline  # noqa: E402
-from src.ux import choose_constraints, choose_repeats, task_organizer, task_running
+from src.ux import (  # noqa: E402
+    choose_constraints,
+    choose_deadline,
+    choose_repeats,
+    task_organizer,
+    task_running,
+)

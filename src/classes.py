@@ -217,6 +217,16 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             self.workload or 0
         )
 
+    def is_overdue(self, now: datetime) -> bool:
+        return (
+            self.own_deadline != float("inf")
+            and datetime.fromtimestamp(self.deadline) < now
+            and not self.done
+            and not self.deleted
+            and not self.draft
+            and not self.inactive
+        )
+
     @cached_property
     def printable_deadline(self) -> str:
         return (

@@ -1,19 +1,17 @@
 from collections import deque
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import reduce
-from itertools import product, takewhile
-from math import isinf, sqrt
+from math import sqrt
 from sqlite3 import Connection
 from time import time
 
 import numpy as np
 import use
-from beartype import beartype
-from Levenshtein import ratio, seqratio, setratio
+from Levenshtein import ratio
 
-from src.functions import cached_func_static, cached_getter, cached_property
 from src.classes import EVERY, ILK, Task
+from src.functions import cached_getter
 from src.stuff import app
 
 fuzzy = use(
@@ -37,7 +35,7 @@ use(
         "I帵螒倝延襂癑槓䕴茿利鹽簸艦Ȣ鼍䞗唀",  # None-None
     },
 )
-from nltk.tokenize import WordPunctTokenizer
+from nltk.tokenize import WordPunctTokenizer  # noqa: E402
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
 habit_weight = fuzzy.sigmoid(k=0.0002, L=1, x0=5000)
@@ -186,7 +184,9 @@ def reset_task(db: Connection, task: Task, now: float, every_x: int):
             )
             query = db.execute(
                 f"""
-    SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} and stop > {(now - td).timestamp()} and (stop - start) > 5  
+    SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} 
+    and stop > {(now - td).timestamp()} 
+    and (stop - start) > 5  
     """
             )
 
@@ -378,7 +378,7 @@ def calculate_sum_of_timeslots_for_next_year(constraints: np.array):
     sum(constraints) * 52
 
 
-def cycle_in_task_dependencies(tasks: dict[int, Task]) -> list[Task]:
+def cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
     """Return a list of tasks that are involved in a cycle in their dependencies."""
     visited = set()
     path = []
@@ -394,4 +394,4 @@ def cycle_in_task_dependencies(tasks: dict[int, Task]) -> list[Task]:
         path.pop()
         return False
 
-    return [task for task in tasks.values() if visit(task)]
+    return [task for task in tasks if visit(task)]

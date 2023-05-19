@@ -13,11 +13,12 @@ from time import time
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
-from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
+from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
 # ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
 # must be set before a QCoreApplication instance is created
-from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
+from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
+
 
 import src.app as app
 
@@ -174,7 +175,7 @@ use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff"
 from src.classes import retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
-from src.ux import task_editor, tip_of_the_day
+from src.ux import tip_of_the_day
 
 qdb.setDatabaseName(config.db_path)
 if not qdb.open() or not qdb.tables():
@@ -233,135 +234,23 @@ app.spaces = {s.space_id: s for s in retrieve_spaces()}
 # get all tasks from the db
 app.tasks = {t.id: t for t in retrieve_tasks()}
 
-# first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
-for task in list(app.tasks.values()):
-    if task.do == "" and task.notes in ("", None):
-        task.really_delete()
+from src.startup_checks import (
+    clean_up_empty_tasks,
+    check_for_overdue_tasks,
+    check_for_cycles,
+    check_for_drafts,
+    check_for_deadline_without_workload,
+    check_for_incompleatable_tasks,
+)
 
+now = datetime.now()
 
-# let's check for drafts
-if drafts := [t for t in app.tasks.values() if t.draft]:
-    match QMessageBox.question(
-        app.win_main,
-        "Jetzt bearbeiten?",
-        f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",
-    ):
-        case QMessageBox.StandardButton.Yes:
-            for task in drafts:
-                win = task_editor.Editor(task)
-                win.show()
-
-
-# let's check for duplicates
-
-# for task1 in app.tasks.values():
-#     duplicates = set()
-#     for task2 in app.tasks.values():
-#         if task1 == task2:
-#             continue
-#         if task1.do == task2.do and task1.space == task2.space:
-#             duplicates.add(task1)
-#             duplicates.add(task2)
-
-#     if duplicates:
-#         match QMessageBox.question(
-#             app.win_main,
-#             "Jetzt bearbeiten?",
-#             "Es gibt Duplikate - jetzt bearbeiten/löschen?",
-#         ):
-#             case QMessageBox.StandardButton.Yes:
-#                 for task in duplicates:
-#                     win = task_editor.Editor(task)
-#                     win.show()
-#                     app.list_of_task_editors.append(win)
-#                     app.list_of_windows.append(win)
-
-# TODO: OMG THIS IS HEADACHE INDUCING
-
-
-# let's check for cycles
-from src.logic import cycle_in_task_dependencies
-
-while cycle := cycle_in_task_dependencies(app.tasks):
-    msgBox = QMessageBox()
-    msgBox.setWindowTitle("Jetzt bearbeiten?")
-    msgBox.setText(
-        "Zyklus gefunden in Aufgaben-Abhängigkeiten! Aufgaben wurden als Entwurf markiert! Jetzt bearbeiten?"
-    )
-    for task in cycle:
-        task.set_("draft", True)
-    editButton = msgBox.addButton("Edit now", QMessageBox.ButtonRole.AcceptRole)
-    cancelButton = msgBox.addButton(QMessageBox.StandardButton.Ignore)
-
-    match msgBox.exec():
-        case QMessageBox.ButtonRole.AcceptRole.value:
-            for task in cycle:
-                win = task_editor.Editor(task)
-                win.show()
-
-# let's check if tasks have a deadline without workloud
-if tasks := [
-    task
-    for task in app.tasks.values()
-    if task.own_deadline != float("inf")
-    and task.workload == 0
-    and not task.done
-    and not task.deleted
-    and not task.draft
-    and not task.inactive
-]:
-    match QMessageBox.question(
-        app.win_main,
-        "Jetzt bearbeiten?",
-        f"""Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 else 
-        'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?""",
-    ):
-        case QMessageBox.StandardButton.Yes:
-            for task in tasks:
-                win = task_editor.Editor(task)
-                win.show()
-
-# let's check for overdue tasks
-if overdue := [
-    task
-    for task in app.tasks.values()
-    if task.own_deadline != float("inf")
-    and datetime.fromtimestamp(task.deadline) < datetime.now()
-    and not task.done
-    and not task.deleted
-    and not task.draft
-    and not task.inactive
-]:
-    match QMessageBox.question(
-        app.win_main,
-        "Jetzt bearbeiten?",
-        f"""Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1 
-        else 'eine überfällige Aufgabe'} - jetzt bearbeiten?""",
-    ):
-        case QMessageBox.StandardButton.Yes:
-            for task in overdue:
-                win = task_editor.Editor(task)
-                win.show()
-
-# let's check for tasks that are incompleteable
-if incompleteable := [
-    task
-    for task in app.tasks.values()
-    if task.time_buffer <= 0 and not task.done and not task.draft and not task.inactive and not task.deleted
-]:
-    match QMessageBox.question(
-        app.win_main,
-        "Jetzt bearbeiten?",
-        f"""Es gibt {
-f'{len(incompleteable)} Aufgaben, die nicht in der gegebenen Zeit abgeschlossen werden können' 
-if len(incompleteable) > 1 else 
-'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'
-} - jetzt bearbeiten?""",
-    ):
-        case QMessageBox.StandardButton.Yes:
-            for task in incompleteable:
-                win = task_editor.Editor(task)
-                win.show()
+clean_up_empty_tasks(app.tasks.values())
+check_for_drafts(app.tasks.values())
+check_for_cycles(app.tasks.values())
+check_for_deadline_without_workload(app.tasks.values())
+check_for_overdue_tasks(app.tasks.values(), now)
+check_for_incompleatable_tasks(app.tasks.values(), now)
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()
