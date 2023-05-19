@@ -115,8 +115,9 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button7.clicked.connect
         def companions():
-            app.win_companions.show()
-            webbrowser.open("https://github.com/amogorkon/tetraplex")
+            # app.win_companions.show()
+            # webbrowser.open("https://github.com/amogorkon/tetraplex")
+            breakpoint()
 
         @self.button8.clicked.connect
         def checklist():
