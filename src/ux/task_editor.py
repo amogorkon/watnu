@@ -6,16 +6,15 @@ from typing import Literal
 
 import numpy as np
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, QSize, Qt, QTimer, QVariant
-from PyQt6.QtGui import QCursor, QIcon, QKeySequence, QShortcut
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 import src.ui as ui
 from src.classes import ACTIVITY, ILK, Task
-from src.functions import typed
 from src.stuff import app, config, db
-from src.ux import space_editor, task_finished, task_list
+from src.ux import space_editor, task_finished
 from src.ux_helper_functions import build_space_list, get_space_priority
 
 _translate = QCoreApplication.translate
@@ -39,6 +38,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
         super().__init__()
         print(f"{repr(task)} {current_space=} {draft=} {cloning=} {templating=} {as_sup=}")
         self.setupUi(self)
+
+        app.list_of_task_editors.append(self)
+        app.list_of_windows.append(self)
+
         self.original_window_title = self.windowTitle()
         self.statusBar = QtWidgets.QStatusBar()
         self.page_layout.addWidget(self.statusBar)
@@ -297,8 +300,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         def organize(depends_on):
             win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
-            app.list_of_task_organizers.append(win)
-            app.list_of_windows.append(win)
             self.hide()
             win.show()
             win.raise_()
@@ -687,12 +688,10 @@ WHERE id == {self.task.id}
         app.win_what.lets_check_whats_next()
 
 
-from src.ux import (
+from src.ux import (  # noqa: E402
     choose_constraints,
     choose_deadline,
     choose_repeats,
-    choose_skills,
-    task_list,
     task_organizer,
     task_running,
 )

@@ -17,7 +17,7 @@ for path in ui_path.glob("*.ui"):
 
 
 Path("./src/ui/__init__.py").write_text(
-    f"""
+    f"""# ruff: noqa: F401 , E501
 # generated via qt2py.py
 from . import (
 {', '.join(p.stem for p in ui_path.glob("*.py"))}
@@ -26,8 +26,7 @@ from . import (
 )
 
 Path("./src/ux/__init__.py").write_text(
-    f"""
-# ruff: noqa: F401
+    f"""# ruff: noqa: F401 , E501
 # generated via qt2py.py
 from . import (
 {', '.join(p.stem for p in ui_path.glob("*.py"))}

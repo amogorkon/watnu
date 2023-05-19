@@ -7,19 +7,15 @@ from time import time
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer
-from PyQt6.QtGui import (QFont, QFontDatabase, QGuiApplication, QIcon,
-                         QKeySequence, QShortcut)
-from PyQt6.QtWidgets import (QCompleter, QListWidget, QMessageBox,
-                             QTableWidgetItem, QVBoxLayout, QWidget)
+from PyQt6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QShortcut
+from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetItem, QVBoxLayout, QWidget
 
 import src.ui as ui
 from src.classes import Task
 from src.logic import filter_tasks_by_content
 from src.stuff import app, config, db
-from src.ux import (choose_space, space_editor, task_editor, task_finished,
-                    task_organizer, task_running)
-from src.ux_helper_functions import (build_space_list, deadline_as_str,
-                                     filter_tasks, get_space_id)
+from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
+from src.ux_helper_functions import build_space_list, deadline_as_str, filter_tasks, get_space_id
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -83,6 +79,9 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
         self.setupUi(self)
+
+        app.list_of_task_lists.append(self)
+        app.list_of_windows.append(self)
 
         self.gui_timer = QTimer()
         "Timer for polling if something has changed and regenerate the GUI."
@@ -639,8 +638,6 @@ font-size: 12pt;
                     break
             else:
                 win = task_organizer.Organizer(task)
-                app.list_of_task_organizers.append(win)
-                app.list_of_windows.append(win)
                 win.show()
 
     def open_editor(self, task, cloning=False, as_sup=0):

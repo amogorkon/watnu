@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """The entry point for watnu.
 
 Run with py main.py and watch the Magik happen!
@@ -9,13 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from time import time
 
-from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
 
-# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts must be set before a QCoreApplication instance is created
-from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon, QTableWidgetItem
+# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
+# must be set before a QCoreApplication instance is created
+from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
 import src.app as app
 
@@ -166,12 +168,13 @@ initial_globals = {
     "db": db,
 }
 
-# push all the globals into 'src.stuff' so we can import them properly and getting all the perks of IDE autocompletion
+# push all the globals into 'src.stuff' so we can import them properly
+# and getting all the perks of IDE autocompletion
 use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
-from src.classes import Task, retrieve_spaces, retrieve_tasks
+from src.classes import retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
-from src.ux import landing, task_editor, tip_of_the_day
+from src.ux import task_editor, tip_of_the_day
 
 qdb.setDatabaseName(config.db_path)
 if not qdb.open() or not qdb.tables():
@@ -223,7 +226,6 @@ else:
         winreg.DeleteValue(key, "Watnu")
         winreg.CloseKey(key)
 
-from time import sleep
 
 # get all spaces from the db
 app.spaces = {s.space_id: s for s in retrieve_spaces()}
@@ -248,8 +250,6 @@ if drafts := [t for t in app.tasks.values() if t.draft]:
             for task in drafts:
                 win = task_editor.Editor(task)
                 win.show()
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
 
 
 # let's check for duplicates
@@ -298,8 +298,6 @@ while cycle := cycle_in_task_dependencies(app.tasks):
             for task in cycle:
                 win = task_editor.Editor(task)
                 win.show()
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
 
 # let's check if tasks have a deadline without workloud
 if tasks := [
@@ -315,14 +313,13 @@ if tasks := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 else 'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?",
+        f"""Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 else 
+        'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?""",
     ):
         case QMessageBox.StandardButton.Yes:
             for task in tasks:
                 win = task_editor.Editor(task)
                 win.show()
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
 
 # let's check for overdue tasks
 if overdue := [
@@ -338,14 +335,13 @@ if overdue := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1 else 'eine überfällige Aufgabe'} - jetzt bearbeiten?",
+        f"""Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1 
+        else 'eine überfällige Aufgabe'} - jetzt bearbeiten?""",
     ):
         case QMessageBox.StandardButton.Yes:
             for task in overdue:
                 win = task_editor.Editor(task)
                 win.show()
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
 
 # let's check for tasks that are incompleteable
 if incompleteable := [
@@ -356,15 +352,16 @@ if incompleteable := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"Es gibt {f'{len(incompleteable)} Aufgaben, die nicht innerhalb der gegebenen Zeit abgeschlossen werden können' if len(incompleteable) > 1 else 'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'} - jetzt bearbeiten?",
+        f"""Es gibt {
+f'{len(incompleteable)} Aufgaben, die nicht in der gegebenen Zeit abgeschlossen werden können' 
+if len(incompleteable) > 1 else 
+'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'
+} - jetzt bearbeiten?""",
     ):
-
         case QMessageBox.StandardButton.Yes:
             for task in incompleteable:
                 win = task_editor.Editor(task)
                 win.show()
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()

@@ -3,16 +3,14 @@ from datetime import datetime, timedelta
 from typing import NamedTuple
 
 import numpy as np
-import pyqtgraph as pg
 from beartype import beartype
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtGui import QIcon
-from pyqtgraph import PlotWidget
 
 import src.ui as ui
 from src.classes import Task, cached_func_static, typed, typed_row
-from src.stuff import __version__, app, config, db
+from src.stuff import app, config, db
 
 _translate = QCoreApplication.translate
 
@@ -44,8 +42,6 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
 
         def open_list_of_tasks(tasks: set[Task]):
             win = TaskList(selected_tasks=tasks)
-            app.list_of_task_lists.append(win)
-            app.list_of_windows.append(win)
             win.show()
 
         self.today_finished_button_label.clicked.connect(

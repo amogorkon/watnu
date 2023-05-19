@@ -1,28 +1,18 @@
-import contextlib
-import webbrowser
-from datetime import datetime
-from functools import partial
-from itertools import count
 from pathlib import Path
-from random import choice, seed
-from time import time, time_ns
+from time import time
 
-from beartype import beartype
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import (QDataStream, QIODevice, QKeyCombination, Qt, QTimer,
-                          QVariant)
+from PyQt6.QtCore import QKeyCombination, Qt, QTimer
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QMenu,
-                             QStatusBar, QTableWidgetItem)
+from PyQt6.QtWidgets import QCheckBox, QDialog, QMenu, QStatusBar, QTableWidgetItem
 
 import src.ui as ui
-from src.classes import Task, typed, typed_row
-from src.logic import (filter_tasks_by_constraints, filter_tasks_by_content,
-                       filter_tasks_by_ilk, filter_tasks_by_space,
-                       filter_tasks_by_status, pipes)
-from src.stuff import app, config, db
-from src.ux import (choose_space, task_editor, task_finished, task_list,
-                    task_running)
+from src.classes import Task
+from src.logic import (
+    filter_tasks_by_content,
+)
+from src.stuff import app, config
+from src.ux import task_editor, task_list
 
 
 _translate = QtCore.QCoreApplication.translate
@@ -55,6 +45,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
     def __init__(self, task: Task | None = None, filters=None, editor=None, depends_on=True):
         super().__init__()
         self.setupUi(self)
+
+        app.list_of_task_organizers.append(self)
+        app.list_of_windows.append(self)
 
         # buttonBox = QDialogButtonBox(self)
         # buttonBox.setOrientation(Qt.Orientation.Horizontal)
@@ -231,15 +224,15 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         self.update()
 
         @self.tasks_table.cellDoubleClicked.connect
-        def task_list_doubleclicked(row, column):
+        def doubleclicked_tasks_table(row, column):
             self.organize_selected(self.tasks_table)
 
         @self.sub_sup_tasks_table.cellDoubleClicked.connect
-        def task_list_doubleclicked(row, column):
+        def doubleclicked_sub_sup_table(row, column):
             self.organize_selected(self.sub_sup_tasks_table)
 
         @self.concerned_task_table.cellDoubleClicked.connect
-        def task_list_doubleclicked(row, column):
+        def doubleclicked_concerned_task(row, column):
             self.organize_selected(self.concerned_task_table)
 
         @self.button1.clicked.connect
@@ -260,8 +253,6 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
                         break
                 else:
                     win = Organizer(task)
-                    app.list_of_windows.append(win)
-                    app.list_of_task_organizers.append(win)
                     win.show()
 
         @self.button4.clicked.connect
@@ -349,6 +340,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
     def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
         from src.ux.task_list import filter_tasks
+
         self.last_generated = time()
 
         config.last_selected_space = self.space.currentText() or ""
@@ -428,8 +420,6 @@ font-size: 12pt;
                     break
             else:
                 win = Organizer(task)
-                app.list_of_task_organizers.append(win)
-                app.list_of_windows.append(win)
                 win.show()
 
     def arrange_sub_sup_task_table(self, tasks: set[Task]):

@@ -1,14 +1,8 @@
-from datetime import datetime
-
-import numpy as np
-from dateutil.relativedelta import relativedelta
-from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QDate, QDateTime, QItemSelectionModel, Qt
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 
 import src.ui as ui
-from src.classes import EVERY, Every, Task
-from src.stuff import __version__
 
 
 class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
@@ -39,4 +33,4 @@ class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
         ]
 
 
-import src.ux as ux
+import src.ux as ux  # noqa: E402

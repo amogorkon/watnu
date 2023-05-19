@@ -13,8 +13,7 @@ from PyQt6.QtWidgets import QPushButton
 import src.ui as ui
 from src.logic import filter_filter_history
 from src.stuff import app, config, db
-from src.ux import (about, attributions, statistics, task_editor, task_list, task_checklist,
-                    task_organizer)
+from src.ux import about, attributions, statistics, task_editor, task_list, task_checklist, task_organizer
 
 _translate = QCoreApplication.translate
 
@@ -121,9 +120,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button8.clicked.connect
         def checklist():
-            win = task_checklist.Checklist()
-            app.list_of_task_checklists.append(win)
-            app.list_of_windows.append(win)
+            win = task_checklist.CheckList()
             for win in app.list_of_task_checklists:
                 win.show()
 
@@ -136,8 +133,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def list_tasks():
             """Task List."""
             win = task_list.TaskList()
-            app.list_of_task_lists.append(win)
-            app.list_of_windows.append(win)
             for win in app.list_of_task_lists:
                 win.show()
 
@@ -166,8 +161,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         @self.button2.clicked.connect
         def organize():
             win = task_organizer.Organizer()
-            app.list_of_task_organizers.append(win)
-            app.list_of_windows.append(win)
             for win in app.list_of_task_organizers:
                 win.show()
 
