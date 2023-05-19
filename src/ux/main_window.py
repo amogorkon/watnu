@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QPushButton
 import src.ui as ui
 from src.logic import filter_filter_history
 from src.stuff import app, config, db
-from src.ux import about, attributions, statistics, task_editor, task_list, task_checklist, task_organizer
+from src.ux import about, attributions, statistics, task_checklist, task_editor, task_list, task_organizer
 
 _translate = QCoreApplication.translate
 
@@ -125,9 +125,8 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
                 win.show()
 
         @self.button9.clicked.connect
-        def community():
-            """Community."""
-            webbrowser.open("https://watnu.slack.com/archives/C01HKH7R4AC")
+        def character():
+            app.win_character.show()
 
         @self.button4.clicked.connect
         def list_tasks():
@@ -301,4 +300,5 @@ VALUES ('{d["do"]}',
 
     def unlock(self):
         for button in self.num_buttons:
+            button.setEnabled(True)
             button.setEnabled(True)
