@@ -13,12 +13,11 @@ from time import time
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
-from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
 # ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
 # must be set before a QCoreApplication instance is created
 from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
-
+from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
 import src.app as app
 
@@ -235,15 +234,16 @@ app.spaces = {s.space_id: s for s in retrieve_spaces()}
 app.tasks = {t.id: t for t in retrieve_tasks()}
 
 from src.startup_checks import (
-    clean_up_empty_tasks,
-    check_for_overdue_tasks,
     check_for_cycles,
-    check_for_drafts,
     check_for_deadline_without_workload,
+    check_for_drafts,
     check_for_incompleatable_tasks,
+    check_for_overdue_tasks,
+    clean_up_empty_tasks,
 )
 
 now = datetime.now()
+
 
 clean_up_empty_tasks(app.tasks.values())
 check_for_drafts(app.tasks.values())

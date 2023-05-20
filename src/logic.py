@@ -376,22 +376,3 @@ def calculate_sum_of_timeslots_for_next_year(constraints: np.array):
         constraints (np.array): 5 min timeslots per week
     """
     sum(constraints) * 52
-
-
-def cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
-    """Return a list of tasks that are involved in a cycle in their dependencies."""
-    visited = set()
-    path = []
-
-    def visit(task: Task) -> bool:
-        if task in visited:
-            return False
-        visited.add(task)
-        path.append(task)
-        for subtask in task.doable_supertasks:
-            if subtask in path or visit(subtask):
-                return True
-        path.pop()
-        return False
-
-    return [task for task in tasks if visit(task)]

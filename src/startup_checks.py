@@ -1,10 +1,10 @@
-from PyQt6.QtWidgets import QMessageBox
-from src.stuff import app
-from src.ux import task_editor
-from src.classes import Task
 from datetime import datetime
 
-from src.logic import cycle_in_task_dependencies
+from PyQt6.QtWidgets import QMessageBox
+
+from src.classes import Task
+from src.stuff import app
+from src.ux import task_editor
 
 
 def clean_up_empty_tasks(tasks: list[Task]):
@@ -47,29 +47,30 @@ def check_for_cycles(tasks):
                     win.show()
 
 
-# let's check for duplicates
+def check_for_duplicates(tasks: list[Task]):
+    # let's check for duplicates
 
-# for task1 in app.tasks.values():
-#     duplicates = set()
-#     for task2 in app.tasks.values():
-#         if task1 == task2:
-#             continue
-#         if task1.do == task2.do and task1.space == task2.space:
-#             duplicates.add(task1)
-#             duplicates.add(task2)
+    for task1 in tasks:
+        duplicates = set()
+        for task2 in tasks:
+            if task1 == task2:
+                continue
+            if task1.do == task2.do and task1.space == task2.space:
+                duplicates.add(task1)
+                duplicates.add(task2)
 
-#     if duplicates:
-#         match QMessageBox.question(
-#             app.win_main,
-#             "Jetzt bearbeiten?",
-#             "Es gibt Duplikate - jetzt bearbeiten/löschen?",
-#         ):
-#             case QMessageBox.StandardButton.Yes:
-#                 for task in duplicates:
-#                     win = task_editor.Editor(task)
-#                     win.show()
-#                     app.list_of_task_editors.append(win)
-#                     app.list_of_windows.append(win)
+        if duplicates:
+            match QMessageBox.question(
+                app.win_main,
+                "Jetzt bearbeiten?",
+                "Es gibt Duplikate - jetzt bearbeiten/löschen?",
+            ):
+                case QMessageBox.StandardButton.Yes:
+                    for task in duplicates:
+                        win = task_editor.Editor(task)
+                        win.show()
+                        app.list_of_task_editors.append(win)
+                        app.list_of_windows.append(win)
 
 
 def check_for_deadline_without_workload(tasks: list[Task]):
@@ -98,7 +99,7 @@ def check_for_deadline_without_workload(tasks: list[Task]):
 
 def check_for_overdue_tasks(tasks: list[Task], now: datetime):
     # let's check for overdue tasks
-    if overdue := [task for task in tasks if task.is_overdue(now)]:
+    if overdue := [task for task in tasks if task.is_overdue(now=now)]:
         match QMessageBox.question(
             app.win_main,
             "Jetzt bearbeiten?",
@@ -113,7 +114,9 @@ def check_for_overdue_tasks(tasks: list[Task], now: datetime):
 
 def check_for_incompleatable_tasks(tasks: list[Task], now: datetime):
     # let's check for tasks that are not yet overdue but incompleatable according to workload
-    if incompleteable := [task for task in tasks if task.time_buffer <= 0 and not task.is_overdue(now)]:
+    if incompleteable := [
+        task for task in tasks if task.time_buffer <= 0 and not task.is_overdue(now=now) and task.is_doable
+    ]:
         match QMessageBox.question(
             app.win_main,
             "Jetzt bearbeiten?",
@@ -127,3 +130,22 @@ def check_for_incompleatable_tasks(tasks: list[Task], now: datetime):
                 for task in incompleteable:
                     win = task_editor.Editor(task)
                     win.show()
+
+
+def cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
+    """Return a list of tasks that are involved in a cycle in their dependencies."""
+    visited = set()
+    path = []
+
+    def visit(task: Task) -> bool:
+        if task in visited:
+            return False
+        visited.add(task)
+        path.append(task)
+        for subtask in task.doable_supertasks:
+            if subtask in path or visit(subtask):
+                return True
+        path.pop()
+        return False
+
+    return [task for task in tasks if visit(task)]
