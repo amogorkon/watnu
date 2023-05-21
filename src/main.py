@@ -244,13 +244,16 @@ from src.startup_checks import (
 
 now = datetime.now()
 
-
-clean_up_empty_tasks(app.tasks.values())
-check_for_drafts(app.tasks.values())
-check_for_cycles(app.tasks.values())
-check_for_deadline_without_workload(app.tasks.values())
-check_for_overdue_tasks(app.tasks.values(), now)
-check_for_incompleatable_tasks(app.tasks.values(), now)
+# just passing app.tasks.values would cause RuntimeError: dictionary changed size during iteration
+# and a single tasks = list(app.tasks.values()) on top wouldn't work either because of tasks
+# being deleted or created at each step
+clean_up_empty_tasks(list(app.tasks.values()))
+check_for_drafts(list(app.tasks.values()))
+check_for_cycles(list(app.tasks.values()))
+check_for_deadline_without_workload(list(app.tasks.values()))
+check_for_overdue_tasks(list(app.tasks.values()), now)
+check_for_incompleatable_tasks(list(app.tasks.values()), now)
+check_for_cycles(list(app.tasks.values()))  # again, the user might have introduced cycles in previous checks
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()

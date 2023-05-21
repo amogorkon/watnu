@@ -649,7 +649,10 @@ font-size: 12pt;
         if not app.win_what.isHidden():
             app.win_what.raise_()
         else:
-            app.list_of_windows[-1].raise_()
+            try:
+                app.list_of_windows[-1].raise_()
+            except RuntimeError:
+                breakpoint()
 
     def get_selected_tasks(self) -> set[Task]:
         return {

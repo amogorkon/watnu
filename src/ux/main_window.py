@@ -1,3 +1,4 @@
+import contextlib
 import signal
 import sys
 import webbrowser
@@ -269,7 +270,10 @@ VALUES ('{d["do"]}',
         app.win_inventory.close()
         app.win_statistics.close()
         for win in app.list_of_windows:
-            win.close()
+            # just to avoid weird C/C++ errors popping up at the end
+            with contextlib.suppress(RuntimeError):
+                win.close()
+
         config.save()
         with open(config.base_path / "filter_history.stay", "w") as f:
             f.write("\n".join(filter_filter_history(app.filter_history)))
