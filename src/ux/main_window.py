@@ -1,4 +1,3 @@
-import contextlib
 import signal
 import sys
 import webbrowser
@@ -72,9 +71,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             self.button8,
             self.button9,
         ]
-        # breakpoint()
-        # for button in self.num_buttons:
-        #     button.__class__ = MyButton
 
         self.set_statistics_icon()
         # self.set_icon(self.button1, "statistics.svg")
@@ -261,16 +257,7 @@ VALUES ('{d["do"]}',
 
     def cleanup(self):
         app.tray.setVisible(False)
-        app.win_what.close()
-        app.win_settings.close()
-        app.win_character.close()
-        app.win_companions.close()
-        app.win_inventory.close()
-        app.win_statistics.close()
-        for win in app.list_of_windows:
-            # just to avoid weird C/C++ errors popping up at the end
-            with contextlib.suppress(RuntimeError):
-                win.close()
+        app.tray.deleteLater()
 
         config.save()
         with open(config.base_path / "filter_history.stay", "w") as f:

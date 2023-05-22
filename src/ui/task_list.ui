@@ -299,125 +299,7 @@
      <property name="topMargin">
       <number>0</number>
      </property>
-     <item row="3" column="3">
-      <widget class="QPushButton" name="button3">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>organisiere Aufgaben</string>
-       </property>
-       <property name="shortcut">
-        <string>3</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="button2">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Erledigt!</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="button5">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>starte Aufgabe</string>
-       </property>
-       <property name="shortcut">
-        <string>5</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="1">
-      <widget class="QPushButton" name="button4">
-       <property name="text">
-        <string>bearbeite Aufgabe(n)</string>
-       </property>
-       <property name="shortcut">
-        <string>4</string>
-       </property>
-       <property name="autoDefault">
-        <bool>true</bool>
-       </property>
-       <property name="default">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="3">
-      <widget class="QPushButton" name="button6">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>erstelle Aufgabe...</string>
-       </property>
-       <property name="shortcut">
-        <string>6</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="button8">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Aufgabe(n) vornehmen für...</string>
-       </property>
-       <property name="shortcut">
-        <string>8</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QPushButton" name="button1">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>setze Aufgabe(n) als...</string>
-       </property>
-       <property name="shortcut">
-        <string>1</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
       <widget class="QPushButton" name="button7">
        <property name="enabled">
         <bool>true</bool>
@@ -436,8 +318,8 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="3">
-      <widget class="QPushButton" name="button9">
+     <item row="5" column="3">
+      <widget class="QPushButton" name="button3">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -448,15 +330,156 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Raum/Fähigkeiten...</string>
+        <string>organisiere Aufgaben</string>
        </property>
        <property name="shortcut">
-        <string>9</string>
-       </property>
-       <property name="checkable">
-        <bool>false</bool>
+        <string>3</string>
        </property>
       </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QPushButton" name="button5">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>starte Aufgabe</string>
+       </property>
+       <property name="shortcut">
+        <string>5</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QPushButton" name="button4">
+       <property name="text">
+        <string>bearbeite Aufgabe(n)</string>
+       </property>
+       <property name="shortcut">
+        <string>4</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QPushButton" name="button2">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Erledigt!</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="3">
+      <widget class="QPushButton" name="button6">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>erstelle Aufgabe...</string>
+       </property>
+       <property name="shortcut">
+        <string>6</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="button8">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Aufgabe(n) vornehmen für...</string>
+       </property>
+       <property name="shortcut">
+        <string>8</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QPushButton" name="button1">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>setze Aufgabe(n) als...</string>
+       </property>
+       <property name="shortcut">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="button9">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Raum...</string>
+         </property>
+         <property name="shortcut">
+          <string>9</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Fähigkeiten...</string>
+         </property>
+         <property name="shortcut">
+          <string>Ctrl+9</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
