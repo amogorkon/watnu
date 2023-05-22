@@ -779,7 +779,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>organisiere Aufgabe(n)</string>
+        <string>organisiere Aufgaben</string>
        </property>
        <property name="shortcut">
         <string>3</string>

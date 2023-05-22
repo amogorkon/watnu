@@ -786,16 +786,33 @@
       <property name="topMargin">
        <number>9</number>
       </property>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="button3">
+      <item row="0" column="1">
+       <widget class="QPushButton" name="button8">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Raum...</string>
+         <string>Aufgabe vornehmen für...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="button9">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Raum/Fähigkeiten...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="button1">
+        <property name="text">
+         <string>setze Aufgabe als...</string>
         </property>
         <property name="shortcut">
-         <string>3</string>
+         <string>1</string>
         </property>
        </widget>
       </item>
@@ -822,29 +839,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="button1">
-        <property name="text">
-         <string>setze Aufgabe als...</string>
-        </property>
-        <property name="shortcut">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="button6">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>erstelle neue Aufgabe...</string>
-        </property>
-        <property name="shortcut">
-         <string>6</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="button7">
         <property name="enabled">
@@ -865,23 +859,29 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="button8">
+      <item row="1" column="2">
+       <widget class="QPushButton" name="button6">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Aufgabe vornehmen für...</string>
+         <string>erstelle neue Aufgabe...</string>
+        </property>
+        <property name="shortcut">
+         <string>6</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="button9">
+      <item row="3" column="2">
+       <widget class="QPushButton" name="button3">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>organisiere Aufgabe</string>
+         <string>organisiere Aufgaben</string>
+        </property>
+        <property name="shortcut">
+         <string>3</string>
         </property>
        </widget>
       </item>

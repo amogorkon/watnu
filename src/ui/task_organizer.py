@@ -391,7 +391,7 @@ class Ui_Dialog(object):
         self.button8.setText(_translate("Dialog", "Visualisierung..."))
         self.button8.setShortcut(_translate("Dialog", "8"))
         self.button9.setShortcut(_translate("Dialog", "9"))
-        self.button3.setText(_translate("Dialog", "organisiere Aufgabe(n)"))
+        self.button3.setText(_translate("Dialog", "organisiere Aufgaben"))
         self.button3.setShortcut(_translate("Dialog", "3"))
         self.button6.setText(_translate("Dialog", "neue Aufgabe"))
         self.button6.setShortcut(_translate("Dialog", "6"))

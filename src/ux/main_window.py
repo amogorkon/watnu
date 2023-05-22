@@ -78,8 +78,8 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         self.set_statistics_icon()
         # self.set_icon(self.button1, "statistics.svg")
-        set_icon(self.button2, "extra/organisation.svg")
-        set_icon(self.button3, "extra/feathericons/inventory.svg")
+        set_icon(self.button3, "extra/organisation.svg")
+        set_icon(self.button2, "extra/feathericons/inventory.svg")
         set_icon(self.button4, "extra/feathericons/list.svg")
         set_icon(self.button5, "extra/feathericons/play-circle.svg")
         set_icon(self.button6, "extra/feathericons/file-plus.svg")
@@ -115,7 +115,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             attributions.Attributions().exec()
 
         @self.button7.clicked.connect
-        def companions():
+        def tetraplex():
             # app.win_companions.show()
             # webbrowser.open("https://github.com/amogorkon/tetraplex")
             breakpoint()
@@ -150,8 +150,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def add_new_task():
             """Add new Task."""
             win = task_editor.Editor()
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
             for win in app.list_of_task_editors:
                 win.show()
 
@@ -159,13 +157,13 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         def statistics():
             app.win_statistics.show()
 
-        @self.button2.clicked.connect
+        @self.button3.clicked.connect
         def organize():
             win = task_organizer.Organizer()
             for win in app.list_of_task_organizers:
                 win.show()
 
-        @self.button3.clicked.connect
+        @self.button2.clicked.connect
         def inventory():
             app.win_inventory.show()
 
