@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>655</width>
+    <width>649</width>
     <height>502</height>
    </rect>
   </property>
@@ -100,6 +100,36 @@
        </widget>
       </item>
       <item>
+       <widget class="QComboBox" name="comboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>Fähigkeit</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>alle Fähigkeiten</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
        <widget class="QComboBox" name="status">
         <property name="font">
          <font>
@@ -156,7 +186,7 @@
         </property>
         <item>
          <property name="text">
-          <string>-- alle Arten--</string>
+          <string>alle Arten</string>
          </property>
         </item>
         <item>
@@ -442,7 +472,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="button9">
+        <widget class="QPushButton" name="button9a">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -464,7 +494,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="button9b">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
            <horstretch>0</horstretch>

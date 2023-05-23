@@ -408,10 +408,10 @@ DELETE FROM spaces where name=='{space_name}'
 
         menu.addAction("bearbeiten", space_edit)
 
-        self.button9.setMenu(menu)
+        self.button9a.setMenu(menu)
 
-        # shortcut for num9 to click button9
-        self.button9.setShortcut("9")
+        # shortcut for num9 to click button9 (Spaces)
+        self.button9a.setShortcut("9")
 
         @self.space.currentIndexChanged.connect
         def _():

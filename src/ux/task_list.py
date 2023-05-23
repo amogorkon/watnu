@@ -14,6 +14,7 @@ import src.ui as ui
 from src.classes import Task
 from src.logic import filter_tasks_by_content
 from src.stuff import app, config, db
+from src.ui import choose_skill
 from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
 from src.ux_helper_functions import build_space_list, deadline_as_str, filter_tasks, get_space_id
 
@@ -225,6 +226,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         menu.addAction("kloniert als Supertask", self.clone_as_sup)
         self.button6.setMenu(menu)
 
+        # space menu
         menu = QtWidgets.QMenu()
 
         def space_set():
@@ -308,7 +310,92 @@ DELETE FROM spaces where name=='{space_name}'
 
         menu.addAction("bearbeiten", space_edit)
 
-        self.button9.setMenu(menu)
+        self.button9a.setMenu(menu)
+
+        # skill menu
+        menu = QtWidgets.QMenu()
+
+        def skill_set():
+            match (win := choose_skill.Skill_Selection()).exec():
+                case QtWidgets.QDialog.DialogCode.Accepted:
+                    space = get_space_id(win.space.currentText(), win.space.currentIndex())
+                case _:  # Cancelled
+                    return
+            for task in (selected := self.get_selected_tasks()):
+                task.set_("space_id", space)
+            self.build_task_table()
+            self.statusBar.showMessage(
+                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.", 5000
+            )
+
+        menu.addAction("für ausgewählte Aufgaben setzen", space_set)
+
+        def skill_add():
+            text, okPressed = QtWidgets.QInputDialog.getText(
+                self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.EchoMode.Normal, ""
+            )
+            if okPressed and text != "":
+                db.execute(
+                    f"""
+INSERT OR IGNORE INTO spaces (name)
+VALUES ('{text}')
+"""
+                )
+                db.commit()
+                space_editor.Space_Editor(text).exec()
+                self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
+                for win in app.list_of_task_editors:
+                    build_space_list(win)
+                for win in app.list_of_task_lists:
+                    build_space_list(win)
+
+        menu.addAction("hinzufügen", space_add)
+
+        def skill_delete():
+            space_name = self.space.currentText()
+            if [task for task in app.tasks.values() if task.space.name == space_name]:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Sorry..",
+                    f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
+                )
+            else:
+                match QtWidgets.QMessageBox.question(
+                    self,
+                    "Wirklich den ausgewählten Raum löschen?",
+                    f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
+                ):
+                    case QtWidgets.QMessageBox.StandardButton.Yes:
+                        db.execute(
+                            f"""
+DELETE FROM spaces where name=='{space_name}'
+"""
+                        )
+                        db.commit()
+                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
+                        for win in app.list_of_task_lists:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
+                        for win in app.list_of_task_editors:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
+                        for win in app.list_of_task_organizers:
+                            build_space_list(win)
+                            if win.space.currentText() == space_name:
+                                win.space.setCurrentIndex(0)
+
+        menu.addAction("löschen", skill_delete)
+
+        def skill_edit():
+            if self.space.currentData() is None:
+                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
+                return
+            space_editor.Space_Editor(self.space.currentText()).exec()
+
+        menu.addAction("bearbeiten", skill_edit)
+        self.button9b.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)

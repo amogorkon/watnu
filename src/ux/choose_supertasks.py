@@ -1,17 +1,10 @@
-from datetime import datetime
-
-import numpy as np
-from dateutil.relativedelta import relativedelta
-from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import QDate, QDateTime, QItemSelectionModel, Qt
+import ui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 
-import ui
-from classes import EVERY, Every, Task
-from src.stuff import __version__
 
-
-class SuperTaskChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
+class SuperTaskChooser(QtWidgets.QDialog, ui.choose_skill.Ui_Dialog):
     def __init__(self, editor, task=None):
         super().__init__()
         self.setupUi(self)

@@ -5,7 +5,7 @@ from PyQt6.QtSql import QSqlTableModel
 import src.ui as ui
 
 
-class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
+class SkillChooser(QtWidgets.QDialog, ui.choose_skill.Ui_Dialog):
     def __init__(self, editor: "ux.task_editor.Editor", task=None):
         super().__init__()
         self.setupUi(self)

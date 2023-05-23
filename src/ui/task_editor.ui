@@ -442,6 +442,32 @@
          <property name="rightMargin">
           <number>10</number>
          </property>
+         <property name="horizontalSpacing">
+          <number>6</number>
+         </property>
+         <item row="3" column="0">
+          <widget class="QPushButton" name="choose_skills_button">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string>Fähigkeiten</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/skills.svg</normaloff>../extra/skills.svg</iconset>
+           </property>
+           <property name="shortcut">
+            <string>9</string>
+           </property>
+          </widget>
+         </item>
          <item row="5" column="0">
           <widget class="QPushButton" name="organize_subtasks">
            <property name="sizePolicy">
@@ -456,6 +482,32 @@
            <property name="icon">
             <iconset>
              <normaloff>../extra/chevrons-down.svg</normaloff>../extra/chevrons-down.svg</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="choose_repeats_button">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string>Wiederholungen</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../extra/repeats.svg</normaloff>../extra/repeats.svg</iconset>
+           </property>
+           <property name="shortcut">
+            <string>8</string>
            </property>
           </widget>
          </item>
@@ -476,30 +528,27 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="choose_repeats_button">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="primary_activity_button">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Geist</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>../extra/repeats.svg</normaloff>../extra/repeats.svg</iconset>
-           </property>
-           <property name="shortcut">
-            <string>8</string>
+             <normaloff>../extra/mind.svg</normaloff>../extra/mind.svg</iconset>
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="1" column="2">
           <widget class="QPushButton" name="choose_constraints_button">
            <property name="enabled">
             <bool>true</bool>
@@ -509,6 +558,9 @@
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string>Zeitliche Beschränkungen</string>
            </property>
            <property name="text">
             <string/>
@@ -522,47 +574,16 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="secondary_activity_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../extra/soul.svg</normaloff>../extra/soul.svg</iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QPushButton" name="primary_activity_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../extra/mind.svg</normaloff>../extra/mind.svg</iconset>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
+         <item row="1" column="3">
           <widget class="QPushButton" name="choose_deadline_button">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string>Deadline</string>
            </property>
            <property name="text">
             <string/>
@@ -582,28 +603,31 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QPushButton" name="choose_skills_button">
+         <item row="0" column="3">
+          <widget class="QPushButton" name="secondary_activity_button">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Seele</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>../extra/skills.svg</normaloff>../extra/skills.svg</iconset>
-           </property>
-           <property name="shortcut">
-            <string>9</string>
+             <normaloff>../extra/soul.svg</normaloff>../extra/soul.svg</iconset>
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="0" column="2">
           <widget class="QPushButton" name="pushButton">
+           <property name="toolTip">
+            <string>Körper</string>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -786,80 +810,7 @@
       <property name="topMargin">
        <number>9</number>
       </property>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="button8">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Aufgabe vornehmen für...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="button9">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Raum/Fähigkeiten...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="button1">
-        <property name="text">
-         <string>setze Aufgabe als...</string>
-        </property>
-        <property name="shortcut">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="button4">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="shortcut">
-         <string>4</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="button5">
-        <property name="text">
-         <string>beende Bearbeitung und starte Aufgabe</string>
-        </property>
-        <property name="shortcut">
-         <string>5</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="button7">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Wann, Wo, Wer,...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="button2">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Aufgabe erledigt!</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
+      <item row="4" column="2">
        <widget class="QPushButton" name="button6">
         <property name="enabled">
          <bool>true</bool>
@@ -872,7 +823,43 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
+      <item row="4" column="1">
+       <widget class="QPushButton" name="button5">
+        <property name="text">
+         <string>beende Bearbeitung und starte Aufgabe</string>
+        </property>
+        <property name="shortcut">
+         <string>5</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QPushButton" name="button2">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Aufgabe erledigt!</string>
+        </property>
+        <property name="shortcut">
+         <string>2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QPushButton" name="button4">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="shortcut">
+         <string>4</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
        <widget class="QPushButton" name="button3">
         <property name="enabled">
          <bool>true</bool>
@@ -884,6 +871,72 @@
          <string>3</string>
         </property>
        </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="button7">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Wann, Wo, Wer,...</string>
+        </property>
+        <property name="shortcut">
+         <string>7</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QPushButton" name="button1">
+        <property name="text">
+         <string>setze Aufgabe als...</string>
+        </property>
+        <property name="shortcut">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="button8">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Aufgabe vornehmen für...</string>
+        </property>
+        <property name="shortcut">
+         <string>8</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <property name="topMargin">
+         <number>10</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="button9a">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Raum...</string>
+          </property>
+          <property name="shortcut">
+           <string>9</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="button9b">
+          <property name="text">
+           <string>Fähigkeiten...</string>
+          </property>
+          <property name="shortcut">
+           <string>Ctrl+9</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
