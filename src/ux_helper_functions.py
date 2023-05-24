@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer, QVariant
+from PyQt6.QtCore import QVariant
 
 from src.classes import Task, typed, typed_row
 from src.logic import (
-    filter_tasks_by_constraints,
-    filter_tasks_by_content,
     filter_tasks_by_ilk,
     filter_tasks_by_space,
     filter_tasks_by_status,
@@ -42,6 +40,7 @@ def deadline_as_str(deadline: float) -> str:
 
 
 def build_space_list(parent, first_item_text="alle Räume") -> None:
+    breakpoint()
     parent.space.clear()
     parent.space.addItem(first_item_text, QVariant(None))
     # set font of first item to bold
@@ -76,6 +75,7 @@ def build_space_list(parent, first_item_text="alle Räume") -> None:
     for space_id, name in sorted_spaces_by_name:
         parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
     parent.space.adjustSize()
+    parent.update()
 
 
 def get_space_priority(space_id) -> float:
