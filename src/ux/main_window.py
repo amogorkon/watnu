@@ -260,6 +260,8 @@ VALUES ('{d["do"]}',
         with contextlib.suppress(RuntimeError):  # ignore annoying last-minute exceptions
             app.tray.setVisible(False)
             app.tray.deleteLater()
+
+        app.closeAllWindows()
         config.save()
         with open(config.base_path / "filter_history.stay", "w") as f:
             f.write("\n".join(filter_filter_history(app.filter_history)))
