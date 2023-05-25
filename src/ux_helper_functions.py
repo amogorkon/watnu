@@ -40,7 +40,6 @@ def deadline_as_str(deadline: float) -> str:
 
 
 def build_space_list(parent, first_item_text="alle Räume") -> None:
-    breakpoint()
     parent.space.clear()
     parent.space.addItem(first_item_text, QVariant(None))
     # set font of first item to bold
