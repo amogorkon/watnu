@@ -1,5 +1,9 @@
 from functools import wraps
 from time import time
+from types import NoneType, UnionType
+from typing import Any
+
+from beartype import beartype
 
 from src.stuff import app
 
@@ -79,6 +83,7 @@ def cached_getter(func):
     return wrapper
 
 
+@beartype
 def typed(thing, kind, default=...):
     if isinstance(thing, kind):
         return thing
@@ -88,7 +93,14 @@ def typed(thing, kind, default=...):
         raise ValueError(f"Expected {kind} but got {type(thing)}")
 
 
-def typed_row(row: tuple, idx: int, kind: type, default=..., debugging=False):
+@beartype
+def typed_row(
+    row: tuple | NoneType,
+    idx: int,
+    kind: type | UnionType | tuple[type, ...],  # sic. for beartype to work, it needs to be a meta-union
+    default: Any = ...,
+    debugging=False,
+):
     if debugging and row is None:
         breakpoint()
 
