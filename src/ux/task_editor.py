@@ -15,13 +15,13 @@ import src.ui as ui
 from src.classes import ACTIVITY, ILK, Task
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished
-from src.ux_helper_functions import build_space_list, get_space_priority
+from src.ux_helper_functions import get_space_priority, Space_Mixin
 
 _translate = QCoreApplication.translate
 _translate = QCoreApplication.translate
 
 
-class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
+class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
     """Editor for new or existing tasks."""
 
     def __init__(
@@ -93,7 +93,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard):
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
-        build_space_list(self, first_item_text="")
+        self.build_space_list(first_item_text="")
 
         for item in ACTIVITY:
             if item == ACTIVITY.unspecified:
@@ -356,9 +356,9 @@ VALUES ('{text}')
                 space_editor.Space_Editor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
-                    build_space_list(win)
+                    win.build_space_list()
                 for win in app.list_of_task_lists:
-                    build_space_list(win)
+                    win.build_space_list()
 
         menu = QtWidgets.QMenu()
         menu.addAction("hinzufügen", space_add)
@@ -386,15 +386,15 @@ DELETE FROM spaces where name=='{space_name}'
                         db.commit()
                         self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                         for win in app.list_of_task_lists:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_editors:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_organizers:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
 

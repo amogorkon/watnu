@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>529</width>
+    <width>567</width>
     <height>700</height>
    </rect>
   </property>
@@ -236,7 +236,7 @@
        <item>
         <layout class="QFormLayout" name="formLayout">
          <property name="rightMargin">
-          <number>9</number>
+          <number>0</number>
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_3">
@@ -253,6 +253,24 @@
            <property name="enabled">
             <bool>true</bool>
            </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>2</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="sizeIncrement">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="currentText">
             <string/>
            </property>
@@ -260,7 +278,7 @@
             <enum>QComboBox::NoInsert</enum>
            </property>
            <property name="sizeAdjustPolicy">
-            <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+            <enum>QComboBox::AdjustToContents</enum>
            </property>
            <property name="frame">
             <bool>true</bool>
@@ -381,8 +399,14 @@
          </item>
          <item row="10" column="0">
           <widget class="QLabel" name="label_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>Arbeitsaufwand [h][min]</string>
+            <string>Arbeitsaufwand</string>
            </property>
            <property name="buddy">
             <cstring>workload_hours</cstring>
@@ -393,13 +417,20 @@
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QSpinBox" name="workload_hours">
+             <property name="toolTip">
+              <string>hours</string>
+             </property>
              <property name="maximum">
               <number>9999</number>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="workload_minutes"/>
+            <widget class="QSpinBox" name="workload_minutes">
+             <property name="toolTip">
+              <string>minutes</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>

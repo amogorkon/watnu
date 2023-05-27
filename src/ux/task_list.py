@@ -14,9 +14,16 @@ import src.ui as ui
 from src.classes import Task
 from src.logic import filter_tasks_by_content
 from src.stuff import app, config, db
-from src.ui import choose_skill
-from src.ux import choose_space, space_editor, task_editor, task_finished, task_organizer, task_running
-from src.ux_helper_functions import build_space_list, deadline_as_str, filter_tasks, get_space_id
+from src.ux import (
+    choose_skills,
+    choose_space,
+    space_editor,
+    task_editor,
+    task_finished,
+    task_organizer,
+    task_running,
+)
+from src.ux_helper_functions import Space_Mixin, deadline_as_str, filter_tasks, get_space_id
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -71,7 +78,7 @@ class Checklist(QWidget):
         # self.adjustSize()
 
 
-class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
+class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
     def rearrange_list(self, item):
         """Callback for easy rearranging of the list, no filtering."""
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
@@ -193,7 +200,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog):
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
 
-        build_space_list(self)
+        self.build_space_list()
         self._first_space_switch = True
         if self.selected_tasks:
             self.space.setCurrentIndex(0)
@@ -259,9 +266,9 @@ VALUES ('{text}')
                 space_editor.Space_Editor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
-                    build_space_list(win)
+                    win.build_space_list()
                 for win in app.list_of_task_lists:
-                    build_space_list(win)
+                    win.build_space_list()
 
         menu.addAction("hinzufügen", space_add)
 
@@ -288,15 +295,15 @@ DELETE FROM spaces where name=='{space_name}'
                         db.commit()
                         self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                         for win in app.list_of_task_lists:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_editors:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_organizers:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
 
@@ -316,7 +323,7 @@ DELETE FROM spaces where name=='{space_name}'
         menu = QtWidgets.QMenu()
 
         def skill_set():
-            match (win := choose_skill.Skill_Selection()).exec():
+            match (win := choose_skills.Skill_Selection()).exec():
                 case QtWidgets.QDialog.DialogCode.Accepted:
                     space = get_space_id(win.space.currentText(), win.space.currentIndex())
                 case _:  # Cancelled
@@ -345,9 +352,9 @@ VALUES ('{text}')
                 space_editor.Space_Editor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
-                    build_space_list(win)
+                    win.build_space_list()
                 for win in app.list_of_task_lists:
-                    build_space_list(win)
+                    win.build_space_list()
 
         menu.addAction("hinzufügen", space_add)
 
@@ -374,15 +381,15 @@ DELETE FROM spaces where name=='{space_name}'
                         db.commit()
                         self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                         for win in app.list_of_task_lists:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_editors:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
                         for win in app.list_of_task_organizers:
-                            build_space_list(win)
+                            win.build_space_list()
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
 

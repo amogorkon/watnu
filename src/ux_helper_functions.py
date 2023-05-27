@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from PyQt6.QtCore import QVariant
+from PyQt6.QtCore import QSize, QVariant
+from PyQt6.QtWidgets import QComboBox
 
 from src.classes import Task, typed, typed_row
 from src.logic import (
@@ -39,42 +40,51 @@ def deadline_as_str(deadline: float) -> str:
         return ""
 
 
-def build_space_list(parent, first_item_text="alle Räume") -> None:
-    parent.space.clear()
-    parent.space.addItem(first_item_text, QVariant(None))
-    # set font of first item to bold
-    # parent.space.setItemData(0, QFont("Arial", 10, QFont.setBold(True)), Qt.FontRole)
+class Space_Mixin:
+    def build_space_list(self, first_item_text="alle Räume") -> None:
+        self.space: QComboBox
 
-    parent.space.insertSeparator(1)
+        self.space.clear()
+        self.space.addItem(first_item_text, QVariant(None))
+        # set first item bold
+        font = self.space.font()
+        font.setBold(True)
+        #self.space.item(0).setFont(font)
+        self.space.insertSeparator(1)
 
-    query = db.execute(
-        """
-    SELECT space_id, name FROM spaces;
-    """
-    )
-    spaces = query.fetchall()
-
-    def number_of_tasks_in_space(item):
-        space_id = item[0]
-        return db.execute(
+        query = db.execute(
             """
-            SELECT COUNT(*) FROM tasks WHERE space_id=?;
-            """,
-            (space_id,),
-        ).fetchone()[0]
+        SELECT space_id, name FROM spaces;
+        """
+        )
+        spaces = query.fetchall()
 
-    sorted_spaces_by_number = sorted(spaces, key=number_of_tasks_in_space, reverse=True)
+        def number_of_tasks_in_space(item):
+            space_id = item[0]
+            return db.execute(
+                """
+                SELECT COUNT(*) FROM tasks WHERE space_id=?;
+                """,
+                (space_id,),
+            ).fetchone()[0]
 
-    for space_id, name in sorted_spaces_by_number[:3]:
-        parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
+        sorted_spaces_by_number = sorted(spaces, key=number_of_tasks_in_space, reverse=True)
 
-    parent.space.insertSeparator(5)
+        for space_id, name in sorted_spaces_by_number[:3]:
+            self.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
 
-    sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
-    for space_id, name in sorted_spaces_by_name:
-        parent.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
-    parent.space.adjustSize()
-    parent.update()
+        self.space.insertSeparator(5)
+
+        sorted_spaces_by_name = sorted(sorted_spaces_by_number[3:], key=lambda x: x[1].casefold())
+        for space_id, name in sorted_spaces_by_name:
+            self.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
+
+        # set the horizontal size of the widget to the size of the longest item in the list
+        self.space.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+
+        self.space.setMinimumSize(QSize(120, 0))
+        self.space.adjustSize()
+        self.update()
 
 
 def get_space_priority(space_id) -> float:
