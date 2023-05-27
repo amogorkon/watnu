@@ -24,7 +24,7 @@ class Application(QtWidgets.QApplication):
         db = db_
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
-        from src.classes import Space, Task
+        from src.classes import Space, Task, Skill
 
         class TaskDict(dict):
             def __missing__(self, key):
@@ -34,7 +34,13 @@ class Application(QtWidgets.QApplication):
 
         class SpaceDict(dict):
             def __missing__(self, key):
-                value = Task.from_id(key)
+                value = Space.from_id(key)
+                self[key] = value
+                return value
+
+        class SkillDict(dict):
+            def __missing__(self, key):
+                value = Skill.from_id(key)
                 self[key] = value
                 return value
 
@@ -76,6 +82,7 @@ class Application(QtWidgets.QApplication):
 
         self.tasks: dict[int, Task] = TaskDict()
         self.spaces: dict[int, Space] = SpaceDict()
+        self.skills: dict[int, Skill] = SkillDict()
 
         self.app_timer = QTimer()
         # start the timer on the clock of the next minute in msec
