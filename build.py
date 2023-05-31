@@ -1,3 +1,7 @@
+from datetime import date
+from math import modf
+from platform import platform
+from time import localtime
 import subprocess
 import sys
 from pathlib import Path
@@ -54,15 +58,19 @@ for p in src.glob("**/*"):
 
 
 subprocess.run(
-    ["pyinstaller", "--distpath", "G:/Watnu-dist", "--workpath", "G:/Watnu-build", "G:/Watnu/main.spec", "-y"]
+    [
+        "pyinstaller",
+        "--distpath",
+        "G:/Watnu-dist",
+        "--workpath",
+        "G:/Watnu-build",
+        "G:/Watnu/main.spec",
+        "-y",
+    ]
 )
 
-print("building zip..")
-from datetime import date
-from math import modf
-from platform import platform
-from time import localtime
 
+print("building zip..")
 
 def timestamp2fragday(x):
     now = localtime(x)
@@ -73,7 +81,8 @@ def timestamp2fragday(x):
 
 now = time()
 make_archive(
-    f"G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{platform(terse=True)} (nightly {date.fromtimestamp(now)}{timestamp2fragday(now)})",
+    f"""G:/Watnu-dist/Watnu-{'.'.join(str(x) for x in __version__)}-{
+platform(terse=True)} (nightly {date.fromtimestamp(now)}{timestamp2fragday(now)})""",
     "zip",
     "G:/Watnu-dist/main",
 )

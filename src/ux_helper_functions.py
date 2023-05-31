@@ -49,7 +49,7 @@ class Space_Mixin:
         # set first item bold
         font = self.space.font()
         font.setBold(True)
-        #self.space.item(0).setFont(font)
+        # self.space.item(0).setFont(font)
         self.space.insertSeparator(1)
 
         query = db.execute(
@@ -89,7 +89,12 @@ class Space_Mixin:
 
 def get_space_priority(space_id) -> float:
     try:
-        return float(db.execute("SELECT priority FROM spaces WHERE space_id = ?", (space_id,)).fetchone()[0])
+        return float(
+            db.execute(
+                "SELECT priority FROM spaces WHERE space_id = ?",
+                (space_id,),
+            ).fetchone()[0]
+        )
     except TypeError:
         return 0
 
@@ -99,7 +104,12 @@ def filter_tasks(widget, tasks: list[Task]) -> list[Task]:
     """Filter tasks according to the current filter settings."""
     return (
         tasks
-        >> filter_tasks_by_space(get_space_id(widget.space.currentText(), widget.space.currentIndex()))
+        >> filter_tasks_by_space(
+            get_space_id(
+                widget.space.currentText(),
+                widget.space.currentIndex(),
+            )
+        )
         >> filter_tasks_by_status(widget.status.currentIndex())
         >> filter_tasks_by_ilk(widget.ilk.currentIndex())
         >> list

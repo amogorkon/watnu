@@ -7,8 +7,22 @@ from time import time
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QKeyCombination, QStringListModel, Qt, QTimer
-from PyQt6.QtGui import QFont, QGuiApplication, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QCompleter, QListWidget, QMessageBox, QTableWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtGui import (
+    QFont,
+    QGuiApplication,
+    QIcon,
+    QKeySequence,
+    QShortcut,
+)
+from PyQt6.QtWidgets import (
+    QCompleter,
+    QListWidget,
+    QMessageBox,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 import src.ui as ui
 from src.classes import Task
@@ -23,7 +37,12 @@ from src.ux import (
     task_organizer,
     task_running,
 )
-from src.ux_helper_functions import Space_Mixin, deadline_as_str, filter_tasks, get_space_id
+from src.ux_helper_functions import (
+    Space_Mixin,
+    deadline_as_str,
+    filter_tasks,
+    get_space_id,
+)
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -135,9 +154,15 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
 
             screen_geometry = app.primaryScreen().geometry()
             if self.column_selection.frameGeometry().right() > screen_geometry.right():
-                self.column_selection.move(global_pos.x() - self.column_selection.width(), global_pos.y())
+                self.column_selection.move(
+                    global_pos.x() - self.column_selection.width(),
+                    global_pos.y(),
+                )
             if self.column_selection.frameGeometry().bottom() > screen_geometry.bottom():
-                self.column_selection.move(global_pos.x(), global_pos.y() - self.column_selection.height())
+                self.column_selection.move(
+                    global_pos.x(),
+                    global_pos.y() - self.column_selection.height(),
+                )
 
         self.task_table.horizontalHeader().setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.task_table.horizontalHeader().customContextMenuRequested.connect(show_column_selection)
@@ -221,8 +246,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
 
         def create_task():
             win = task_editor.Editor(current_space=self.space.currentText())
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
             win.show()
 
         menu = QtWidgets.QMenu()
@@ -239,21 +262,29 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
         def space_set():
             match (win := choose_space.Space_Selection()).exec():
                 case QtWidgets.QDialog.DialogCode.Accepted:
-                    space = get_space_id(win.space.currentText(), win.space.currentIndex())
+                    space = get_space_id(
+                        win.space.currentText(),
+                        win.space.currentIndex(),
+                    )
                 case _:  # Cancelled
                     return
             for task in (selected := self.get_selected_tasks()):
                 task.set_("space_id", space)
             self.build_task_table()
             self.statusBar.showMessage(
-                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.", 5000
+                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
+                5000,
             )
 
         menu.addAction("für ausgewählte Aufgaben setzen", space_set)
 
         def space_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
-                self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.EchoMode.Normal, ""
+                self,
+                "Neuer Space",
+                "Name des neuen Space",
+                QtWidgets.QLineEdit.EchoMode.Normal,
+                "",
             )
             if okPressed and text != "":
                 db.execute(
@@ -325,21 +356,29 @@ DELETE FROM spaces where name=='{space_name}'
         def skill_set():
             match (win := choose_skills.Skill_Selection()).exec():
                 case QtWidgets.QDialog.DialogCode.Accepted:
-                    space = get_space_id(win.space.currentText(), win.space.currentIndex())
+                    space = get_space_id(
+                        win.space.currentText(),
+                        win.space.currentIndex(),
+                    )
                 case _:  # Cancelled
                     return
             for task in (selected := self.get_selected_tasks()):
                 task.set_("space_id", space)
             self.build_task_table()
             self.statusBar.showMessage(
-                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.", 5000
+                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
+                5000,
             )
 
         menu.addAction("für ausgewählte Aufgaben setzen", space_set)
 
         def skill_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
-                self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.EchoMode.Normal, ""
+                self,
+                "Neuer Space",
+                "Name des neuen Space",
+                QtWidgets.QLineEdit.EchoMode.Normal,
+                "",
             )
             if okPressed and text != "":
                 db.execute(
@@ -467,7 +506,10 @@ DELETE FROM spaces where name=='{space_name}'
             if not selected:
                 return
             elif len(selected) > 1:
-                self.statusBar.showMessage("Es kann jeweils nur eine Aufgabe gestartet werden.", 5000)
+                self.statusBar.showMessage(
+                    "Es kann jeweils nur eine Aufgabe gestartet werden.",
+                    5000,
+                )
                 return
             else:
                 self.hide()
@@ -667,14 +709,20 @@ font-size: 12pt;
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
             case 1:  # draft
                 menu.addAction("offen", self.set_as_open)
-                menu.addAction("kein Entwurf", partial(self.set_as, "draft", False))
+                menu.addAction(
+                    "kein Entwurf",
+                    partial(self.set_as, "draft", False),
+                )
                 menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
                 menu.addAction("erledigt", partial(self.set_as, "done", True))
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
             case 2:  # inactive
                 menu.addAction("offen", self.set_as_open)
                 menu.addAction("Entwurf", partial(self.set_as, "draft", True))
-                menu.addAction("nicht inaktiv", partial(self.set_as, "inactive", False))
+                menu.addAction(
+                    "nicht inaktiv",
+                    partial(self.set_as, "inactive", False),
+                )
                 menu.addAction("erledigt", partial(self.set_as, "done", True))
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
 
@@ -682,14 +730,20 @@ font-size: 12pt;
                 menu.addAction("offen", self.set_as_open)
                 menu.addAction("Entwurf", partial(self.set_as, "draft", True))
                 menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
-                menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
+                menu.addAction(
+                    "nicht erledigt",
+                    partial(self.set_as, "done", False),
+                )
                 menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
             case 4:  # deleted
                 menu.addAction("offen", self.set_as_open)
                 menu.addAction("Entwurf", partial(self.set_as, "draft", True))
                 menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
                 menu.addAction("erledigt", partial(self.set_as, "done", True))
-                menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+                menu.addAction(
+                    "nicht gelöscht",
+                    partial(self.set_as, "deleted", False),
+                )
             case 5:  # all
                 menu.addAction("offen", self.set_as_open)
                 menu.addAction("Entwurf", partial(self.set_as, "draft", True))
@@ -711,8 +765,6 @@ font-size: 12pt;
                     break
             else:
                 win = task_editor.Editor(task)
-                app.list_of_task_editors.append(win)
-                app.list_of_windows.append(win)
                 win.show()
 
     def organize_selected(self, widget):

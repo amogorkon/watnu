@@ -19,7 +19,10 @@ class PlaySound(QThread):
         super().__init__()
 
     def run(self):
-        winsound.PlaySound(str(config.base_path / "extra/success1.wav"), winsound.SND_FILENAME)
+        winsound.PlaySound(
+            str(config.base_path / "extra/success1.wav"),
+            winsound.SND_FILENAME,
+        )
 
 
 class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
@@ -78,7 +81,10 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         sound = PlaySound()
         sound.start()
 
-        if self.task.ilk not in (ILK.habit, ILK.routine):  # ? is that right?
+        if self.task.ilk not in (
+            ILK.habit,
+            ILK.routine,
+        ):  # ? is that right?
             total = self.hours.value() * 60 * 60 + self.minutes.value() * 60 - self.pause_time
         else:
             total = (
@@ -91,7 +97,13 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.task.set_("done", True)
         self.task.set_adjust_time_spent(total - self.task.time_spent)
         self.task.set_last_checked(self.stop)
-        app.write_session(self.task.id, self.start, time(), finished=True, pause_time=self.pause_time)
+        app.write_session(
+            self.task.id,
+            self.start,
+            time(),
+            finished=True,
+            pause_time=self.pause_time,
+        )
 
         new_skills = [
             (skill_id, int(skill_level(Skill(skill_id).time_spent))) for skill_id in self.task.skill_ids

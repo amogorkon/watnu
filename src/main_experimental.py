@@ -29,7 +29,9 @@ app = app.Application(sys.argv)
 import use
 
 q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
+    modes=use.recklessness,
+    import_as="q",
 ).Q()
 
 
@@ -140,7 +142,9 @@ app.setWindowIcon(app.icon)
 # split tutorial from landing wizard, so the user can do the tutorial at any time
 if config.first_start:
     win_landing = use(
-        use.Path("ux/landing.py"), initial_globals={"config": config}, import_as="ux.landing"
+        use.Path("ux/landing.py"),
+        initial_globals={"config": config},
+        import_as="ux.landing",
     ).Landing()
     concluded = win_landing.exec()
 
@@ -178,7 +182,11 @@ initial_globals = {
 
 # push all the globals into 'src.stuff' so we can import them properly and
 # getting all the perks of IDE autocompletion
-use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
+use(
+    use.Path("stuff.py"),
+    initial_globals=initial_globals,
+    import_as="src.stuff",
+)
 from src.classes import retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
@@ -219,7 +227,13 @@ if config.autostart:
         0,
         winreg.KEY_ALL_ACCESS,
     )
-    winreg.SetValueEx(key, "Watnu", 0, winreg.REG_SZ, f"{sys.executable} {config.base_path / 'watnu.py'}")
+    winreg.SetValueEx(
+        key,
+        "Watnu",
+        0,
+        winreg.REG_SZ,
+        f"{sys.executable} {config.base_path / 'watnu.py'}",
+    )
     winreg.CloseKey(key)
 else:
     with contextlib.suppress(FileNotFoundError):

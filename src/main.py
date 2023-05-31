@@ -28,7 +28,9 @@ import use
 # new_tips = use("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.py")
 
 q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
+    modes=use.recklessness,
+    import_as="q",
 ).Q()
 
 
@@ -73,6 +75,16 @@ use(
     hash_algo=use.Hash.sha256,
     hashes={
         "M㻇睧㳱懁㖯糄巿蚩熆鲣㦶烺㒈䵒犝㞍覦",  # py3-any
+    },
+)
+
+use(
+    "icontract",
+    version="2.6.2",
+    modes=use.auto_install,
+    hash_algo=use.Hash.sha256,
+    hashes={
+        "I瓄繨鈁䦻㱄䡋禫登鶹棵鋌㓿䆛澖鞸岳拺",  # py3-any
     },
 )
 
@@ -132,7 +144,9 @@ app.setWindowIcon(app.icon)
 # split tutorial from landing wizard, so the user can do the tutorial at any time
 if config.first_start:
     win_landing = use(
-        use.Path("ux/landing.py"), initial_globals={"config": config}, import_as="ux.landing"
+        use.Path("ux/landing.py"),
+        initial_globals={"config": config},
+        import_as="ux.landing",
     ).Landing()
     concluded = win_landing.exec()
 
@@ -170,7 +184,11 @@ initial_globals = {
 
 # push all the globals into 'src.stuff' so we can import them properly
 # and getting all the perks of IDE autocompletion
-use(use.Path("stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
+use(
+    use.Path("stuff.py"),
+    initial_globals=initial_globals,
+    import_as="src.stuff",
+)
 from src.classes import retrieve_spaces, retrieve_tasks
 
 app.setUp(config, db)
@@ -211,7 +229,13 @@ if config.autostart:
         0,
         winreg.KEY_ALL_ACCESS,
     )
-    winreg.SetValueEx(key, "Watnu", 0, winreg.REG_SZ, f"{sys.executable} {config.base_path / 'watnu.py'}")
+    winreg.SetValueEx(
+        key,
+        "Watnu",
+        0,
+        winreg.REG_SZ,
+        f"{sys.executable} {config.base_path / 'watnu.py'}",
+    )
     winreg.CloseKey(key)
 else:
     with contextlib.suppress(FileNotFoundError):
@@ -253,7 +277,9 @@ check_for_cycles(list(app.tasks.values()))
 check_for_deadline_without_workload(list(app.tasks.values()))
 check_for_overdue_tasks(list(app.tasks.values()), now)
 check_for_incompleatable_tasks(list(app.tasks.values()), now)
-check_for_cycles(list(app.tasks.values()))  # again, the user might have introduced cycles in previous checks
+check_for_cycles(
+    list(app.tasks.values())
+)  # again, the user might have introduced cycles in previous checks
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()

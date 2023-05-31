@@ -1,6 +1,10 @@
 from PyQt6.QtCore import QRectF, QSizeF, Qt
-from PyQt6.QtGui import QBrush, QColor, QPen
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
+from PyQt6.QtGui import QColor, QPen
+from PyQt6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsScene,
+    QGraphicsView,
+)
 
 
 class Node(QGraphicsItem):

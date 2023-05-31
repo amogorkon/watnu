@@ -7,14 +7,14 @@ from src.stuff import app
 from src.ux import task_editor
 
 
-def clean_up_empty_tasks(tasks: list[Task]):
+def clean_up_empty_tasks(tasks: list[Task]) -> None:
     # first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
     for task in tasks:
         if task.do == "" and task.notes in ("", None):
             task.really_delete()
 
 
-def check_for_drafts(tasks: list[Task]):
+def check_for_drafts(tasks: list[Task]) -> None:
     # let's check for drafts
     if drafts := [t for t in tasks if t.draft]:
         match QMessageBox.question(
@@ -28,7 +28,7 @@ def check_for_drafts(tasks: list[Task]):
                     win.show()
 
 
-def check_for_cycles(tasks):
+def check_for_cycles(tasks: list[Task]) -> None:
     while cycle := cycle_in_task_dependencies(tasks):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("Jetzt bearbeiten?")
@@ -47,7 +47,7 @@ def check_for_cycles(tasks):
                     win.show()
 
 
-def check_for_duplicates(tasks: list[Task]):
+def check_for_duplicates(tasks: list[Task]) -> None:
     # let's check for duplicates
 
     for task1 in tasks:
@@ -73,7 +73,7 @@ def check_for_duplicates(tasks: list[Task]):
                         app.list_of_windows.append(win)
 
 
-def check_for_deadline_without_workload(tasks: list[Task]):
+def check_for_deadline_without_workload(tasks: list[Task]) -> None:
     # let's check if tasks have a deadline without workload
     if bads := [
         task
@@ -97,7 +97,7 @@ def check_for_deadline_without_workload(tasks: list[Task]):
                     win.show()
 
 
-def check_for_overdue_tasks(tasks: list[Task], now: datetime):
+def check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for overdue tasks
     if overdue := [task for task in tasks if task.is_overdue(now=now)]:
         match QMessageBox.question(
@@ -112,7 +112,7 @@ def check_for_overdue_tasks(tasks: list[Task], now: datetime):
                     win.show()
 
 
-def check_for_incompleatable_tasks(tasks: list[Task], now: datetime):
+def check_for_incompleatable_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for tasks that are not yet overdue but incompleatable according to workload
     if incompleteable := [
         task for task in tasks if task.time_buffer <= 0 and not task.is_overdue(now=now) and task.is_doable

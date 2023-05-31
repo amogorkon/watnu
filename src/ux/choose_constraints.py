@@ -1,14 +1,15 @@
-from datetime import datetime
 
 import numpy as np
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QKeyCombination, Qt, QTimer, QVariant
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import (
+    QKeySequence,
+    QShortcut,
+)
 
 import src.ui as ui
 import src.ux as ux
-from src.classes import EVERY, Every, Task
+from src.classes import Task
 
 
 class ConstraintChooser(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):

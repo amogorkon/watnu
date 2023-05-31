@@ -13,7 +13,10 @@ class Ui_Wizard(object):
     def setupUi(self, Wizard):
         Wizard.setObjectName("Wizard")
         Wizard.resize(567, 700)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Wizard.sizePolicy().hasHeightForWidth())
@@ -22,13 +25,24 @@ class Ui_Wizard(object):
         Wizard.setSizeGripEnabled(True)
         Wizard.setModal(False)
         Wizard.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
-        Wizard.setOptions(QtWidgets.QWizard.WizardOption.CancelButtonOnLeft|QtWidgets.QWizard.WizardOption.HaveCustomButton1|QtWidgets.QWizard.WizardOption.HaveCustomButton2|QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages|QtWidgets.QWizard.WizardOption.HaveHelpButton|QtWidgets.QWizard.WizardOption.IgnoreSubTitles|QtWidgets.QWizard.WizardOption.NoBackButtonOnStartPage)
+        Wizard.setOptions(
+            QtWidgets.QWizard.WizardOption.CancelButtonOnLeft
+            | QtWidgets.QWizard.WizardOption.HaveCustomButton1
+            | QtWidgets.QWizard.WizardOption.HaveCustomButton2
+            | QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages
+            | QtWidgets.QWizard.WizardOption.HaveHelpButton
+            | QtWidgets.QWizard.WizardOption.IgnoreSubTitles
+            | QtWidgets.QWizard.WizardOption.NoBackButtonOnStartPage
+        )
         self.page = QtWidgets.QWizardPage()
         self.page.setObjectName("page")
         self.page_layout = QtWidgets.QVBoxLayout(self.page)
         self.page_layout.setObjectName("page_layout")
         self.groupBox = QtWidgets.QGroupBox(parent=self.page)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
@@ -38,7 +52,10 @@ class Ui_Wizard(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.groupBox)
         self.verticalLayout.setObjectName("verticalLayout")
         self.do = QtWidgets.QTextEdit(parent=self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.do.sizePolicy().hasHeightForWidth())
@@ -52,7 +69,15 @@ class Ui_Wizard(object):
         self.do.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.do.setAutoFormatting(QtWidgets.QTextEdit.AutoFormattingFlag.AutoAll)
         self.do.setTabChangesFocus(True)
-        self.do.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse|QtCore.Qt.TextInteractionFlag.TextBrowserInteraction|QtCore.Qt.TextInteractionFlag.TextEditable|QtCore.Qt.TextInteractionFlag.TextEditorInteraction|QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard|QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.do.setTextInteractionFlags(
+            QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard
+            | QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse
+            | QtCore.Qt.TextInteractionFlag.TextBrowserInteraction
+            | QtCore.Qt.TextInteractionFlag.TextEditable
+            | QtCore.Qt.TextInteractionFlag.TextEditorInteraction
+            | QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard
+            | QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.do.setObjectName("do")
         self.verticalLayout.addWidget(self.do)
         self.task_type = QtWidgets.QGroupBox(parent=self.groupBox)
@@ -84,7 +109,10 @@ class Ui_Wizard(object):
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.groupBox_2)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.resources = QtWidgets.QComboBox(parent=self.groupBox_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.resources.sizePolicy().hasHeightForWidth())
@@ -96,31 +124,55 @@ class Ui_Wizard(object):
         self.resource_remove = QtWidgets.QPushButton(parent=self.groupBox_2)
         self.resource_remove.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/minus.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/feathericons/minus.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.resource_remove.setIcon(icon)
         self.resource_remove.setObjectName("resource_remove")
         self.horizontalLayout_4.addWidget(self.resource_remove)
         self.resource_add = QtWidgets.QPushButton(parent=self.groupBox_2)
         self.resource_add.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/plus.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon1.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/feathericons/plus.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.resource_add.setIcon(icon1)
         self.resource_add.setObjectName("resource_add")
         self.horizontalLayout_4.addWidget(self.resource_add)
         self.verticalLayout.addWidget(self.groupBox_2)
         self.page_layout.addWidget(self.groupBox)
         self.notes = QtWidgets.QPlainTextEdit(parent=self.page)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Maximum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Maximum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.notes.sizePolicy().hasHeightForWidth())
         self.notes.setSizePolicy(sizePolicy)
-        self.notes.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
-        self.notes.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard|QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse|QtCore.Qt.TextInteractionFlag.TextBrowserInteraction|QtCore.Qt.TextInteractionFlag.TextEditable|QtCore.Qt.TextInteractionFlag.TextEditorInteraction|QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard|QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.notes.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
+        )
+        self.notes.setTextInteractionFlags(
+            QtCore.Qt.TextInteractionFlag.LinksAccessibleByKeyboard
+            | QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse
+            | QtCore.Qt.TextInteractionFlag.TextBrowserInteraction
+            | QtCore.Qt.TextInteractionFlag.TextEditable
+            | QtCore.Qt.TextInteractionFlag.TextEditorInteraction
+            | QtCore.Qt.TextInteractionFlag.TextSelectableByKeyboard
+            | QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.notes.setObjectName("notes")
         self.page_layout.addWidget(self.notes)
         self.groupBox_6 = QtWidgets.QGroupBox(parent=self.page)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox_6.sizePolicy().hasHeightForWidth())
@@ -136,7 +188,10 @@ class Ui_Wizard(object):
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.label_3)
         self.space = QtWidgets.QComboBox(parent=self.groupBox_6)
         self.space.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(2)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.space.sizePolicy().hasHeightForWidth())
@@ -169,19 +224,28 @@ class Ui_Wizard(object):
         self.total_priority.setDecimals(3)
         self.total_priority.setMaximum(99999.99)
         self.total_priority.setObjectName("total_priority")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.ItemRole.FieldRole, self.total_priority)
+        self.formLayout.setWidget(
+            2,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.total_priority,
+        )
         self.label_4 = QtWidgets.QLabel(parent=self.groupBox_6)
         self.label_4.setObjectName("label_4")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.ItemRole.LabelRole, self.label_4)
         self.level = QtWidgets.QComboBox(parent=self.groupBox_6)
         self.level.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.level.sizePolicy().hasHeightForWidth())
         self.level.setSizePolicy(sizePolicy)
         self.level.setCurrentText("")
-        self.level.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.level.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.level.setFrame(True)
         self.level.setObjectName("level")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.ItemRole.FieldRole, self.level)
@@ -191,9 +255,16 @@ class Ui_Wizard(object):
         self.secondary_activity = QtWidgets.QComboBox(parent=self.groupBox_6)
         self.secondary_activity.setObjectName("secondary_activity")
         self.secondary_activity.addItem("")
-        self.formLayout.setWidget(7, QtWidgets.QFormLayout.ItemRole.FieldRole, self.secondary_activity)
+        self.formLayout.setWidget(
+            7,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.secondary_activity,
+        )
         self.label_2 = QtWidgets.QLabel(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Preferred,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
@@ -209,136 +280,217 @@ class Ui_Wizard(object):
         self.workload_minutes = QtWidgets.QSpinBox(parent=self.groupBox_6)
         self.workload_minutes.setObjectName("workload_minutes")
         self.horizontalLayout_2.addWidget(self.workload_minutes)
-        self.formLayout.setLayout(10, QtWidgets.QFormLayout.ItemRole.FieldRole, self.horizontalLayout_2)
+        self.formLayout.setLayout(
+            10,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.horizontalLayout_2,
+        )
         self.primary_activity = QtWidgets.QComboBox(parent=self.groupBox_6)
         self.primary_activity.setObjectName("primary_activity")
         self.primary_activity.addItem("")
-        self.formLayout.setWidget(5, QtWidgets.QFormLayout.ItemRole.FieldRole, self.primary_activity)
+        self.formLayout.setWidget(
+            5,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.primary_activity,
+        )
         self.label_5 = QtWidgets.QLabel(parent=self.groupBox_6)
         self.label_5.setObjectName("label_5")
         self.formLayout.setWidget(5, QtWidgets.QFormLayout.ItemRole.LabelRole, self.label_5)
         self.horizontalLayout.addLayout(self.formLayout)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40,
+            20,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         self.horizontalLayout.addItem(spacerItem)
         self.gridLayout_2 = QtWidgets.QGridLayout()
         self.gridLayout_2.setContentsMargins(-1, -1, 10, -1)
         self.gridLayout_2.setHorizontalSpacing(6)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.choose_skills_button = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.choose_skills_button.sizePolicy().hasHeightForWidth())
         self.choose_skills_button.setSizePolicy(sizePolicy)
         self.choose_skills_button.setText("")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("src\\ui\\../extra/skills.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon2.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/skills.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.choose_skills_button.setIcon(icon2)
         self.choose_skills_button.setObjectName("choose_skills_button")
         self.gridLayout_2.addWidget(self.choose_skills_button, 3, 0, 1, 1)
         self.organize_subtasks = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.organize_subtasks.sizePolicy().hasHeightForWidth())
         self.organize_subtasks.setSizePolicy(sizePolicy)
         self.organize_subtasks.setText("")
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap("src\\ui\\../extra/chevrons-down.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon3.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/chevrons-down.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.organize_subtasks.setIcon(icon3)
         self.organize_subtasks.setObjectName("organize_subtasks")
         self.gridLayout_2.addWidget(self.organize_subtasks, 5, 0, 1, 1)
         self.choose_repeats_button = QtWidgets.QPushButton(parent=self.groupBox_6)
         self.choose_repeats_button.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.choose_repeats_button.sizePolicy().hasHeightForWidth())
         self.choose_repeats_button.setSizePolicy(sizePolicy)
         self.choose_repeats_button.setText("")
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap("src\\ui\\../extra/repeats.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon4.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/repeats.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.choose_repeats_button.setIcon(icon4)
         self.choose_repeats_button.setObjectName("choose_repeats_button")
         self.gridLayout_2.addWidget(self.choose_repeats_button, 1, 0, 1, 1)
         self.organize_supertasks = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.organize_supertasks.sizePolicy().hasHeightForWidth())
         self.organize_supertasks.setSizePolicy(sizePolicy)
         self.organize_supertasks.setText("")
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap("src\\ui\\../extra/chevrons-up.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon5.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/chevrons-up.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.organize_supertasks.setIcon(icon5)
         self.organize_supertasks.setObjectName("organize_supertasks")
         self.gridLayout_2.addWidget(self.organize_supertasks, 4, 0, 1, 1)
         self.primary_activity_button = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.primary_activity_button.sizePolicy().hasHeightForWidth())
         self.primary_activity_button.setSizePolicy(sizePolicy)
         self.primary_activity_button.setText("")
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap("src\\ui\\../extra/mind.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon6.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/mind.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.primary_activity_button.setIcon(icon6)
         self.primary_activity_button.setObjectName("primary_activity_button")
         self.gridLayout_2.addWidget(self.primary_activity_button, 0, 0, 1, 1)
         self.choose_constraints_button = QtWidgets.QPushButton(parent=self.groupBox_6)
         self.choose_constraints_button.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.choose_constraints_button.sizePolicy().hasHeightForWidth())
         self.choose_constraints_button.setSizePolicy(sizePolicy)
         self.choose_constraints_button.setText("")
         icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap("src\\ui\\../extra/constraints.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon7.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/constraints.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.choose_constraints_button.setIcon(icon7)
         self.choose_constraints_button.setObjectName("choose_constraints_button")
         self.gridLayout_2.addWidget(self.choose_constraints_button, 1, 2, 1, 1)
         self.choose_deadline_button = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.choose_deadline_button.sizePolicy().hasHeightForWidth())
         self.choose_deadline_button.setSizePolicy(sizePolicy)
         self.choose_deadline_button.setText("")
         icon8 = QtGui.QIcon()
-        icon8.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/log-in.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon8.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/feathericons/log-in.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.choose_deadline_button.setIcon(icon8)
         self.choose_deadline_button.setCheckable(False)
         self.choose_deadline_button.setChecked(False)
         self.choose_deadline_button.setObjectName("choose_deadline_button")
         self.gridLayout_2.addWidget(self.choose_deadline_button, 1, 3, 1, 1)
         self.secondary_activity_button = QtWidgets.QPushButton(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.secondary_activity_button.sizePolicy().hasHeightForWidth())
         self.secondary_activity_button.setSizePolicy(sizePolicy)
         self.secondary_activity_button.setText("")
         icon9 = QtGui.QIcon()
-        icon9.addPixmap(QtGui.QPixmap("src\\ui\\../extra/soul.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon9.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/soul.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.secondary_activity_button.setIcon(icon9)
         self.secondary_activity_button.setObjectName("secondary_activity_button")
         self.gridLayout_2.addWidget(self.secondary_activity_button, 0, 3, 1, 1)
         self.pushButton = QtWidgets.QPushButton(parent=self.groupBox_6)
         self.pushButton.setText("")
         icon10 = QtGui.QIcon()
-        icon10.addPixmap(QtGui.QPixmap("src\\ui\\../extra/body.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon10.addPixmap(
+            QtGui.QPixmap("src\\ui\\../extra/body.svg"),
+            QtGui.QIcon.Mode.Normal,
+            QtGui.QIcon.State.Off,
+        )
         self.pushButton.setIcon(icon10)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout_2.addWidget(self.pushButton, 0, 2, 1, 1)
         self.horizontalLayout.addLayout(self.gridLayout_2)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40,
+            20,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         self.horizontalLayout.addItem(spacerItem1)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
         self.verticalLayout_3.setContentsMargins(-1, -1, 10, -1)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.groupBox_9 = QtWidgets.QGroupBox(parent=self.groupBox_6)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox_9.sizePolicy().hasHeightForWidth())
@@ -355,7 +507,10 @@ class Ui_Wizard(object):
         self.verticalLayout_4.setContentsMargins(-1, -1, 10, -1)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
         self.fear_label = QtWidgets.QLabel(parent=self.groupBox_9)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.fear_label.sizePolicy().hasHeightForWidth())
@@ -375,7 +530,10 @@ class Ui_Wizard(object):
         self.verticalLayout_5.setContentsMargins(-1, -1, 10, -1)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
         self.difficulty_label = QtWidgets.QLabel(parent=self.groupBox_9)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.difficulty_label.sizePolicy().hasHeightForWidth())
@@ -394,7 +552,10 @@ class Ui_Wizard(object):
         self.verticalLayout_6.setContentsMargins(-1, -1, 10, -1)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.embarrassment_label = QtWidgets.QLabel(parent=self.groupBox_9)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.embarrassment_label.sizePolicy().hasHeightForWidth())
@@ -411,7 +572,12 @@ class Ui_Wizard(object):
         self.horizontalLayout_6.addLayout(self.verticalLayout_6)
         self.horizontalLayout_3.addLayout(self.horizontalLayout_6)
         self.verticalLayout_3.addWidget(self.groupBox_9)
-        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            20,
+            40,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
         self.verticalLayout_3.addItem(spacerItem2)
         self.horizontalLayout.addLayout(self.verticalLayout_3)
         self.page_layout.addWidget(self.groupBox_6)

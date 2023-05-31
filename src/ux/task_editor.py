@@ -5,6 +5,7 @@ from functools import partial
 from typing import Literal
 
 import numpy as np
+from beartype import beartype
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -15,12 +16,13 @@ import src.ui as ui
 from src.classes import ACTIVITY, ILK, Task
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished
-from src.ux_helper_functions import get_space_priority, Space_Mixin
+from src.ux_helper_functions import Space_Mixin, get_space_priority
 
 _translate = QCoreApplication.translate
 _translate = QCoreApplication.translate
 
 
+@beartype
 class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
     """Editor for new or existing tasks."""
 
@@ -109,7 +111,12 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         self.level.setModelColumn(1)
         self.level.setCurrentIndex(2)
 
-        self.page.registerField("task*", self.do, "plainText", changedSignal=self.do.textChanged)
+        self.page.registerField(
+            "task*",
+            self.do,
+            "plainText",
+            changedSignal=self.do.textChanged,
+        )
 
         # editing a task - need to set all values accordingly
         if task:
@@ -219,7 +226,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         show_state_depending()  # first time
         self.gui_timer.timeout.connect(show_state_depending)
 
-        self.setButtonText(QWizard.WizardButton.CustomButton1, "als Entwurf speichern")
+        self.setButtonText(
+            QWizard.WizardButton.CustomButton1,
+            "als Entwurf speichern",
+        )
 
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
         def _():
@@ -343,7 +353,11 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         def space_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
-                self, "Neuer Space", "Name des neuen Space", QtWidgets.QLineEdit.EchoMode.Normal, ""
+                self,
+                "Neuer Space",
+                "Name des neuen Space",
+                QtWidgets.QLineEdit.EchoMode.Normal,
+                "",
             )
             if okPressed and text != "":
                 db.execute(
@@ -417,7 +431,7 @@ DELETE FROM spaces where name=='{space_name}'
         def _():
             space_id = self.space.currentData()
             if space_id is not None:
-                for primary_activity_id, secondary_activity_id in db.execute(
+                for (primary_activity_id, secondary_activity_id,) in db.execute(
                     f"""
 SELECT primary_activity_id, secondary_activity_id
 FROM spaces
@@ -508,8 +522,14 @@ VALUES ({self.task.id}, '{self.deadline}')
 
     def save_resources(self):
         for url in (self.resources.itemText(i) for i in range(self.resources.count())):
-            db.execute("INSERT OR IGNORE INTO resources (url) VALUES (?);", (url,))
-            resource_id = db.execute("SELECT resource_id FROM resources WHERE url = ?;", (url,)).fetchone()[0]
+            db.execute(
+                "INSERT OR IGNORE INTO resources (url) VALUES (?);",
+                (url,),
+            )
+            resource_id = db.execute(
+                "SELECT resource_id FROM resources WHERE url = ?;",
+                (url,),
+            ).fetchone()[0]
             db.execute(
                 "INSERT INTO task_uses_resource (task_id, resource_id) VALUES (?, ?);",
                 (self.task.id, resource_id),
@@ -607,6 +627,10 @@ WHERE id={self.task.id}
     def hideEvent(self, event):
         self.kill()
 
+    def reject(self):
+        super().reject()
+        self.kill()
+
     def kill(self):
         self.gui_timer.stop()
         # sometimes Qt hides and then closes the window, so this is called twice
@@ -614,6 +638,9 @@ WHERE id={self.task.id}
             app.list_of_task_editors.remove(self)
         with contextlib.suppress(ValueError):
             app.list_of_windows.remove(self)
+        assert self not in app.list_of_task_editors, breakpoint()
+        assert self not in app.list_of_windows, breakpoint()
+
         if self.task.do == "" and self.task.notes == "":  # TODO: this is a hack
             self.task.really_delete()
 
@@ -621,7 +648,6 @@ WHERE id={self.task.id}
             app.win_what.raise_()
         else:
             app.list_of_windows[-1].raise_()
-
         self.close()
         self.deleteLater()
 
@@ -639,12 +665,6 @@ WHERE id={self.task.id}
         win.skill_ids = self.skill_ids
         win.priority.setValue(self.priority.value())
         win.total_priority.setValue(self.total_priority.value())
-
-        self.add_win_to_app(win)
-
-    def add_win_to_app(self, win):
-        app.list_of_task_editors.append(win)
-        app.list_of_windows.append(win)
         win.show()
 
     def set_as(self, status: str, set_flag):
@@ -675,7 +695,10 @@ WHERE id == {self.task.id}
             menu.addAction("Entwurf", partial(self.set_as, "draft", True))
 
         if self.task.deleted:
-            menu.addAction("nicht gelöscht", partial(self.set_as, "deleted", False))
+            menu.addAction(
+                "nicht gelöscht",
+                partial(self.set_as, "deleted", False),
+            )
         else:
             menu.addAction("gelöscht", partial(self.set_as, "deleted", True))
 

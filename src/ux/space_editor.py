@@ -1,13 +1,13 @@
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, QSize, Qt, QTimer, QVariant
+from PyQt6.QtCore import QCoreApplication, QVariant
 
-_translate = QCoreApplication.translate
 
 import src.ui as ui
 import src.ux as ux
 from src.stuff import app, db
 from src.classes import ACTIVITY
 
+_translate = QCoreApplication.translate
 
 class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
     def __init__(self, space_name: str):
@@ -44,12 +44,18 @@ class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
         self.former_name = space_name
         self.name_edit.setText(space_name)
         self.priority.setValue(
-            db.execute("SELECT priority FROM spaces WHERE name=?", (space_name,)).fetchone()[0]
+            db.execute(
+                "SELECT priority FROM spaces WHERE name=?",
+                (space_name,),
+            ).fetchone()[0]
         )
 
     def accept(self):
         if self.name_edit.text() != self.former_name:
-            db.execute("UPDATE spaces SET name=? WHERE name=?", (self.name_edit.text(), self.former_name))
+            db.execute(
+                "UPDATE spaces SET name=? WHERE name=?",
+                (self.name_edit.text(), self.former_name),
+            )
             for win in app.list_of_task_lists:
                 ux.task_list.ux.task_list.build_space_list(win)
                 if win.space.currentText() == self.name_edit.text():

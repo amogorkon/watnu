@@ -33,7 +33,10 @@ class Ui_Dialog(object):
         self.field_filter.setObjectName("field_filter")
         self.statusLayout.addWidget(self.field_filter)
         self.space = QtWidgets.QComboBox(parent=self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.space.sizePolicy().hasHeightForWidth())
@@ -49,7 +52,10 @@ class Ui_Dialog(object):
         self.space.addItem("")
         self.statusLayout.addWidget(self.space)
         self.comboBox = QtWidgets.QComboBox(parent=self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
@@ -90,7 +96,10 @@ class Ui_Dialog(object):
         self.statusLayout.addWidget(self.ilk)
         self.layout.addWidget(self.groupBox)
         self.task_table = QtWidgets.QTableWidget(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.task_table.sizePolicy().hasHeightForWidth())
@@ -138,7 +147,10 @@ class Ui_Dialog(object):
         self.buttonLayout.setObjectName("buttonLayout")
         self.button7 = QtWidgets.QPushButton(parent=Dialog)
         self.button7.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button7.sizePolicy().hasHeightForWidth())
@@ -147,7 +159,10 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button7, 2, 1, 1, 1)
         self.button3 = QtWidgets.QPushButton(parent=Dialog)
         self.button3.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button3.sizePolicy().hasHeightForWidth())
@@ -155,7 +170,10 @@ class Ui_Dialog(object):
         self.button3.setObjectName("button3")
         self.buttonLayout.addWidget(self.button3, 5, 3, 1, 1)
         self.button5 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button5.sizePolicy().hasHeightForWidth())
@@ -169,7 +187,10 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button4, 4, 1, 1, 1)
         self.button2 = QtWidgets.QPushButton(parent=Dialog)
         self.button2.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button2.sizePolicy().hasHeightForWidth())
@@ -178,7 +199,10 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button2, 5, 2, 1, 1)
         self.button6 = QtWidgets.QPushButton(parent=Dialog)
         self.button6.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button6.sizePolicy().hasHeightForWidth())
@@ -186,7 +210,10 @@ class Ui_Dialog(object):
         self.button6.setObjectName("button6")
         self.buttonLayout.addWidget(self.button6, 4, 3, 1, 1)
         self.button8 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button8.sizePolicy().hasHeightForWidth())
@@ -194,7 +221,10 @@ class Ui_Dialog(object):
         self.button8.setObjectName("button8")
         self.buttonLayout.addWidget(self.button8, 2, 2, 1, 1)
         self.button1 = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button1.sizePolicy().hasHeightForWidth())
@@ -206,7 +236,10 @@ class Ui_Dialog(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.button9a = QtWidgets.QPushButton(parent=Dialog)
         self.button9a.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button9a.sizePolicy().hasHeightForWidth())
@@ -215,7 +248,10 @@ class Ui_Dialog(object):
         self.button9a.setObjectName("button9a")
         self.horizontalLayout.addWidget(self.button9a)
         self.button9b = QtWidgets.QPushButton(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Minimum,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button9b.sizePolicy().hasHeightForWidth())

@@ -110,7 +110,13 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             self.space_stats.setItem(i, 3, item)
 
         for i, (level_id, name) in enumerate(
-            ((-2, "MUST NOT"), (-1, "SHOULD NOT"), (0, "COULD"), (1, "SHOULD"), (2, "MUST"))
+            (
+                (-2, "MUST NOT"),
+                (-1, "SHOULD NOT"),
+                (0, "COULD"),
+                (1, "SHOULD"),
+                (2, "MUST"),
+            )
         ):
             self.level_stats.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(name)
@@ -158,7 +164,7 @@ sessions
 """
         )
 
-        for i, (session_id, task_id, start, stop, finished, pause_time) in enumerate(
+        for i, (session_id, task_id, start, stop, finished, pause_time,) in enumerate(
             (
                 typed_row(row, 0, int),
                 typed_row(row, 1, int),
@@ -213,7 +219,10 @@ def collect_statistics() -> statistics:
     yesterday_end = today_end - timedelta(days=1)
 
     total_added = typed_row(
-        db.execute("SELECT count(*) from tasks WHERE not draft").fetchone(), 0, int, default=0
+        db.execute("SELECT count(*) from tasks WHERE not draft").fetchone(),
+        0,
+        int,
+        default=0,
     )
     total_finished = typed_row(
         db.execute(
@@ -262,7 +271,8 @@ def get_today_finished():
     now = datetime.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     return db.execute(
-        """SELECT count(*) from sessions WHERE ? < stop AND finished""", (today_start.timestamp(),)
+        """SELECT count(*) from sessions WHERE ? < stop AND finished""",
+        (today_start.timestamp(),),
     ).fetchone()[0]
 
 

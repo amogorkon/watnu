@@ -16,13 +16,19 @@ class Ui_Dialog(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName("verticalLayout")
         self.skills_table = QtWidgets.QTableWidget(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.skills_table.sizePolicy().hasHeightForWidth())
         self.skills_table.setSizePolicy(sizePolicy)
         self.skills_table.setAutoFillBackground(True)
-        self.skills_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked|QtWidgets.QAbstractItemView.EditTrigger.EditKeyPressed)
+        self.skills_table.setEditTriggers(
+            QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked
+            | QtWidgets.QAbstractItemView.EditTrigger.EditKeyPressed
+        )
         self.skills_table.setTabKeyNavigation(False)
         self.skills_table.setProperty("showDropIndicator", False)
         self.skills_table.setDragDropOverwriteMode(False)

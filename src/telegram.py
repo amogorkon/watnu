@@ -11,7 +11,9 @@ def tell_telegram(msg, config):
 
     with requests.Session() as session:
         retries = Retry(
-            total=10, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
+            total=10,
+            backoff_factor=0.2,
+            status_forcelist=[500, 502, 503, 504],
         )
 
         session.mount("http://", HTTPAdapter(max_retries=retries))

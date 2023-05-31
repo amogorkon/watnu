@@ -157,7 +157,11 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.task.set_("adjust_time_spent", self.session_adjust_time_spent)
             self.hide()
             app.write_session(
-                self.task.id, self.start_time, stop_time, finished=False, pause_time=self.paused_ticks
+                self.task.id,
+                self.start_time,
+                stop_time,
+                finished=False,
+                pause_time=self.paused_ticks,
             )
             app.win_main.show()
 
@@ -182,7 +186,11 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         def finish_task_button():
             if timer_was_running := self.timer.isActive():
                 self.timer.stop()
-            win = ux.task_finished.Finisher(self.task, start=self.start_time, pause_time=self.paused_ticks)
+            win = ux.task_finished.Finisher(
+                self.task,
+                start=self.start_time,
+                pause_time=self.paused_ticks,
+            )
             if not win.exec():
                 if timer_was_running:
                     self.timer.start()

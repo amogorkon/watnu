@@ -26,45 +26,93 @@ class Ui_Dialog(object):
         self.today_finished_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.today_finished_outlabel.setText("")
         self.today_finished_outlabel.setObjectName("today_finished_outlabel")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.today_finished_outlabel)
+        self.formLayout.setWidget(
+            0,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.today_finished_outlabel,
+        )
         self.total_finished_label = QtWidgets.QLabel(parent=self.general_tab)
         self.total_finished_label.setObjectName("total_finished_label")
-        self.formLayout.setWidget(5, QtWidgets.QFormLayout.ItemRole.LabelRole, self.total_finished_label)
+        self.formLayout.setWidget(
+            5,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.total_finished_label,
+        )
         self.total_finished_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.total_finished_outlabel.setText("")
         self.total_finished_outlabel.setObjectName("total_finished_outlabel")
-        self.formLayout.setWidget(5, QtWidgets.QFormLayout.ItemRole.FieldRole, self.total_finished_outlabel)
+        self.formLayout.setWidget(
+            5,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.total_finished_outlabel,
+        )
         self.total_num_tasks_label = QtWidgets.QLabel(parent=self.general_tab)
         self.total_num_tasks_label.setObjectName("total_num_tasks_label")
-        self.formLayout.setWidget(6, QtWidgets.QFormLayout.ItemRole.LabelRole, self.total_num_tasks_label)
+        self.formLayout.setWidget(
+            6,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.total_num_tasks_label,
+        )
         self.total_num_tasks_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.total_num_tasks_outlabel.setText("")
         self.total_num_tasks_outlabel.setObjectName("total_num_tasks_outlabel")
-        self.formLayout.setWidget(6, QtWidgets.QFormLayout.ItemRole.FieldRole, self.total_num_tasks_outlabel)
+        self.formLayout.setWidget(
+            6,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.total_num_tasks_outlabel,
+        )
         self.today_added_label = QtWidgets.QLabel(parent=self.general_tab)
         self.today_added_label.setObjectName("today_added_label")
-        self.formLayout.setWidget(7, QtWidgets.QFormLayout.ItemRole.LabelRole, self.today_added_label)
+        self.formLayout.setWidget(
+            7,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.today_added_label,
+        )
         self.today_added_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.today_added_outlabel.setText("")
         self.today_added_outlabel.setObjectName("today_added_outlabel")
-        self.formLayout.setWidget(7, QtWidgets.QFormLayout.ItemRole.FieldRole, self.today_added_outlabel)
+        self.formLayout.setWidget(
+            7,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.today_added_outlabel,
+        )
         self.yesterday_added_label = QtWidgets.QLabel(parent=self.general_tab)
         self.yesterday_added_label.setObjectName("yesterday_added_label")
-        self.formLayout.setWidget(8, QtWidgets.QFormLayout.ItemRole.LabelRole, self.yesterday_added_label)
+        self.formLayout.setWidget(
+            8,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.yesterday_added_label,
+        )
         self.yesterday_added_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.yesterday_added_outlabel.setText("")
         self.yesterday_added_outlabel.setObjectName("yesterday_added_outlabel")
-        self.formLayout.setWidget(8, QtWidgets.QFormLayout.ItemRole.FieldRole, self.yesterday_added_outlabel)
+        self.formLayout.setWidget(
+            8,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.yesterday_added_outlabel,
+        )
         self.yesterday_finished_outlabel = QtWidgets.QLabel(parent=self.general_tab)
         self.yesterday_finished_outlabel.setText("")
         self.yesterday_finished_outlabel.setObjectName("yesterday_finished_outlabel")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.ItemRole.FieldRole, self.yesterday_finished_outlabel)
+        self.formLayout.setWidget(
+            1,
+            QtWidgets.QFormLayout.ItemRole.FieldRole,
+            self.yesterday_finished_outlabel,
+        )
         self.today_finished_button_label = QtWidgets.QPushButton(parent=self.general_tab)
         self.today_finished_button_label.setObjectName("today_finished_button_label")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.today_finished_button_label)
+        self.formLayout.setWidget(
+            0,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.today_finished_button_label,
+        )
         self.yesterday_finished_button_label = QtWidgets.QPushButton(parent=self.general_tab)
         self.yesterday_finished_button_label.setObjectName("yesterday_finished_button_label")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.yesterday_finished_button_label)
+        self.formLayout.setWidget(
+            1,
+            QtWidgets.QFormLayout.ItemRole.LabelRole,
+            self.yesterday_finished_button_label,
+        )
         self.verticalLayout_7.addLayout(self.formLayout)
         self.tabs.addTab(self.general_tab, "")
         self.spaces_tab = QtWidgets.QWidget()
@@ -120,7 +168,9 @@ class Ui_Dialog(object):
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.sessions_tab)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.session_stats = QtWidgets.QTableWidget(parent=self.sessions_tab)
-        self.session_stats.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
+        self.session_stats.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
+        )
         self.session_stats.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.session_stats.setDragDropOverwriteMode(False)
         self.session_stats.setAlternatingRowColors(True)
@@ -214,7 +264,10 @@ class Ui_Dialog(object):
         self.yesterday_added_label.setText(_translate("Dialog", "Gestern hinzugefügt"))
         self.today_finished_button_label.setText(_translate("Dialog", "Heute erledigt"))
         self.yesterday_finished_button_label.setText(_translate("Dialog", "Gestern erledigt"))
-        self.tabs.setTabText(self.tabs.indexOf(self.general_tab), _translate("Dialog", "Allgemein"))
+        self.tabs.setTabText(
+            self.tabs.indexOf(self.general_tab),
+            _translate("Dialog", "Allgemein"),
+        )
         item = self.space_stats.horizontalHeaderItem(0)
         item.setText(_translate("Dialog", "Raum"))
         item = self.space_stats.horizontalHeaderItem(1)
@@ -223,7 +276,10 @@ class Ui_Dialog(object):
         item.setText(_translate("Dialog", "unerledigt"))
         item = self.space_stats.horizontalHeaderItem(3)
         item.setText(_translate("Dialog", "total"))
-        self.tabs.setTabText(self.tabs.indexOf(self.spaces_tab), _translate("Dialog", "Räume"))
+        self.tabs.setTabText(
+            self.tabs.indexOf(self.spaces_tab),
+            _translate("Dialog", "Räume"),
+        )
         item = self.level_stats.horizontalHeaderItem(0)
         item.setText(_translate("Dialog", "Level"))
         item = self.level_stats.horizontalHeaderItem(1)
@@ -232,7 +288,10 @@ class Ui_Dialog(object):
         item.setText(_translate("Dialog", "unerledigt"))
         item = self.level_stats.horizontalHeaderItem(3)
         item.setText(_translate("Dialog", "total"))
-        self.tabs.setTabText(self.tabs.indexOf(self.level_tab), _translate("Dialog", "Level"))
+        self.tabs.setTabText(
+            self.tabs.indexOf(self.level_tab),
+            _translate("Dialog", "Level"),
+        )
         self.session_stats.setSortingEnabled(True)
         item = self.session_stats.horizontalHeaderItem(0)
         item.setText(_translate("Dialog", "Aufgabe"))
@@ -246,4 +305,7 @@ class Ui_Dialog(object):
         item.setText(_translate("Dialog", "Länge (mit Pausen)"))
         item = self.session_stats.horizontalHeaderItem(5)
         item.setText(_translate("Dialog", "Pufferzeit (Pausen)"))
-        self.tabs.setTabText(self.tabs.indexOf(self.sessions_tab), _translate("Dialog", "Sitzungen"))
+        self.tabs.setTabText(
+            self.tabs.indexOf(self.sessions_tab),
+            _translate("Dialog", "Sitzungen"),
+        )

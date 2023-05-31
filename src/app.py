@@ -86,7 +86,10 @@ class Application(QtWidgets.QApplication):
 
         self.app_timer = QTimer()
         # start the timer on the clock of the next minute in msec
-        QTimer.singleShot(int((60 - datetime.now().timestamp() % 60) * 1000), self.app_timer.start)
+        QTimer.singleShot(
+            int((60 - datetime.now().timestamp() % 60) * 1000),
+            self.app_timer.start,
+        )
         self.app_timer.start(60_000)
 
         @self.app_timer.timeout.connect
@@ -102,7 +105,8 @@ class Application(QtWidgets.QApplication):
             "Guten Abend",
         ][bisect_right([6, 11, 14, 18, 21, 25], datetime.now().hour)]
         self.win_main.statusBar.showMessage(
-            f"{greet_time}, {f'{config.call_name}' if config.call_name else 'willkommen zurück'}!", 10000
+            f"{greet_time}, {f'{config.call_name}' if config.call_name else 'willkommen zurück'}!",
+            10000,
         )
         self.win_what = what_now.What_Now()
         self.win_character = character.Character()
@@ -152,7 +156,10 @@ class Application(QtWidgets.QApplication):
 
         import q
 
-        q(i + 1 if i is not None else "Nothing found, so no", "unused resources deleted.")
+        q(
+            i + 1 if i is not None else "Nothing found, so no",
+            "unused resources deleted.",
+        )
 
     def editor_opened(self, editor):
         self.list_of_task_editors.append(editor)

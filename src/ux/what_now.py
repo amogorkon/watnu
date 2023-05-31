@@ -260,7 +260,9 @@ Auf gehts!""",
 
         if not self.tasks:
             QtWidgets.QMessageBox.information(
-                self, "Hmm..", "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte."
+                self,
+                "Hmm..",
+                "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
             )
             self.hide()
             return False

@@ -1,12 +1,11 @@
 import q
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt, QVariant
-from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QMessageBox
 
 import src.ui as ui
-from src.classes import Task, typed, typed_row
-from src.stuff import __version__, app, db
+from src.classes import typed, typed_row
+from src.stuff import app, db
 
 _translate = QCoreApplication.translate
 
@@ -24,7 +23,11 @@ class Settings(QtWidgets.QDialog, ui.settings.Ui_Dialog):
         @self.create_skill.clicked.connect
         def _():
             text, okPressed = QtWidgets.QInputDialog.getText(
-                self, "Neue Aktivität", "Name der neuen Aktivität", QtWidgets.QLineEdit.Normal, ""
+                self,
+                "Neue Aktivität",
+                "Name der neuen Aktivität",
+                QtWidgets.QLineEdit.Normal,
+                "",
             )
             if okPressed and text != "":
                 db.execute(
@@ -96,7 +99,11 @@ WHERE sessions.task_id = tasks.id)
             skill_id = self.skills_table.item(x, 1).data(Qt.ItemDataRole.UserRole)
             name = self.skills_table.item(x, 1).text()
 
-            match QMessageBox.question(self, "Bitte bestätigen!", f"Wirklich Fähigkeit '{name}' löschen?"):
+            match QMessageBox.question(
+                self,
+                "Bitte bestätigen!",
+                f"Wirklich Fähigkeit '{name}' löschen?",
+            ):
                 case QMessageBox.StandardButton.Yes:
                     db.execute(
                         f"""

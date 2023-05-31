@@ -8,7 +8,13 @@ from typing import Any, NamedTuple
 
 import use
 
-from src.functions import cached_func_static, cached_getter, cached_property, typed, typed_row
+from src.functions import (
+    cached_func_static,
+    cached_getter,
+    cached_property,
+    typed,
+    typed_row,
+)
 from src.stuff import app, config, db
 
 np = use(
@@ -25,7 +31,9 @@ np = use(
 import numpy as np  # to make pylance happy - they don't know justuse YET :)  # noqa: E402
 
 q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
+    modes=use.recklessness,
+    import_as="q",
 ).Q()
 
 
@@ -69,7 +77,13 @@ class Skill(NamedTuple):
 
 
 class Space:
-    __slots__ = ("space_id", "name", "priority", "primary_activity_id", "secondary_activity_id")
+    __slots__ = (
+        "space_id",
+        "name",
+        "priority",
+        "primary_activity_id",
+        "secondary_activity_id",
+    )
 
     def __init__(self, **kwargs) -> None:
         self.space_id = None
@@ -326,7 +340,11 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
             self.space_priority if space_priority is None else space_priority
         )
 
-        max_supertask = max(self.doable_supertasks, key=lambda t: t.get_total_priority(), default=None)
+        max_supertask = max(
+            self.doable_supertasks,
+            key=lambda t: t.get_total_priority(),
+            default=None,
+        )
         sibling_priorities = (
             {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
         )
@@ -410,8 +428,16 @@ WHERE tasks.id = {self.id}
         Returns:
             ACTIVITY: ACTIVITY enum value
         """
-        query = db.execute("SELECT primary_activity_id FROM tasks WHERE id=?", (self.id,))
-        own_activity_id = typed_row(query.fetchone(), 0, int, default=ACTIVITY.unspecified.value)
+        query = db.execute(
+            "SELECT primary_activity_id FROM tasks WHERE id=?",
+            (self.id,),
+        )
+        own_activity_id = typed_row(
+            query.fetchone(),
+            0,
+            int,
+            default=ACTIVITY.unspecified.value,
+        )
         own_activity = ACTIVITY(own_activity_id)
         space_activity = self.space.primary_activity if self.space else ACTIVITY.unspecified
 
@@ -421,7 +447,8 @@ WHERE tasks.id = {self.id}
     def secondary_activity(self) -> ACTIVITY:
         """Get the secondary activity for the task and default to the activity of the space if not set."""
         if own_activity := db.execute(
-            "SELECT secondary_activity_id FROM tasks WHERE id=?", (self.id,)
+            "SELECT secondary_activity_id FROM tasks WHERE id=?",
+            (self.id,),
         ).fetchone()[0]:
             return ACTIVITY(own_activity)
         else:
@@ -464,7 +491,8 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             if id_ not in app.tasks:
                 # clean up the database (this should not happen, but it does)
                 db.execute(
-                    "DELETE FROM task_requires_task WHERE required_task=? or task_of_concern=?", (id_, id_)
+                    "DELETE FROM task_requires_task WHERE required_task=? or task_of_concern=?",
+                    (id_, id_),
                 )
                 ids.remove(id_)
         db.commit()
@@ -493,7 +521,10 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
 
     def set_(self, name: str, value: Any, to_db=True):
         if to_db:
-            db.execute(f"UPDATE tasks SET {name}=? WHERE id={self.id}", (value,))
+            db.execute(
+                f"UPDATE tasks SET {name}=? WHERE id={self.id}",
+                (value,),
+            )
             db.commit()
         object.__setattr__(self, name, value)
 
@@ -534,7 +565,12 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return self
 
     def get_status(self) -> tuple[bool, bool, bool, bool]:
-        return not self.done, not self.draft, not self.inactive, not self.deleted
+        return (
+            not self.done,
+            not self.draft,
+            not self.inactive,
+            not self.deleted,
+        )
 
     def get_status_text(self):
         return f"""{'done' if self.done else "not done"}

@@ -3,13 +3,13 @@ import sys
 from pathlib import Path
 from unittest.mock import Mock
 
-from pytest import fixture, mark
+from pytest import fixture
+import use
 
 # fucking hate this, but it's the only way to make tests work properly with python
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
-import use
 
 
 # set up a test DB connection, in memory as fixture
@@ -21,18 +21,27 @@ def db():
     conn.close()
 
 
-initial_globals = {"config": Mock(), "db": db, "app": Mock(), "__version__": use.Version("1.2.3")}
+initial_globals = {
+    "config": Mock(),
+    "db": db,
+    "app": Mock(),
+    "__version__": use.Version("1.2.3"),
+}
 
 # injecting globals into the module
-stuff = use(use.Path("../src/stuff.py"), initial_globals=initial_globals, import_as="src.stuff")
+stuff = use(
+    use.Path("../src/stuff.py"),
+    initial_globals=initial_globals,
+    import_as="src.stuff",
+)
 
 # to get type hints in IDEs
-from src.stuff import app, config, db
+from src.stuff import db  # noqa: E402
 
 print()  # prevent import reshuffling
 
 # now the rest
-import src.classes as classes
+# import src.classes as classes
 
 # from src.first_start import setUp
 

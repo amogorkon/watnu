@@ -22,7 +22,10 @@ class SuperTaskChooser(QtWidgets.QDialog, ui.choose_skill.Ui_Dialog):
             self.listView.selectionModel().clear()
             for index in range(model.rowCount()):
                 if model.itemData(model.index(index, 0))[0] in [t.id for t in task.supertasks]:
-                    self.listView.selectionModel().select(model.index(index, 1), QItemSelectionModel.Select)
+                    self.listView.selectionModel().select(
+                        model.index(index, 1),
+                        QItemSelectionModel.Select,
+                    )
 
     def accept(self):
         self.editor.supertasks = [

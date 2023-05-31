@@ -63,7 +63,10 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
                 )
             verticalLayout.addWidget(tip_visual)
             spacerItem = QtWidgets.QSpacerItem(
-                20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding
+                20,
+                40,
+                QtWidgets.QSizePolicy.Policy.Minimum,
+                QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             )
             verticalLayout.addItem(spacerItem)
             horizontalLayout = QtWidgets.QHBoxLayout()
@@ -71,7 +74,8 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
             horizontalLayout.setObjectName("horizontalLayout")
             feedback_input = QtWidgets.QTextEdit(parent=page)
             sizePolicy = QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Minimum,
             )
             sizePolicy.setHorizontalStretch(0)
             sizePolicy.setVerticalStretch(0)

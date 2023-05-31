@@ -23,7 +23,10 @@ class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
             self.listView.selectionModel().clear()
             for index in range(model.rowCount()):
                 if model.itemData(model.index(index, 0))[0] in task.skill_ids:
-                    self.listView.selectionModel().select(model.index(index, 1), QItemSelectionModel.Select)
+                    self.listView.selectionModel().select(
+                        model.index(index, 1),
+                        QItemSelectionModel.Select,
+                    )
 
     def accept(self):
         super().accept()

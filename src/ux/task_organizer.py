@@ -4,7 +4,13 @@ from time import time
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QKeyCombination, Qt, QTimer
 from PyQt6.QtGui import QFont, QIcon, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QCheckBox, QDialog, QMenu, QStatusBar, QTableWidgetItem
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QMenu,
+    QStatusBar,
+    QTableWidgetItem,
+)
 
 import src.ui as ui
 from src.classes import Task
@@ -21,10 +27,16 @@ NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
 ARROW_DOWN = QIcon()
 ARROW_DOWN.addPixmap(
-    QtGui.QPixmap("ui\\../extra/arrow-down.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off
+    QtGui.QPixmap("ui\\../extra/arrow-down.svg"),
+    QtGui.QIcon.Mode.Normal,
+    QtGui.QIcon.State.Off,
 )
 ARROW_UP = QIcon()
-ARROW_UP.addPixmap(QtGui.QPixmap("ui\\../extra/arrow-up.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+ARROW_UP.addPixmap(
+    QtGui.QPixmap("ui\\../extra/arrow-up.svg"),
+    QtGui.QIcon.Mode.Normal,
+    QtGui.QIcon.State.Off,
+)
 
 # TODO: use _translate
 translation = {
@@ -41,7 +53,13 @@ translation = {
 
 
 class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
-    def __init__(self, task: Task | None = None, filters=None, editor=None, depends_on=True):
+    def __init__(
+        self,
+        task: Task | None = None,
+        filters=None,
+        editor=None,
+        depends_on=True,
+    ):
         super().__init__()
         self.setupUi(self)
 
@@ -109,12 +127,36 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         self.columns = (
             ("space", self.check_space, lambda t: str(t.space)),
             ("level", self.check_level, lambda t: str(t.level)),
-            ("priority", self.check_priority, lambda t: str(t.priority)),
-            ("deadline", self.check_deadline, lambda t: task_list.deadline_as_str(t.deadline)),
-            ("done", self.check_done, lambda t: OK if t.done else NOK),
-            ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
-            ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
-            ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
+            (
+                "priority",
+                self.check_priority,
+                lambda t: str(t.priority),
+            ),
+            (
+                "deadline",
+                self.check_deadline,
+                lambda t: task_list.deadline_as_str(t.deadline),
+            ),
+            (
+                "done",
+                self.check_done,
+                lambda t: OK if t.done else NOK,
+            ),
+            (
+                "draft",
+                self.check_draft,
+                lambda t: OK if t.draft else NOK,
+            ),
+            (
+                "inactive",
+                self.check_inactive,
+                lambda t: OK if t.inactive else NOK,
+            ),
+            (
+                "deleted",
+                self.check_deleted,
+                lambda t: OK if t.deleted else NOK,
+            ),
             ("do", self.check_do, lambda t: t.get_short_do()),
         )
 
@@ -195,13 +237,19 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         def dropEvent(event):
             if not self.task:
-                self.statusBar.showMessage("Erstmal eine Aufgabe als Bezug auswählen...", 5000)
+                self.statusBar.showMessage(
+                    "Erstmal eine Aufgabe als Bezug auswählen...",
+                    5000,
+                )
                 event.ignore()
                 return
             if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
                 for task in self._drag_info:
                     if task == self.task:
-                        self.statusBar.showMessage("Aufgabe kann nicht ihre eigene Voraussetzung sein!", 5000)
+                        self.statusBar.showMessage(
+                            "Aufgabe kann nicht ihre eigene Voraussetzung sein!",
+                            5000,
+                        )
                         continue
                     if self.depends_on:
                         self.subtasks.add(task)
@@ -326,7 +374,14 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
 
         def filter_changed():
-            self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+            self.arrange_table(
+                list(
+                    filter_tasks_by_content(
+                        self.tasks,
+                        self.field_filter.text().casefold(),
+                    )
+                )
+            )
             self.update()
 
     def get_selected_tasks(self, widget) -> set[Task]:
@@ -374,7 +429,12 @@ font-size: 12pt;
         selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
         for column_number, column in enumerate(selected_columns):
-            set_header(self.tasks_table, translation[column[0]], header_font, column_number)
+            set_header(
+                self.tasks_table,
+                translation[column[0]],
+                header_font,
+                column_number,
+            )
 
         for i, task in enumerate(tasks):
             for column_number, (header, displayed, func) in enumerate(selected_columns):
@@ -444,7 +504,12 @@ font-size: 12pt;
         selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
         for column_number, column in enumerate(selected_columns):
-            set_header(self.sub_sup_tasks_table, translation[column[0]], header_font, column_number)
+            set_header(
+                self.sub_sup_tasks_table,
+                translation[column[0]],
+                header_font,
+                column_number,
+            )
 
         for i, task in enumerate(tasks):
             for column_number, (header, displayed, func) in enumerate(selected_columns):

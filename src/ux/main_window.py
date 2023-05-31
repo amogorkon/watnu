@@ -14,7 +14,15 @@ from PyQt6.QtWidgets import QPushButton
 import src.ui as ui
 from src.logic import filter_filter_history
 from src.stuff import app, config, db
-from src.ux import about, attributions, statistics, task_checklist, task_editor, task_list, task_organizer
+from src.ux import (
+    about,
+    attributions,
+    statistics,
+    task_checklist,
+    task_editor,
+    task_list,
+    task_organizer,
+)
 
 _translate = QCoreApplication.translate
 
@@ -22,7 +30,9 @@ dump = stay.Encoder()
 load = stay.Decoder()
 
 q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"), modes=use.recklessness, import_as="q"
+    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
+    modes=use.recklessness,
+    import_as="q",
 ).Q()
 
 

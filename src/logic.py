@@ -291,7 +291,10 @@ def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> I
     for task in tasks:
         if task.constraints is None:
             yield task
-        elif task.constraints[now.weekday(), now.time().hour * 6 + now.time().minute // 5]:
+        elif task.constraints[
+            now.weekday(),
+            now.time().hour * 6 + now.time().minute // 5,
+        ]:
             yield task
 
 
@@ -343,7 +346,10 @@ def filter_tasks_by_ilk(tasks: Iterable[Task], ilk: int | None) -> Iterable[Task
 
 def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task]:
     """Filter tasks by space id."""
-    return filter(lambda t: t.space_id == (space_id) if space_id is not None else True, tasks)
+    return filter(
+        lambda t: t.space_id == (space_id) if space_id is not None else True,
+        tasks,
+    )
 
 
 def filter_filter_history_whitespace(history: Iterable[str]):

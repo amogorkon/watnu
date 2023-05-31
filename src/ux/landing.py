@@ -3,8 +3,8 @@ from PyQt6.QtCore import QCoreApplication
 
 import src.ui as ui
 
-from src.configuration import Config
-config: Config
+from src.stuff import config
+
 _translate = QCoreApplication.translate
 
 

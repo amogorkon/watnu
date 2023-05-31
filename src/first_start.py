@@ -1,8 +1,8 @@
-print("FIRST START")
-
 import sqlite3
 
-from stuff import config, db
+print("FIRST START")
+
+
 
 
 def setUp(db: sqlite3.Connection) -> None:
@@ -134,7 +134,10 @@ CREATE TABLE "tasks" (
 
     ### Default Entries ###
 
-    for name, level_id in zip(["MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"], [-2, -1, 0, 1, 2]):
+    for name, level_id in zip(
+        ["MUST NOT", "SHOULD NOT", "COULD", "SHOULD", "MUST"],
+        [-2, -1, 0, 1, 2],
+    ):
         db.execute(
             f"""
         INSERT INTO levels (name, level_id)
