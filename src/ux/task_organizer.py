@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 )
 
 import src.ui as ui
+from src import ux_helpers
 from src.classes import Task
 from src.logic import (
     filter_tasks_by_content,
@@ -52,7 +53,7 @@ translation = {
 }
 
 
-class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
+class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.Space_Mixin):
     def __init__(
         self,
         task: Task | None = None,
@@ -120,7 +121,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
                 self.relationship_button.setText("hängt ab von")
                 self.relationship_button.setIcon(ARROW_DOWN)
             self.depends_on ^= True
-            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+            self.arrange_sub_sup_task_table(
+                self.subtasks if self.depends_on else self.supertasks
+            )
 
         # displayed columns: tuple[Header, displayed, how to get value]
 
@@ -170,7 +173,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
                 if self.task:
                     self.task = self.task.reload()
                     self.arrange_concerned_task_table(self.task)
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+                self.arrange_sub_sup_task_table(
+                    self.subtasks if self.depends_on else self.supertasks
+                )
 
         def toggle_fullscreen():
             if self.isFullScreen():
@@ -178,7 +183,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
             else:
                 self.showFullScreen()
 
-        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
+            toggle_fullscreen
+        )
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         QShortcut(
@@ -196,14 +203,18 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
                     self.subtasks.remove(task)
                 else:
                     self.supertasks.remove(task)
-            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+            self.arrange_sub_sup_task_table(
+                self.subtasks if self.depends_on else self.supertasks
+            )
 
-        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.sub_sup_tasks_table).activated.connect(
-            remove_item_from_sub_sup
+        QShortcut(
+            QKeySequence(Qt.Key.Key_Delete), self.sub_sup_tasks_table
+        ).activated.connect(remove_item_from_sub_sup)
+
+        self.build_space_list()
+        self.space.setCurrentIndex(
+            x if (x := self.space.findText(config.last_selected_space)) > -1 else 0
         )
-
-        task_list.build_space_list(self)
-        self.space.setCurrentIndex(x if (x := self.space.findText(config.last_selected_space)) > -1 else 0)
 
         @self.space.currentIndexChanged.connect
         def space_switched():
@@ -223,7 +234,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         self.build_task_table()
         self.arrange_concerned_task_table(self.task)
-        self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+        self.arrange_sub_sup_task_table(
+            self.subtasks if self.depends_on else self.supertasks
+        )
 
         def startDrag(action):
             self._drag_info = []
@@ -255,11 +268,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
                         self.subtasks.add(task)
                     else:
                         self.supertasks.add(task)
-                self.task.set_subtasks(self.subtasks) if self.depends_on else self.task.set_supertasks(
-                    self.supertasks
-                )
+                self.task.set_subtasks(
+                    self.subtasks
+                ) if self.depends_on else self.task.set_supertasks(self.supertasks)
 
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+                self.arrange_sub_sup_task_table(
+                    self.subtasks if self.depends_on else self.supertasks
+                )
                 event.accept()
             else:
                 event.ignore()
@@ -371,7 +386,9 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
 
         # once we change the filter, we wait for 1 sec before applying the filter,
         # in order to avoid constant refiltering for something the user doesn't actually want.
-        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
+        self.field_filter.textChanged.connect(
+            lambda: QTimer.singleShot(1000, filter_changed)
+        )
 
         def filter_changed():
             self.arrange_table(
@@ -402,7 +419,11 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog):
         # exclude tasks that are in the concerned_tasks list
         self.tasks = filter_tasks(self, app.tasks.values())
 
-        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+        self.arrange_table(
+            list(
+                filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())
+            )
+        )
         self.update()
 
     def arrange_table(self, tasks: list[Task]):
@@ -422,7 +443,9 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.tasks_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
+        self.tasks_table.setColumnCount(
+            len(list(filter(lambda c: c[1].isChecked(), self.columns)))
+        )
 
         currently_selected_rows = self.tasks_table.selectionModel()
 
@@ -443,7 +466,9 @@ font-size: 12pt;
                     item = QTableWidgetItem(content)
                     item.setFont(app.fira_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                    item.setTextAlignment(
+                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                    )
                 if isinstance(content, QIcon):
                     item = QTableWidgetItem()
                     item.setIcon(content)
@@ -497,7 +522,9 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.sub_sup_tasks_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
+        self.sub_sup_tasks_table.setColumnCount(
+            len(list(filter(lambda c: c[1].isChecked(), self.columns)))
+        )
 
         currently_selected_rows = self.sub_sup_tasks_table.selectionModel()
 
@@ -518,7 +545,9 @@ font-size: 12pt;
                     item = QTableWidgetItem(content)
                     item.setFont(app.fira_font)
                     item.setData(Qt.ItemDataRole.UserRole, task)
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                    item.setTextAlignment(
+                        Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                    )
                 if isinstance(content, QIcon):
                     item = QTableWidgetItem()
                     item.setIcon(content)
@@ -543,7 +572,9 @@ font-size: 12pt;
         self.concerned_task_table.ensurePolished()
         if not task:
             return
-        self.concerned_task_table.setColumnCount(len(list(filter(lambda c: c[1].isChecked(), self.columns))))
+        self.concerned_task_table.setColumnCount(
+            len(list(filter(lambda c: c[1].isChecked(), self.columns)))
+        )
 
         selected_columns = list(filter(lambda c: c[1].isChecked(), self.columns))
 
@@ -553,7 +584,9 @@ font-size: 12pt;
                 item = QTableWidgetItem(content)
                 item.setFont(app.fira_font)
                 item.setData(Qt.ItemDataRole.UserRole, task)
-                item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                item.setTextAlignment(
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                )
             if isinstance(content, QIcon):
                 item = QTableWidgetItem()
                 item.setIcon(content)
@@ -589,8 +622,14 @@ font-size: 12pt;
 
     def rearrange_list(self):
         """Callback for easy rearranging of the list, no filtering."""
-        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
-        self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+        self.arrange_table(
+            list(
+                filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())
+            )
+        )
+        self.arrange_sub_sup_task_table(
+            self.subtasks if self.depends_on else self.supertasks
+        )
         self.arrange_concerned_task_table(self.task)
         self.update()
 
