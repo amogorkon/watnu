@@ -38,8 +38,8 @@ q = use(
 
 
 last_sql_access = 0
-
-ILK = Enum("TaskType", "task habit tradition routine")  # * enum numbering starts with 1!
+# * enum numbering starts with 1!
+ILK = Enum("TaskType", "task habit tradition routine")
 LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 
 
@@ -122,6 +122,15 @@ class Space:
 
 @cached_getter
 def retrieve_space_by_id(ID: int | None, db=db) -> Space | None:
+    """Retrieve a space from the database by its ID.
+
+    Args:
+        ID (int | None): The ID of the space to retrieve.
+        db (sqlite3.Connection): The database connection to use.
+
+    Returns:
+        Space | None: The space with the given ID, or None if no such space exists.
+    """
     if ID is None:
         return None
     query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces WHERE space_id == {ID};")
@@ -161,7 +170,7 @@ class Task:
         Return the repeats for this task.
 
         Returns:
-            Every[EVERY, int]: Returns a namedtuple Every for EVERY unit of time, 
+            Every[EVERY, int]: Returns a namedtuple Every for EVERY unit of time,
                                 ints of unit, per EVERY unit of time, ints of unit.
         """ """"""
         return (
@@ -286,22 +295,51 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         query = db.execute("SELECT workload FROM tasks WHERE id=?", (self.id,))
         return typed_row(query.fetchone(), 0, int, default=0)
 
-    def set_deadline(self, deadline: float) -> float:
-        # removing deadline
-        if deadline == float("inf"):
-            db.execute(f"DELETE FROM deadlines WHERE task_id={self.id}")
-            db.commit()
-            return
 
-        query = db.execute(f"SELECT time_of_reference FROM deadlines WHERE task_id={self.id}")
+def set_deadline(self, deadline: float):
+    """Sets the deadline for a task.
 
-        # changing deadline
-        if query.fetchone():
-            db.execute(f"UPDATE deadlines SET time_of_reference={deadline} WHERE task_id={self.id}")
-        else:  # new deadline
-            db.execute(f"INSERT INTO deadlines (task_id, time_of_reference) VALUES ({self.id}, {deadline})")
+    If deadline is set to infinity, the deadline is removed from the database.
+    If the deadline already exists, it is updated with the new deadline.
+    If the deadline does not exist, a new deadline is created in the database.
 
+    Args:
+        deadline (float): The deadline to be set for the task.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If deadline is not a float.
+        AssertionError: If deadline is negative.
+
+    Examples:
+        >>> task = Task()
+        >>> task.set_deadline(10.0)
+        >>> task.set_deadline(float("inf"))
+        >>> task.set_deadline(-1.0)
+        Traceback (most recent call last):
+            ...
+        AssertionError: Deadline cannot be negative.
+    """
+    assert isinstance(deadline, float), "Deadline must be a float."
+    assert deadline >= 0, "Deadline cannot be negative."
+
+    # removing deadline
+    if deadline == float("inf"):
+        db.execute(f"DELETE FROM deadlines WHERE task_id={self.id}")
         db.commit()
+        return
+
+    query = db.execute(f"SELECT time_of_reference FROM deadlines WHERE task_id={self.id}")
+
+    # changing deadline
+    if query.fetchone():
+        db.execute(f"UPDATE deadlines SET time_of_reference={deadline} WHERE task_id={self.id}")
+    else:  # new deadline
+        db.execute(f"INSERT INTO deadlines (task_id, time_of_reference) VALUES ({self.id}, {deadline})")
+
+    db.commit()
 
     @cached_property
     def supertasks(self) -> set["Task"]:
@@ -336,6 +374,25 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         return self.adjust_time_spent + self.time_spent
 
     def get_total_priority(self, priority=None, space_priority=None) -> float:
+        """
+        Calculates the total priority of the task, taking into account its own priority, space priority,
+        and the priority of its subtasks.
+
+        Args:
+            priority (float, optional): The priority of the task. Defaults to None.
+            space_priority (float, optional): The space priority of the task. Defaults to None.
+
+        Returns:
+            float: The total priority of the task.
+
+        Raises:
+            None
+
+        Examples:
+            >>> task = Task()
+            >>> task.get_total_priority()
+            1.0
+        """
         own_priority = (self.priority if priority is None else priority) + (
             self.space_priority if space_priority is None else space_priority
         )
@@ -358,6 +415,22 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         return self_doable and not any(s.is_doable for s in self.subtasks)
 
     def get_short_do(self, max_len=None):
+        """
+        Get the first line of the do, or the first line truncated to max_len.
+
+        Args:
+            max_len (int): The maximum length of the returned string.
+
+        Returns:
+            str: The first line of the do, or the first line truncated to max_len.
+
+        Examples:
+            >>> todo = Todo("do this", "do that")
+            >>> todo.get_short_do()
+            'do this'
+            >>> todo.get_short_do(max_len=5)
+            'do th'
+        """
         lines = self.do.split("\n")
         if not max_len:
             return lines[0] + ("" if len(lines) == 1 else " […]")
@@ -480,9 +553,29 @@ WHERE tasks.id = {self.id}
 
     @cached_property
     def subtasks(self) -> set["Task"]:
+        """Returns a set of subtasks that are required to complete this task.
+
+        This function queries the database to find all tasks that are required to complete this task.
+        It then checks if each required task is present in the `app.tasks` dictionary. If a required task
+        is not present, it is removed from the list of required tasks and the database is updated accordingly.
+        Finally, a set of `Task` objects corresponding to the required tasks is returned.
+
+        Returns:
+            A set of `Task` objects corresponding to the required tasks.
+
+        Raises:
+            None.
+
+        Args:
+            self: The `Task` object for which to find the subtasks.
+
+        Examples:
+            task = Task()
+            subtasks = task.subtasks()
+        """
         query = db.execute(
             f"""
-SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
+    SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
         ids = [typed_row(row, 0, int) for row in query.fetchall() if row is not None]
@@ -554,6 +647,19 @@ SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
     def reload(self):
+        """Reload the task from the database.
+
+        Args:
+            None
+
+        Returns:
+            The task itself.
+
+        Examples:
+            >>> task = Task(id=1)
+            >>> task.reload()
+            <Task(id=1, name='Task 1', ...)>
+        """
         new = _retrieve_task_by_id(self.id)
         for k in self.__slots__:
             self.set_(k, getattr(new, k), to_db=False)

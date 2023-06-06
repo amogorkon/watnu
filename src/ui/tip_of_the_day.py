@@ -14,21 +14,10 @@ class Ui_Wizard(object):
         Wizard.setObjectName("Wizard")
         Wizard.resize(500, 348)
         icon = QtGui.QIcon()
-        icon.addPixmap(
-            QtGui.QPixmap("C:/Users/micro/.designer/extra/watnu1.png"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon.addPixmap(QtGui.QPixmap("C:/Users/micro/.designer/extra/watnu1.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         Wizard.setWindowIcon(icon)
         Wizard.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
-        Wizard.setOptions(
-            QtWidgets.QWizard.WizardOption.HaveCustomButton1
-            | QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages
-            | QtWidgets.QWizard.WizardOption.HaveNextButtonOnLastPage
-            | QtWidgets.QWizard.WizardOption.IndependentPages
-            | QtWidgets.QWizard.WizardOption.NoCancelButton
-            | QtWidgets.QWizard.WizardOption.NoCancelButtonOnLastPage
-        )
+        Wizard.setOptions(QtWidgets.QWizard.WizardOption.HaveCustomButton1|QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages|QtWidgets.QWizard.WizardOption.HaveNextButtonOnLastPage|QtWidgets.QWizard.WizardOption.IndependentPages|QtWidgets.QWizard.WizardOption.NoCancelButton|QtWidgets.QWizard.WizardOption.NoCancelButtonOnLastPage)
 
         self.retranslateUi(Wizard)
         QtCore.QMetaObject.connectSlotsByName(Wizard)

@@ -24,10 +24,7 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName("gridLayout")
         self.button6 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button6.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button6.sizePolicy().hasHeightForWidth())
@@ -42,10 +39,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button6, 1, 2, 1, 1)
         self.button4 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button4.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button4.sizePolicy().hasHeightForWidth())
@@ -57,10 +51,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button4, 1, 0, 1, 1)
         self.button5 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button5.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button5.sizePolicy().hasHeightForWidth())
@@ -77,10 +68,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button5, 1, 1, 1, 1)
         self.button8 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button8.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button8.sizePolicy().hasHeightForWidth())
@@ -94,10 +82,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button8, 0, 1, 1, 1)
         self.button7 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button7.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button7.sizePolicy().hasHeightForWidth())
@@ -111,10 +96,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button7, 0, 0, 1, 1)
         self.button9 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button9.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button9.sizePolicy().hasHeightForWidth())
@@ -131,10 +113,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button9, 0, 2, 1, 1)
         self.button2 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button2.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button2.sizePolicy().hasHeightForWidth())
@@ -149,10 +128,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button2, 2, 1, 1, 1)
         self.button3 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button3.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button3.sizePolicy().hasHeightForWidth())
@@ -166,10 +142,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.button3, 2, 2, 1, 1)
         self.button1 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.button1.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button1.sizePolicy().hasHeightForWidth())
@@ -215,29 +188,17 @@ class Ui_MainWindow(object):
         self.actionAbout_Watnu.setObjectName("actionAbout_Watnu")
         self.actionIssue_Tracker = QtGui.QAction(parent=MainWindow)
         icon = QtGui.QIcon()
-        icon.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/github.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/github.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.actionIssue_Tracker.setIcon(icon)
         self.actionIssue_Tracker.setObjectName("actionIssue_Tracker")
         self.actionContact = QtGui.QAction(parent=MainWindow)
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/twitter.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon1.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/twitter.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.actionContact.setIcon(icon1)
         self.actionContact.setObjectName("actionContact")
         self.about = QtGui.QAction(parent=MainWindow)
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/aperture.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon2.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/aperture.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.about.setIcon(icon2)
         self.about.setObjectName("about")
         self.actionImport = QtGui.QAction(parent=MainWindow)
@@ -251,29 +212,17 @@ class Ui_MainWindow(object):
         self.actionBeenden.setObjectName("actionBeenden")
         self.actionSupportMe = QtGui.QAction(parent=MainWindow)
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/gift.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon3.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/gift.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.actionSupportMe.setIcon(icon3)
         self.actionSupportMe.setObjectName("actionSupportMe")
         self.attributions = QtGui.QAction(parent=MainWindow)
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/feather.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon4.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/feather.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.attributions.setIcon(icon4)
         self.attributions.setObjectName("attributions")
         self.actionReadme = QtGui.QAction(parent=MainWindow)
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/feathericons/help-circle.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon5.addPixmap(QtGui.QPixmap("src\\ui\\../extra/feathericons/help-circle.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.actionReadme.setIcon(icon5)
         self.actionReadme.setObjectName("actionReadme")
         self.menuNeu.addAction(self.actionReadme)
@@ -290,7 +239,7 @@ class Ui_MainWindow(object):
         self.menuBar.addAction(self.menuNeu.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.actionExit.triggered.connect(MainWindow.close)  # type: ignore
+        self.actionExit.triggered.connect(MainWindow.close) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.button5, self.button4)
         MainWindow.setTabOrder(self.button4, self.button1)

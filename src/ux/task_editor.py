@@ -38,9 +38,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         draft: bool = False,
     ):
         super().__init__()
-        print(
-            f"{repr(task)} {current_space=} {draft=} {cloning=} {templating=} {as_sup=}"
-        )
+        print(f"{repr(task)} {current_space=} {draft=} {cloning=} {templating=} {as_sup=}")
         self.setupUi(self)
 
         app.list_of_task_editors.append(self)
@@ -64,19 +62,13 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         self.draft = draft
 
         url = "https://www.youtube.com/watch?v=kvZEzEOPRfw"
-        self.button(QWizard.WizardButton.HelpButton).clicked.connect(
-            lambda: webbrowser.open(url)
-        )
+        self.button(QWizard.WizardButton.HelpButton).clicked.connect(lambda: webbrowser.open(url))
 
         # custombutton2 should be "löschen"
-        self.button(QWizard.WizardButton.CustomButton2).setText(
-            _translate("Wizard", "löschen")
-        )
+        self.button(QWizard.WizardButton.CustomButton2).setText(_translate("Wizard", "löschen"))
 
         # custombutton2 to delete the task
-        self.button(QWizard.WizardButton.CustomButton2).clicked.connect(
-            self.delete_task
-        )
+        self.button(QWizard.WizardButton.CustomButton2).clicked.connect(self.delete_task)
 
         # defaults
         self.deadline = float("inf")
@@ -101,9 +93,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             else:
                 self.showFullScreen()
 
-        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
-            toggle_fullscreen
-        )
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
 
         self.build_space_list(first_item_text="")
 
@@ -151,9 +141,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             )
 
             self.repeats = self.task.repeats
-            self.constraints = (
-                x if (x := self.task.constraints) is not None else np.zeros((7, 288))
-            )
+            self.constraints = x if (x := self.task.constraints) is not None else np.zeros((7, 288))
             self.task = task
             # set workload_hours and workload_minutes accordingly
             self.workload_hours.setValue(self.task.workload // 60)
@@ -161,9 +149,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         # new task - preset space by previous edit
         else:
-            self.space.setCurrentIndex(
-                self.space.findText(current_space or config.last_edited_space)
-            )
+            self.space.setCurrentIndex(self.space.findText(current_space or config.last_edited_space))
             query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
             db.commit()
             self.task = Task.from_id(query.lastrowid)
@@ -176,12 +162,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         self.gui_timer = QTimer()
         self.gui_timer.start(100)
 
-        def show_state_depending():
-            statuses = [
-                x
-                for x in ["done", "draft", "deleted", "inactive"]
-                if getattr(self.task, x)
-            ]
+        def _show_state_depending():
+            statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
             title_status = " - " + ", ".join(statuses) if statuses else ""
             self.setWindowTitle(f"{self.original_window_title}{title_status}")
 
@@ -205,12 +187,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
                     self.is_routine.setChecked(True)
                     self.button8.setEnabled(True)
 
-            self.organize_supertasks.setToolTip(
-                f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}"
-            )
-            self.organize_subtasks.setToolTip(
-                f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}"
-            )
+            self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
+            self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
 
             if self.task.deadline == float("inf"):
                 self.choose_deadline_button.hide()
@@ -245,8 +223,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             if app.win_running:
                 self.button5.setEnabled(False)
 
-        show_state_depending()  # first time
-        self.gui_timer.timeout.connect(show_state_depending)
+        _show_state_depending()  # first time
+        self.gui_timer.timeout.connect(_show_state_depending)
 
         self.setButtonText(
             QWizard.WizardButton.CustomButton1,
@@ -256,7 +234,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
         def _():
             self.draft = True
-            self.save()
+            self._save()
             self.done(12)
 
         self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
@@ -294,7 +272,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         menu = QtWidgets.QMenu()
         menu.addAction("ohne Vorlage", create_task)
-        menu.addAction("als Klon von dieser Aufgabe", self.clone)
+        menu.addAction("als Klon von dieser Aufgabe", self._clone)
         self.button6.setMenu(menu)
 
         self.activateWindow()
@@ -334,9 +312,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             # self.done(12)
 
         def organize(depends_on):
-            win = task_organizer.Organizer(
-                task=self.task, editor=self, depends_on=depends_on
-            )
+            win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
             self.hide()
             win.show()
             win.raise_()
@@ -357,7 +333,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         @self.button5.clicked.connect
         def start_button():
-            self.save()
+            self._save()
             self.done(12)
             task_running.Running(self.task)
 
@@ -375,7 +351,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         # button9
 
-        def space_add():
+        def _space_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
                 self,
                 "Neuer Space",
@@ -399,9 +375,9 @@ VALUES ('{text}')
                     win.build_space_list()
 
         menu = QtWidgets.QMenu()
-        menu.addAction("hinzufügen", space_add)
+        menu.addAction("hinzufügen", _space_add)
 
-        def space_delete():
+        def _space_delete():
             space_name = self.space.currentText()
             if [task for task in app.tasks.values() if task.space.name == space_name]:
                 QtWidgets.QMessageBox.information(
@@ -422,9 +398,7 @@ DELETE FROM spaces where name=='{space_name}'
 """
                         )
                         db.commit()
-                        self.statusBar.showMessage(
-                            f"Raum '{space_name}' gelöscht.", 5000
-                        )
+                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                         for win in app.list_of_task_lists:
                             win.build_space_list()
                             if win.space.currentText() == space_name:
@@ -438,13 +412,11 @@ DELETE FROM spaces where name=='{space_name}'
                             if win.space.currentText() == space_name:
                                 win.space.setCurrentIndex(0)
 
-        menu.addAction("löschen", space_delete)
+        menu.addAction("löschen", _space_delete)
 
         def space_edit():
             if self.space.currentData() is None:
-                self.statusBar.showMessage(
-                    "Dieser 'Raum' lässt sich nicht bearbeiten.", 5000
-                )
+                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
                 return
             space_editor.Space_Editor(self.space.currentText()).exec()
 
@@ -468,17 +440,13 @@ WHERE space_id = {space_id}
                 ).fetchall():
                     if primary_activity_id is not None:
                         self.primary_activity.setCurrentIndex(
-                            self.primary_activity.findData(
-                                QVariant(primary_activity_id)
-                            )
+                            self.primary_activity.findData(QVariant(primary_activity_id))
                         )
                     else:
                         self.primary_activity.setCurrentIndex(0)
                     if secondary_activity_id is not None:
                         self.secondary_activity.setCurrentIndex(
-                            self.secondary_activity.findData(
-                                QVariant(secondary_activity_id)
-                            )
+                            self.secondary_activity.findData(QVariant(secondary_activity_id))
                         )
                     else:
                         self.secondary_activity.setCurrentIndex(0)
@@ -492,15 +460,13 @@ WHERE space_id = {space_id}
 
         @self.space.currentIndexChanged.connect
         def space_switched():
-            config.last_edited_space = (
-                self.space.currentText() or config.last_edited_space
-            )
+            config.last_edited_space = self.space.currentText() or config.last_edited_space
             config.save()
 
-    def save(self):
+    def _save(self):
         config.save()
 
-        self.save_task_details()
+        self._save_task_details()
         # enter fresh, no matter whether new or old
         self.save_cleanup()
         self.save_subsup()
@@ -525,7 +491,7 @@ WHERE space_id = {space_id}
 INSERT INTO repeats
 (task_id, every_ilk, x_every, min_distance, x_per)
 VALUES (
-{self.task.id}, 
+{self.task.id},
 {self.repeats.every_ilk.value},
 {self.repeats.x_every},
 {self.repeats.x_per},
@@ -617,7 +583,7 @@ COMMIT;
         """Return the workload in minutes from the GUI."""
         return self.workload_minutes.value() + 60 * self.workload_hours.value()
 
-    def save_task_details(self):
+    def _save_task_details(self):
         task_type = ILK.task
         if self.is_habit.isChecked():
             task_type = ILK.habit
@@ -629,8 +595,8 @@ COMMIT;
         # TODO: space_id == 0 is NOT NULL!!!
         db.execute(
             f"""
-UPDATE tasks 
-SET 
+UPDATE tasks
+SET
     do = ?,
     notes = ?,
     priority = {self.priority.value()},
@@ -651,21 +617,21 @@ WHERE id={self.task.id}
 
     def accept(self):
         self.draft = False
-        self.save()
+        self._save()
         self.task.reload()
         super().accept()
 
     def closeEvent(self, event):
-        self.kill()
+        self._kill()
 
     def hideEvent(self, event):
-        self.kill()
+        self._kill()
 
     def reject(self):
         super().reject()
-        self.kill()
+        self._kill()
 
-    def kill(self):
+    def _kill(self):
         self.gui_timer.stop()
         # sometimes Qt hides and then closes the window, so this is called twice
         with contextlib.suppress(ValueError):
@@ -685,7 +651,7 @@ WHERE id={self.task.id}
         self.close()
         self.deleteLater()
 
-    def clone(self):
+    def _clone(self):
         win = Editor()
         win.supertasks = self.supertasks
         win.subtasks = self.subtasks
@@ -714,9 +680,9 @@ WHERE id == {self.task.id}
             )
             db.commit()
         setattr(self.task, status, set_flag)
-        self.build_button1_menu()
+        self._build_button1_menu()
 
-    def build_button1_menu(self):
+    def _build_button1_menu(self):
         menu = QtWidgets.QMenu()
         if self.task.done:
             menu.addAction("nicht erledigt", partial(self.set_as, "done", False))

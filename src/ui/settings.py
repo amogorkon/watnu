@@ -24,30 +24,18 @@ class Ui_Dialog(object):
         self.formLayout_2 = QtWidgets.QFormLayout()
         self.formLayout_2.setObjectName("formLayout_2")
         self.call_name_edit = QtWidgets.QPlainTextEdit(parent=self.tab_general)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.call_name_edit.sizePolicy().hasHeightForWidth())
         self.call_name_edit.setSizePolicy(sizePolicy)
         self.call_name_edit.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
         self.call_name_edit.setObjectName("call_name_edit")
-        self.formLayout_2.setWidget(
-            1,
-            QtWidgets.QFormLayout.ItemRole.FieldRole,
-            self.call_name_edit,
-        )
+        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.ItemRole.FieldRole, self.call_name_edit)
         self.label_5 = QtWidgets.QLabel(parent=self.tab_general)
         self.label_5.setObjectName("label_5")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.label_5)
-        spacerItem = QtWidgets.QSpacerItem(
-            20,
-            40,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         self.formLayout_2.setItem(3, QtWidgets.QFormLayout.ItemRole.FieldRole, spacerItem)
         self.gridLayout_3.addLayout(self.formLayout_2, 0, 0, 1, 1)
         self.tabWidget.addTab(self.tab_general, "")
@@ -68,10 +56,7 @@ class Ui_Dialog(object):
         self.skills_table.setFont(font)
         self.skills_table.setAutoFillBackground(True)
         self.skills_table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.skills_table.setEditTriggers(
-            QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked
-            | QtWidgets.QAbstractItemView.EditTrigger.EditKeyPressed
-        )
+        self.skills_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.DoubleClicked|QtWidgets.QAbstractItemView.EditTrigger.EditKeyPressed)
         self.skills_table.setAlternatingRowColors(True)
         self.skills_table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self.skills_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
@@ -99,12 +84,7 @@ class Ui_Dialog(object):
         self.skills_table.horizontalHeader().setVisible(False)
         self.skills_table.verticalHeader().setVisible(False)
         self.verticalLayout_2.addWidget(self.skills_table)
-        spacerItem1 = QtWidgets.QSpacerItem(
-            20,
-            146,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(20, 146, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_2.addItem(spacerItem1)
         self.gridLayout_4 = QtWidgets.QGridLayout()
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -156,10 +136,7 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Einstellungen"))
         self.call_name_edit.setPlaceholderText(_translate("Dialog", "Name"))
         self.label_5.setText(_translate("Dialog", "Wie du genannt werden möchtest"))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_general),
-            _translate("Dialog", "General"),
-        )
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_general), _translate("Dialog", "General"))
         self.skills_table.setSortingEnabled(True)
         item = self.skills_table.horizontalHeaderItem(0)
         item.setText(_translate("Dialog", "activity_id"))
@@ -170,23 +147,11 @@ class Ui_Dialog(object):
         self.create_skill.setText(_translate("Dialog", "erstelle neu"))
         self.rename_skill.setText(_translate("Dialog", "benenne um"))
         self.delete_skill.setText(_translate("Dialog", "lösche"))
-        self.categories_pages.setTabText(
-            self.categories_pages.indexOf(self.tab_3),
-            _translate("Dialog", "Skills"),
-        )
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_categories),
-            _translate("Dialog", "Categories"),
-        )
+        self.categories_pages.setTabText(self.categories_pages.indexOf(self.tab_3), _translate("Dialog", "Skills"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_categories), _translate("Dialog", "Categories"))
         self.default_settings.setTitle(_translate("Dialog", "default"))
         self.user_settings.setTitle(_translate("Dialog", "user-defined"))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_config),
-            _translate("Dialog", "Config"),
-        )
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_config), _translate("Dialog", "Config"))
         self.clear_all_deleted.setText(_translate("Dialog", "clear all deleted Tasks"))
         self.clear_unused_resources.setText(_translate("Dialog", "clear unused resources"))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_misc),
-            _translate("Dialog", "Misc"),
-        )
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_misc), _translate("Dialog", "Misc"))

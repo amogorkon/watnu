@@ -14,6 +14,10 @@ class CheckList(QtWidgets.QDialog, ui.task_checklist.Ui_Dialog):
         app.list_of_windows.append(self)
 
     def reject(self):
+        """
+        Reimplemented to remove the current task checklist from the list of task checklists and windows,
+        and to raise the previous window in the list of windows.
+        """
         super().reject()
         app.list_of_task_checklists.remove(self)
         app.list_of_windows.remove(self)

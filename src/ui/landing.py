@@ -16,12 +16,7 @@ class Ui_Wizard(object):
         Wizard.resize(607, 360)
         Wizard.setModal(True)
         Wizard.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
-        Wizard.setOptions(
-            QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages
-            | QtWidgets.QWizard.WizardOption.IgnoreSubTitles
-            | QtWidgets.QWizard.WizardOption.NoBackButtonOnStartPage
-            | QtWidgets.QWizard.WizardOption.NoCancelButton
-        )
+        Wizard.setOptions(QtWidgets.QWizard.WizardOption.HaveFinishButtonOnEarlyPages|QtWidgets.QWizard.WizardOption.IgnoreSubTitles|QtWidgets.QWizard.WizardOption.NoBackButtonOnStartPage|QtWidgets.QWizard.WizardOption.NoCancelButton)
         self.wizardPage_1 = QtWidgets.QWizardPage()
         self.wizardPage_1.setObjectName("wizardPage_1")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.wizardPage_1)
@@ -55,10 +50,7 @@ class Ui_Wizard(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.textBrowser_3 = QtWidgets.QTextBrowser(parent=self.horizontalLayoutWidget)
         self.textBrowser_3.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Fixed,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.textBrowser_3.sizePolicy().hasHeightForWidth())
@@ -66,10 +58,7 @@ class Ui_Wizard(object):
         self.textBrowser_3.setObjectName("textBrowser_3")
         self.verticalLayout.addWidget(self.textBrowser_3)
         self.call_name = QtWidgets.QLineEdit(parent=self.horizontalLayoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Preferred,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.call_name.sizePolicy().hasHeightForWidth())
@@ -103,40 +92,25 @@ class Ui_Wizard(object):
     def retranslateUi(self, Wizard):
         _translate = QtCore.QCoreApplication.translate
         Wizard.setWindowTitle(_translate("Wizard", "Watnu - Einstieg"))
-        self.textBrowser.setHtml(
-            _translate(
-                "Wizard",
-                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
-                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
-                "p, li { white-space: pre-wrap; }\n"
-                "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-weight:600;">Willkommen zu Watnu!</span></p>\n'
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Auf den folgenden Seiten wirst du die wichtigsten Funktionen kennenlernen um Watnu effektiv einsetzen zu können.</p>\n'
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Lass uns anfangen!</p></body></html>',
-            )
-        )
-        self.textBrowser_3.setHtml(
-            _translate(
-                "Wizard",
-                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
-                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
-                "p, li { white-space: pre-wrap; }\n"
-                "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Zunächst einmal: <span style=" font-weight:600;">Wie darf ich dich nennen?</span></p></body></html>',
-            )
-        )
+        self.textBrowser.setHtml(_translate("Wizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Willkommen zu Watnu!</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Auf den folgenden Seiten wirst du die wichtigsten Funktionen kennenlernen um Watnu effektiv einsetzen zu können.</p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Lass uns anfangen!</p></body></html>"))
+        self.textBrowser_3.setHtml(_translate("Wizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Zunächst einmal: <span style=\" font-weight:600;\">Wie darf ich dich nennen?</span></p></body></html>"))
         self.call_name.setPlaceholderText(_translate("Wizard", "Name"))
-        self.textBrowser_2.setHtml(
-            _translate(
-                "Wizard",
-                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
-                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
-                "p, li { white-space: pre-wrap; }\n"
-                "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-weight:600;">Auswahl der Datenbank</span></p>\n'
-                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
-                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Willst du eine bestimmte existierende Datenbank für deine Aufgaben verwenden? Hier kannst du zum Beispiel auch eine Datei wählen, die in deiner Dropbox liegt. Wählst du nichts aus, wird eine neue Datenbank angelegt.</p></body></html>',
-            )
-        )
+        self.textBrowser_2.setHtml(_translate("Wizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Auswahl der Datenbank</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Willst du eine bestimmte existierende Datenbank für deine Aufgaben verwenden? Hier kannst du zum Beispiel auch eine Datei wählen, die in deiner Dropbox liegt. Wählst du nichts aus, wird eine neue Datenbank angelegt.</p></body></html>"))
         self.pushButton.setText(_translate("Wizard", "Existierende Datenbank auswählen"))
         self.pushButton_2.setText(_translate("Wizard", "Mach neu!"))

@@ -54,18 +54,10 @@ class Ui_Dialog(object):
         self.in_months.setMinimum(-999)
         self.in_months.setMaximum(999)
         self.in_months.setObjectName("in_months")
-        self.formLayout.setWidget(
-            2,
-            QtWidgets.QFormLayout.ItemRole.LabelRole,
-            self.in_months,
-        )
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.ItemRole.LabelRole, self.in_months)
         self.enter_date = QtWidgets.QPushButton(parent=self.groupBox_3)
         self.enter_date.setObjectName("enter_date")
-        self.formLayout.setWidget(
-            3,
-            QtWidgets.QFormLayout.ItemRole.SpanningRole,
-            self.enter_date,
-        )
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.ItemRole.SpanningRole, self.enter_date)
         self.gridLayout_3.addWidget(self.groupBox_3, 1, 0, 1, 1)
         self.reference_date = QtWidgets.QDateTimeEdit(parent=self.deadline_details)
         self.reference_date.setAccelerated(False)
@@ -78,19 +70,14 @@ class Ui_Dialog(object):
         self.verticalLayout.addWidget(self.tabWidget)
         self.buttonBox = QtWidgets.QDialogButtonBox(parent=Dialog)
         self.buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel
-            | QtWidgets.QDialogButtonBox.StandardButton.Discard
-            | QtWidgets.QDialogButtonBox.StandardButton.Ok
-            | QtWidgets.QDialogButtonBox.StandardButton.Reset
-        )
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Cancel|QtWidgets.QDialogButtonBox.StandardButton.Discard|QtWidgets.QDialogButtonBox.StandardButton.Ok|QtWidgets.QDialogButtonBox.StandardButton.Reset)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi(Dialog)
         self.tabWidget.setCurrentIndex(0)
-        self.buttonBox.accepted.connect(Dialog.accept)  # type: ignore
-        self.buttonBox.rejected.connect(Dialog.reject)  # type: ignore
+        self.buttonBox.accepted.connect(Dialog.accept) # type: ignore
+        self.buttonBox.rejected.connect(Dialog.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -102,8 +89,5 @@ class Ui_Dialog(object):
         self.label_3.setText(_translate("Dialog", "Wochen"))
         self.label_4.setText(_translate("Dialog", "Monate"))
         self.enter_date.setText(_translate("Dialog", "davor/danach als neuen Bezug"))
-        self.reference_date.setSpecialValueText(_translate("Dialog", '"Never"'))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.deadline_details),
-            _translate("Dialog", "Deadline Details"),
-        )
+        self.reference_date.setSpecialValueText(_translate("Dialog", "\"Never\""))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.deadline_details), _translate("Dialog", "Deadline Details"))

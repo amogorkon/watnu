@@ -7,14 +7,14 @@ from src.stuff import app
 from src.ux import task_editor
 
 
-def clean_up_empty_tasks(tasks: list[Task]) -> None:
+def _clean_up_empty_tasks(tasks: list[Task]) -> None:
     # first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
     for task in tasks:
         if task.do == "" and task.notes in ("", None):
             task.really_delete()
 
 
-def check_for_drafts(tasks: list[Task]) -> None:
+def _check_for_drafts(tasks: list[Task]) -> None:
     # let's check for drafts
     if drafts := [t for t in tasks if t.draft]:
         match QMessageBox.question(
@@ -28,8 +28,8 @@ def check_for_drafts(tasks: list[Task]) -> None:
                     win.show()
 
 
-def check_for_cycles(tasks: list[Task]) -> None:
-    while cycle := cycle_in_task_dependencies(tasks):
+def _check_for_cycles(tasks: list[Task]) -> None:
+    while cycle := _cycle_in_task_dependencies(tasks):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("Jetzt bearbeiten?")
         msgBox.setText(
@@ -47,7 +47,7 @@ def check_for_cycles(tasks: list[Task]) -> None:
                     win.show()
 
 
-def check_for_duplicates(tasks: list[Task]) -> None:
+def _check_for_duplicates(tasks: list[Task]) -> None:
     # let's check for duplicates
 
     for task1 in tasks:
@@ -73,7 +73,7 @@ def check_for_duplicates(tasks: list[Task]) -> None:
                         app.list_of_windows.append(win)
 
 
-def check_for_deadline_without_workload(tasks: list[Task]) -> None:
+def _check_for_deadline_without_workload(tasks: list[Task]) -> None:
     # let's check if tasks have a deadline without workload
     if bads := [
         task
@@ -88,7 +88,7 @@ def check_for_deadline_without_workload(tasks: list[Task]) -> None:
         match QMessageBox.question(
             app.win_main,
             "Jetzt bearbeiten?",
-            f"""Es gibt {f'{len(bads)} Aufgaben ohne Arbeitsaufwand' if len(bads) > 1 else 
+            f"""Es gibt {f'{len(bads)} Aufgaben ohne Arbeitsaufwand' if len(bads) > 1 else
             'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?""",
         ):
             case QMessageBox.StandardButton.Yes:
@@ -97,7 +97,7 @@ def check_for_deadline_without_workload(tasks: list[Task]) -> None:
                     win.show()
 
 
-def check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
+def _check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for overdue tasks
     if overdue := [task for task in tasks if task.is_overdue(now=now)]:
         match QMessageBox.question(
@@ -112,7 +112,7 @@ def check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
                     win.show()
 
 
-def check_for_incompleatable_tasks(tasks: list[Task], now: datetime) -> None:
+def _check_for_incompletable_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for tasks that are not yet overdue but incompleatable according to workload
     if incompleteable := [
         task for task in tasks if task.time_buffer <= 0 and not task.is_overdue(now=now) and task.is_doable
@@ -132,20 +132,20 @@ def check_for_incompleatable_tasks(tasks: list[Task], now: datetime) -> None:
                     win.show()
 
 
-def cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
+def _cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
     """Return a list of tasks that are involved in a cycle in their dependencies."""
     visited = set()
     path = []
 
-    def visit(task: Task) -> bool:
+    def _visit(task: Task) -> bool:
         if task in visited:
             return False
         visited.add(task)
         path.append(task)
         for subtask in task.doable_supertasks:
-            if subtask in path or visit(subtask):
+            if subtask in path or _visit(subtask):
                 return True
         path.pop()
         return False
 
-    return [task for task in tasks if visit(task)]
+    return [task for task in tasks if _visit(task)]

@@ -33,10 +33,7 @@ class Ui_Dialog(object):
         self.field_filter.setObjectName("field_filter")
         self.statusLayout.addWidget(self.field_filter)
         self.space = QtWidgets.QComboBox(parent=self.groupBox)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Fixed,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.space.sizePolicy().hasHeightForWidth())
@@ -109,10 +106,7 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.check_deleted)
         self.layout.addWidget(self.horizontalGroupBox)
         self.groupBox_2 = QtWidgets.QGroupBox(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(20)
         sizePolicy.setHeightForWidth(self.groupBox_2.sizePolicy().hasHeightForWidth())
@@ -122,10 +116,7 @@ class Ui_Dialog(object):
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.groupBox_2)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.tasks_table = QtWidgets.QTableWidget(parent=self.groupBox_2)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(20)
         sizePolicy.setHeightForWidth(self.tasks_table.sizePolicy().hasHeightForWidth())
@@ -173,10 +164,7 @@ class Ui_Dialog(object):
         self.verticalLayout_2.addWidget(self.tasks_table)
         self.layout.addWidget(self.groupBox_2)
         self.groupBox_3 = QtWidgets.QGroupBox(parent=Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(20)
         sizePolicy.setHeightForWidth(self.groupBox_3.sizePolicy().hasHeightForWidth())
@@ -189,10 +177,7 @@ class Ui_Dialog(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.concerned_task_table = QtWidgets.QTableWidget(parent=self.groupBox_3)
         self.concerned_task_table.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Fixed,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.concerned_task_table.sizePolicy().hasHeightForWidth())
@@ -201,9 +186,7 @@ class Ui_Dialog(object):
         self.concerned_task_table.setAutoFillBackground(False)
         self.concerned_task_table.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.concerned_task_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.concerned_task_table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
-        )
+        self.concerned_task_table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
         self.concerned_task_table.setAutoScroll(False)
         self.concerned_task_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.concerned_task_table.setTabKeyNavigation(False)
@@ -212,13 +195,9 @@ class Ui_Dialog(object):
         self.concerned_task_table.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.NoDragDrop)
         self.concerned_task_table.setAlternatingRowColors(False)
         self.concerned_task_table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.concerned_task_table.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self.concerned_task_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.concerned_task_table.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
-        self.concerned_task_table.setHorizontalScrollMode(
-            QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel
-        )
+        self.concerned_task_table.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.concerned_task_table.setShowGrid(False)
         self.concerned_task_table.setWordWrap(False)
         self.concerned_task_table.setCornerButtonEnabled(False)
@@ -237,43 +216,30 @@ class Ui_Dialog(object):
         self.verticalLayout.addWidget(self.concerned_task_table)
         self.relationship_button = QtWidgets.QPushButton(parent=self.groupBox_3)
         icon = QtGui.QIcon()
-        icon.addPixmap(
-            QtGui.QPixmap("src\\ui\\../extra/arrow-down.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
+        icon.addPixmap(QtGui.QPixmap("src\\ui\\../extra/arrow-down.svg"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.relationship_button.setIcon(icon)
         self.relationship_button.setCheckable(False)
         self.relationship_button.setAutoExclusive(False)
         self.relationship_button.setObjectName("relationship_button")
         self.verticalLayout.addWidget(self.relationship_button)
         self.sub_sup_tasks_table = QtWidgets.QTableWidget(parent=self.groupBox_3)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(20)
         sizePolicy.setHeightForWidth(self.sub_sup_tasks_table.sizePolicy().hasHeightForWidth())
         self.sub_sup_tasks_table.setSizePolicy(sizePolicy)
         self.sub_sup_tasks_table.setMinimumSize(QtCore.QSize(0, 20))
         self.sub_sup_tasks_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.sub_sup_tasks_table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
-        )
+        self.sub_sup_tasks_table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.sub_sup_tasks_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.sub_sup_tasks_table.setDragEnabled(True)
         self.sub_sup_tasks_table.setDragDropOverwriteMode(False)
         self.sub_sup_tasks_table.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.DragDrop)
         self.sub_sup_tasks_table.setDefaultDropAction(QtCore.Qt.DropAction.IgnoreAction)
         self.sub_sup_tasks_table.setAlternatingRowColors(True)
-        self.sub_sup_tasks_table.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self.sub_sup_tasks_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.sub_sup_tasks_table.setTextElideMode(QtCore.Qt.TextElideMode.ElideMiddle)
-        self.sub_sup_tasks_table.setHorizontalScrollMode(
-            QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel
-        )
+        self.sub_sup_tasks_table.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.sub_sup_tasks_table.setShowGrid(False)
         self.sub_sup_tasks_table.setWordWrap(False)
         self.sub_sup_tasks_table.setCornerButtonEnabled(False)
@@ -299,10 +265,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button4, 2, 1, 1, 1)
         self.button2 = QtWidgets.QPushButton(parent=Dialog)
         self.button2.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button2.sizePolicy().hasHeightForWidth())
@@ -312,10 +275,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button2, 3, 2, 1, 1)
         self.button5 = QtWidgets.QPushButton(parent=Dialog)
         self.button5.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button5.sizePolicy().hasHeightForWidth())
@@ -324,10 +284,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button5, 2, 2, 1, 1)
         self.button1 = QtWidgets.QPushButton(parent=Dialog)
         self.button1.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button1.sizePolicy().hasHeightForWidth())
@@ -337,10 +294,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button1, 3, 1, 1, 1)
         self.button7 = QtWidgets.QPushButton(parent=Dialog)
         self.button7.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button7.sizePolicy().hasHeightForWidth())
@@ -349,10 +303,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button7, 1, 1, 1, 1)
         self.button8 = QtWidgets.QPushButton(parent=Dialog)
         self.button8.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button8.sizePolicy().hasHeightForWidth())
@@ -361,10 +312,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button8, 1, 2, 1, 1)
         self.button9 = QtWidgets.QPushButton(parent=Dialog)
         self.button9.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button9.sizePolicy().hasHeightForWidth())
@@ -375,10 +323,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button9, 1, 3, 1, 1)
         self.button3 = QtWidgets.QPushButton(parent=Dialog)
         self.button3.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button3.sizePolicy().hasHeightForWidth())
@@ -387,10 +332,7 @@ class Ui_Dialog(object):
         self.buttonLayout.addWidget(self.button3, 3, 3, 1, 1)
         self.button6 = QtWidgets.QPushButton(parent=Dialog)
         self.button6.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding, QtWidgets.QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.button6.sizePolicy().hasHeightForWidth())

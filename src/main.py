@@ -258,12 +258,12 @@ app.spaces = {s.space_id: s for s in retrieve_spaces()}
 app.tasks = {t.id: t for t in retrieve_tasks()}
 
 from src.startup_checks import (
-    check_for_cycles,
-    check_for_deadline_without_workload,
-    check_for_drafts,
-    check_for_incompleatable_tasks,
-    check_for_overdue_tasks,
-    clean_up_empty_tasks,
+    _check_for_cycles,
+    _check_for_deadline_without_workload,
+    _check_for_drafts,
+    _check_for_incompletable_tasks,
+    _check_for_overdue_tasks,
+    _clean_up_empty_tasks,
 )
 
 now = datetime.now()
@@ -271,15 +271,13 @@ now = datetime.now()
 # just passing app.tasks.values would cause RuntimeError: dictionary changed size during iteration
 # and a single tasks = list(app.tasks.values()) on top wouldn't work either because of tasks
 # being deleted or created at each step
-clean_up_empty_tasks(list(app.tasks.values()))
-check_for_drafts(list(app.tasks.values()))
-check_for_cycles(list(app.tasks.values()))
-check_for_deadline_without_workload(list(app.tasks.values()))
-check_for_overdue_tasks(list(app.tasks.values()), now)
-check_for_incompleatable_tasks(list(app.tasks.values()), now)
-check_for_cycles(
-    list(app.tasks.values())
-)  # again, the user might have introduced cycles in previous checks
+_clean_up_empty_tasks(list(app.tasks.values()))
+_check_for_drafts(list(app.tasks.values()))
+_check_for_cycles(list(app.tasks.values()))
+_check_for_deadline_without_workload(list(app.tasks.values()))
+_check_for_overdue_tasks(list(app.tasks.values()), now)
+_check_for_incompletable_tasks(list(app.tasks.values()), now)
+_check_for_cycles(list(app.tasks.values()))  # again, the user might have introduced cycles in previous checks
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()

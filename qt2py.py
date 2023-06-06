@@ -15,12 +15,13 @@ for path in ui_path.glob("*.ui"):
     rc = run(args)
     (Path("./src/ux") / path.name).with_suffix(".py").touch()
 
+newline = "\n"
 
 Path("./src/ui/__init__.py").write_text(
     f"""# ruff: noqa: F401 , E501
 # generated via qt2py.py
 from . import (
-{', '.join(p.stem for p in ui_path.glob("*.py"))}
+{"".join(f"   {p.stem},\n" for p in ui_path.glob("*.py"))}
 )
 """
 )
@@ -29,7 +30,7 @@ Path("./src/ux/__init__.py").write_text(
     f"""# ruff: noqa: F401 , E501
 # generated via qt2py.py
 from . import (
-{', '.join(p.stem for p in ui_path.glob("*.py"))}
+{"".join(f"   {p.stem},\n" for p in ui_path.glob("*.py"))}
 )
 """
 )
