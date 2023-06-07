@@ -17,7 +17,17 @@ class Application(QtWidgets.QApplication):
         self.startup_time = datetime.now().timestamp()
         # self.startup_win = startup.Startup()
 
+# sourcery skip: use-function-docstrings-gpt35
     def setUp(self, config_, db_):
+        """Set up the application.
+
+        Args:
+            config_: The configuration.
+            db_: The database.
+
+        Returns:
+            None.
+        """
         self.db_last_modified = 0
         global config, db
         config = config_
@@ -135,31 +145,38 @@ class Application(QtWidgets.QApplication):
         )
         db.commit()
 
+def sanitize_db(self):
+    """
+    Deletes all resources that are not used by any task from the database.
+    """
     def sanitize_db(self):
-        query = db.execute(
             """
-    SELECT r.resource_id
-    FROM resources r
-    LEFT JOIN task_uses_resource
-    ON task_uses_resource.resource_id = r.resource_id
-    WHERE task_uses_resource.task_id is NULL
-    """
-        )
-        i = None
-        for i, resource_id in enumerate(query.fetchall()):
-            db.execute(
-                f"""
-    DELETE FROM resources
-    WHERE resource_id = {resource_id}
-    """
+            Deletes all resources that are not used by any task from the database.
+            """
+            query = db.execute(
+                """
+        SELECT r.resource_id
+        FROM resources r
+        LEFT JOIN task_uses_resource
+        ON task_uses_resource.resource_id = r.resource_id
+        WHERE task_uses_resource.task_id is NULL
+        """
             )
+            i = None
+            for i, resource_id in enumerate(query.fetchall()):
+                db.execute(
+                    f"""
+        DELETE FROM resources
+        WHERE resource_id = {resource_id}
+        """
+                )
 
-        import q
+            import q
 
-        q(
-            i + 1 if i is not None else "Nothing found, so no",
-            "unused resources deleted.",
-        )
+            q(
+                i + 1 if i is not None else "Nothing found, so no",
+                "unused resources deleted.",
+            )
 
     def editor_opened(self, editor):
         self.list_of_task_editors.append(editor)

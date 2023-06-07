@@ -98,20 +98,20 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
     def rearrange_list(self, item):
         """Callback for easy rearranging of the list, no filtering."""
         # save the current selected rows in the task_table
-        selection = self.tasks_table.selectedRanges()
+        selection = self.task_table.selectedRanges()
         # also save the current scroll position and sorting
-        scroll_pos = self.tasks_table.verticalScrollBar().value()
-        sort_col = self.tasks_table.horizontalHeader().sortIndicatorSection()
-        sort_order = self.tasks_table.horizontalHeader().sortIndicatorOrder()
+        scroll_pos = self.task_table.verticalScrollBar().value()
+        sort_col = self.task_table.horizontalHeader().sortIndicatorSection()
+        sort_order = self.task_table.horizontalHeader().sortIndicatorOrder()
 
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
         # restore the sorting, scroll position and selection
-        self.tasks_table.horizontalHeader().setSortIndicator(sort_col, sort_order)
-        self.tasks_table.verticalScrollBar().setValue(scroll_pos)
+        self.task_table.horizontalHeader().setSortIndicator(sort_col, sort_order)
+        self.task_table.verticalScrollBar().setValue(scroll_pos)
 
         for i in selection:
-            self.tasks_table.setRangeSelected(i, True)
+            self.task_table.setRangeSelected(i, True)
 
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
@@ -679,7 +679,7 @@ font-size: 12pt;
         )
 
         for column_number, column in enumerate(selected_columns):
-            self.set_header(translation[column[0]], header_font, column_number)
+            self._set_header(translation[column[0]], header_font, column_number)
 
         for i, task in enumerate(tasks):
             for column_number, (header, func) in enumerate(selected_columns):

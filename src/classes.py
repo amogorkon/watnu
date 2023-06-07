@@ -296,50 +296,50 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         return typed_row(query.fetchone(), 0, int, default=0)
 
 
-def set_deadline(self, deadline: float):
-    """Sets the deadline for a task.
+    def set_deadline(self, deadline: float):
+        """Sets the deadline for a task.
 
-    If deadline is set to infinity, the deadline is removed from the database.
-    If the deadline already exists, it is updated with the new deadline.
-    If the deadline does not exist, a new deadline is created in the database.
+        If deadline is set to infinity, the deadline is removed from the database.
+        If the deadline already exists, it is updated with the new deadline.
+        If the deadline does not exist, a new deadline is created in the database.
 
-    Args:
-        deadline (float): The deadline to be set for the task.
+        Args:
+            deadline (float): The deadline to be set for the task.
 
-    Returns:
-        None
+        Returns:
+            None
 
-    Raises:
-        AssertionError: If deadline is not a float.
-        AssertionError: If deadline is negative.
+        Raises:
+            AssertionError: If deadline is not a float.
+            AssertionError: If deadline is negative.
 
-    Examples:
-        >>> task = Task()
-        >>> task.set_deadline(10.0)
-        >>> task.set_deadline(float("inf"))
-        >>> task.set_deadline(-1.0)
-        Traceback (most recent call last):
-            ...
-        AssertionError: Deadline cannot be negative.
-    """
-    assert isinstance(deadline, float), "Deadline must be a float."
-    assert deadline >= 0, "Deadline cannot be negative."
+        Examples:
+            >>> task = Task()
+            >>> task.set_deadline(10.0)
+            >>> task.set_deadline(float("inf"))
+            >>> task.set_deadline(-1.0)
+            Traceback (most recent call last):
+                ...
+            AssertionError: Deadline cannot be negative.
+        """
+        assert isinstance(deadline, float), "Deadline must be a float."
+        assert deadline >= 0, "Deadline cannot be negative."
 
-    # removing deadline
-    if deadline == float("inf"):
-        db.execute(f"DELETE FROM deadlines WHERE task_id={self.id}")
+        # removing deadline
+        if deadline == float("inf"):
+            db.execute(f"DELETE FROM deadlines WHERE task_id={self.id}")
+            db.commit()
+            return
+
+        query = db.execute(f"SELECT time_of_reference FROM deadlines WHERE task_id={self.id}")
+
+        # changing deadline
+        if query.fetchone():
+            db.execute(f"UPDATE deadlines SET time_of_reference={deadline} WHERE task_id={self.id}")
+        else:  # new deadline
+            db.execute(f"INSERT INTO deadlines (task_id, time_of_reference) VALUES ({self.id}, {deadline})")
+
         db.commit()
-        return
-
-    query = db.execute(f"SELECT time_of_reference FROM deadlines WHERE task_id={self.id}")
-
-    # changing deadline
-    if query.fetchone():
-        db.execute(f"UPDATE deadlines SET time_of_reference={deadline} WHERE task_id={self.id}")
-    else:  # new deadline
-        db.execute(f"INSERT INTO deadlines (task_id, time_of_reference) VALUES ({self.id}, {deadline})")
-
-    db.commit()
 
     @cached_property
     def supertasks(self) -> set["Task"]:
