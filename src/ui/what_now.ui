@@ -691,7 +691,7 @@
         </font>
        </property>
        <property name="text">
-        <string/>
+        <string>Was kommt als Nächstes?</string>
        </property>
        <property name="shortcut">
         <string>3</string>
@@ -709,11 +709,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Wirf Münze</string>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>../extra/coin.svg</normaloff>../extra/coin.svg</iconset>
+        <string>Schon erledigt!</string>
        </property>
        <property name="shortcut">
         <string>2</string>
@@ -749,7 +745,11 @@
         </font>
        </property>
        <property name="text">
-        <string/>
+        <string>Wirf Münze</string>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../extra/coin.svg</normaloff>../extra/coin.svg</iconset>
        </property>
        <property name="shortcut">
         <string>1</string>

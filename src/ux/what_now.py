@@ -1,4 +1,5 @@
 from collections import Counter, defaultdict
+from enum import Enum
 from itertools import count
 from math import modf, sin
 from random import choice, seed
@@ -16,6 +17,8 @@ from src.ux import task_editor, task_finished, task_running
 
 _translate = QCoreApplication.translate
 
+
+SELECT = Enum("SELECT", "BALANCE PRIORITY TIMING")
 
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def __init__(self):
@@ -41,32 +44,13 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.priority_tasks = None
         self.timing_tasks = None
 
-        # @self.edit_priority.clicked.connect
-        def edit_priority():
-            win = task_editor.Editor(self.task_priority)
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            if win.exec():
-                self.lets_check_whats_next()
+        self.selected = None
 
-        # @self.edit_timing.clicked.connect
-        def edit_timing():
-            win = task_editor.Editor(self.task_timing)
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            if win.exec():
-                self.lets_check_whats_next()
 
-        # @self.edit_balanced.clicked.connect
-        def edit_balanced():
-            win = task_editor.Editor(self.task_balanced)
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            if win.exec():
-                self.lets_check_whats_next()
+
 
         @self.sec_timer.timeout.connect
-        def sec_timer_timeout():
+        def _sec_timer_timeout():
             T: float
             # every full second
             if self.task_timing:
@@ -85,16 +69,16 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.deadline_seconds.setProperty("intValue", seconds)
 
         @self.animation_timer.timeout.connect
-        def animation_timer_timeout():
+        def _animation_timer_timeout():
             T = time()
             if self.task_timing:
                 self.frame_timing.setStyleSheet(
                     f"""
-        * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-                stop:0 black, 
+        * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
+                stop:0 black,
                 stop:1 white);
-        background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
-                stop:0 {self.task_timing.primary_color}, 
+        background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
+                stop:0 {self.task_timing.primary_color},
                 stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_timing.secondary_color},
                 stop:1 white);
         }}
@@ -106,10 +90,10 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if self.task_priority:
                 self.frame_priority.setStyleSheet(
                     f"""
-    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-            stop:0 black, 
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
+            stop:0 black,
             stop:1 white);
-    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             stop:0 {self.task_priority.primary_color},
             stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_priority.secondary_color},
             stop:1 white);
@@ -122,10 +106,10 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             if self.task_balanced:
                 self.frame_balanced.setStyleSheet(
                     f"""
-    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-            stop:0 black, 
+    * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
+            stop:0 black,
             stop:1 white);
-    background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+    background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             stop:0 {self.task_balanced.primary_color},
             stop:{sin(T * 0.1) * 0.5 + 0.5} {self.task_balanced.secondary_color},
             stop:1 white);
@@ -136,7 +120,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.frame_balanced.setStyleSheet("color: grey")
 
         @self.gui_timer.timeout.connect
-        def gui_timer_timeout():
+        def _gui_timer_timeout():
             # update the task descriptions
             if self.task_timing:
                 self.task_desc_timing.setText(self.task_timing.do)
@@ -160,13 +144,33 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.task_desc_balanced.setText("Keine Aufgabe")
                 self.task_space_balanced.setText("")
 
-        # @self.button4.clicked.connect
-        def go_priority_clicked():
-            self.hide()
-            app.win_running = task_running.Running(self.task_priority)
+        @self.button1.clicked.connect
+        def button1():
+            throw_coins()
 
-        # @self.button1.clicked.connect
-        def skip_priority_clicked():
+        @self.button2.clicked.connect
+        def _task_done():
+            match self.selected:
+                case SELECT.PRIORITY:
+                    done = task_finished.Finisher(self.task_priority).exec()
+                case SELECT.TIMING:
+                    done = task_finished.Finisher(self.task_timing).exec()
+                case SELECT.BALANCE:
+                    done = task_finished.Finisher(self.task_balance).exec()
+            if done:
+                self.lets_check_whats_next()
+
+        @self.button3.clicked.connect
+        def _skip_task():
+            match self.selected:
+                case SELECT.PRIORITY:
+                    _skip_priority()
+                case SELECT.TIMING:
+                    _skip_timing()
+                case SELECT.BALANCE:
+                    _skip_balanced()
+
+        def _skip_priority():
             old_task = self.task_priority
             self.priority_tasks.rotate(-1)
             self.task_priority.set_last_checked(time())
@@ -183,13 +187,14 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 Auf gehts!""",
                 )
 
-        # @self.button6.clicked.connect
-        def go_balanced_clicked():
-            self.hide()
-            app.win_running = task_running.Running(self.task_balanced)
+        def _skip_timing():
+            self.timing_tasks.rotate(-1)
+            self.task_timing.set_last_checked(time())
+            self.task_timing = self.timing_tasks[0]
+            self.task_desc_timing.setText(self.task_timing.do)
+            self.task_space_timing.setText(self.task_timing.space.name)
 
-        # @self.button3.clicked.connect
-        def skip_balanced_clicked():
+        def _skip_balanced():
             self.task_balanced.set_last_checked(time())
             self.balanced_tasks.rotate(-1)
             self.task_balanced = self.balanced_tasks[0]
@@ -197,81 +202,104 @@ Auf gehts!""",
             self.task_desc_balanced.adjustSize()
             self.task_space_balanced.setText(self.task_balanced.space.name)
 
-        def go_timing_clicked():
-            self.hide()
-            app.win_running = task_running.Running(self.task_timing)
 
-        # @self.button2.clicked.connect
-        def skip_timing_clicked():
-            self.timing_tasks.rotate(-1)
-            self.task_timing.set_last_checked(time())
-            self.task_timing = self.timing_tasks[0]
-            self.task_desc_timing.setText(self.task_timing.do)
-            self.task_space_timing.setText(self.task_timing.space.name)
+        @self.button4.clicked.connect
+        def _edit_task():
+            match self.selected:
+                case SELECT.PRIORITY:
+                    win = task_editor.Editor(self.task_priority)
+                case SELECT.TIMING:
+                    win = task_editor.Editor(self.task_timing)
+                case SELECT.BALANCE:
+                    win = task_editor.Editor(self.task_balanced)
+                case _:
+                    return
 
-        # @self.button7.clicked.connect
-        def done_priority_clicked():
-            if task_finished.Finisher(self.task_priority).exec():
-                self.lets_check_whats_next()
-
-        # @self.button9.clicked.connect
-        def done_balanced_clicked():
-            if task_finished.Finisher(self.task_balanced).exec():
+            if win.exec():
                 self.lets_check_whats_next()
 
         @self.button5.clicked.connect
-        def throw_coins():
-            # vonNeumann!
-            i = 0
-            first = 0
-            for i in count():
-                # least significant bit of high-res time *should* give enough entropy
-                first = (time_ns() // 100) & 1
-                second = (time_ns() // 100) & 1
-                if first != second:
-                    break
-            # 'threw 31688 pairs!' - so much for "should"
-            # bitshift to the left
-            config.coin <<= 1
-            # then set the bit -
-            config.coin |= first
-            seed((config.coin ^ config.lucky_num) * config.count)
-            config.count += 1
+        def _run_task():
+            self.hide()
+            match self.selected:
+                case SELECT.PRIORITY:
+                    app.win_running = task_running.Running(self.task_priority)
+                case SELECT.TIMING:
+                    app.win_running = task_running.Running(self.task_timing)
+                case SELECT.BALANCE:
+                    app.win_running = task_running.Running(self.task_balanced)
 
-            x = choice(["Kopf", "Zahl"])
-            mb = QtWidgets.QMessageBox()
-            mb.setWindowTitle("Hmm..")
-            if x == "Kopf":
-                mb.setText("Du hast Kopf geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
+        @self.button6.clicked.connect
+        def _new_task():
+            win = task_editor.Editor()
+            if win.exec():
+                self.lets_check_whats_next()
+
+
+        @self.button7.clicked.connect
+        def select_priority():
+            _unselect_all()
+            if self.selected is SELECT.PRIORITY:
+                self.selected = None
             else:
-                mb.setText("Du hast Zahl geworfen!")
-                mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
-            mb.exec()
+                self.selected = SELECT.PRIORITY
+                self.priority.setStyleSheet("border: 2px solid black; background-color: grey")
+
+        @self.button8.clicked.connect
+        def select_timing():
+            _unselect_all()
+            if self.selected is SELECT.TIMING:
+                self.selected = None
+            else:
+                self.selected = SELECT.TIMING
+                self.timing.setStyleSheet("border: 2px solid black; background-color: grey")
+
+        @self.button9.clicked.connect
+        def select_balanced():
+            _unselect_all()
+            if self.selected is SELECT.BALANCE:
+                self.selected = None
+            else:
+                self.selected = SELECT.BALANCE
+                self.balance.setStyleSheet("border: 2px solid black; background-color: grey")
+
+        def _unselect_all():
+            self.priority.setStyleSheet(None)
+            self.timing.setStyleSheet(None)
+            self.balance.setStyleSheet(None)
+
+
 
     @cached_getter
     def lets_check_whats_next(self):
-        seed((config.coin ^ config.lucky_num) * config.count)
-        config.count += 1
+            """
+            This method selects the next task to be done based on the current state.
+            It sets the task priority, balance, and timing, and returns True if there are tasks to be done,
+            False if there are no tasks.
+            """
+            seed((config.coin ^ config.lucky_num) * config.count)
+            config.count += 1
 
-        self.groups = defaultdict(lambda: [])
+            self.groups = defaultdict(lambda: [])
 
-        self.tasks = get_doable_tasks(app.tasks.values())
+            self.tasks = get_doable_tasks(app.tasks.values())
 
-        if not self.tasks:
-            QtWidgets.QMessageBox.information(
-                self,
-                "Hmm..",
-                "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
-            )
-            self.hide()
-            return False
+            if not self.tasks:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Hmm..",
+                    "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
+                )
+                self.hide()
+                return False
 
-        self.set_task_priority()
-        self.set_task_balanced()
-        self.set_timing_task()
-        return True
+            self._set_task_priority()
+            self._set_task_balanced()
+            self._set_timing_task()
+            return True
 
+# sourcery skip: use-function-docstrings-gpt3
+# sourcery skip: use-function-docstrings-gpt35
     def reject(self):
         super().reject()
         self.hide()
@@ -283,14 +311,14 @@ Auf gehts!""",
             win.gui_timer.start(100)
             win.show()
 
-    def set_task_priority(self):
+    def _set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
         self.task_priority = self.priority_tasks[0]
         self.task_desc_priority.setText(self.task_priority.do)
         self.task_desc_priority.adjustSize()
         self.task_space_priority.setText(self.task_priority.space.name)
 
-    def set_timing_task(self):
+    def _set_timing_task(self):
         try:
             self.timing_tasks = schedule(self.tasks)
             self.task_timing = self.timing_tasks[0]
@@ -300,10 +328,10 @@ Auf gehts!""",
         except IndexError:
             self.set_empty()
         else:
-            self.set_timing_header(False, True)
+            self._set_timing_header(False, True)
         self.task_desc_timing.adjustSize()
 
-    def set_timing_empty(self):
+    def _set_timing_empty(self):
         self.task_desc_timing.setText("nix was präsiert")
         self.set_timing_header(True, False)
         self.task_timing = None
@@ -314,12 +342,12 @@ Auf gehts!""",
         self.deadline_minutes.display("")
         self.deadline_seconds.display("")
 
-    def set_timing_header(self, italic, enabled):
+    def _set_timing_header(self, italic, enabled):
         self.taskfont.setItalic(italic)
         self.task_desc_timing.setFont(self.taskfont)
         self.timing.setEnabled(enabled)
 
-    def set_task_balanced(self):
+    def _set_task_balanced(self):
         activity_time_spent = Counter()
 
         for task in app.tasks.values():
@@ -366,3 +394,37 @@ Auf gehts!""",
         self.animation_timer.start(15)
         self.gui_timer.start(1000)
         super().show()
+
+
+def throw_coins():
+    """
+    Simulates a coin toss by using the least significant bit of high-resolution time as entropy source.
+
+
+    The function then displays a message box with the result of the coin toss.
+    """
+    first = 0
+    for _ in count():
+        # least significant bit of high-res time *should* give enough entropy
+        first = (time_ns() // 100) & 1
+        second = (time_ns() // 100) & 1
+        if first != second:
+            break
+    # 'threw 31688 pairs!' - so much for "should"
+    # bitshift to the left
+    config.coin <<= 1
+    # then set the bit -
+    config.coin |= first
+    seed((config.coin ^ config.lucky_num) * config.count)
+    config.count += 1
+
+    x = choice(["Kopf", "Zahl"])
+    mb = QtWidgets.QMessageBox()
+    mb.setWindowTitle("Hmm..")
+    if x == "Kopf":
+        mb.setText("Du hast Kopf geworfen!")
+        mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
+    else:
+        mb.setText("Du hast Zahl geworfen!")
+        mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
+    mb.exec()
