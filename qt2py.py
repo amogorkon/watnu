@@ -12,7 +12,7 @@ for path in ui_path.glob("*.ui"):
         f"src/ui/{path.stem}.py",
     ]
     print(args)
-    rc = run(args)
+    run(args)
     (Path("./src/ux") / path.name).with_suffix(".py").touch()
 
 newline = "\n"

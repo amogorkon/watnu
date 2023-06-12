@@ -150,6 +150,8 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         @self.button2.clicked.connect
         def _task_done():
+            if not self.selected:
+                return
             match self.selected:
                 case SELECT.PRIORITY:
                     done = task_finished.Finisher(self.task_priority).exec()
@@ -205,6 +207,8 @@ Auf gehts!""",
 
         @self.button4.clicked.connect
         def _edit_task():
+            if not self.selected:
+                return
             match self.selected:
                 case SELECT.PRIORITY:
                     win = task_editor.Editor(self.task_priority)
@@ -212,14 +216,14 @@ Auf gehts!""",
                     win = task_editor.Editor(self.task_timing)
                 case SELECT.BALANCE:
                     win = task_editor.Editor(self.task_balanced)
-                case _:
-                    return
 
             if win.exec():
                 self.lets_check_whats_next()
 
         @self.button5.clicked.connect
         def _run_task():
+            if not self.selected:
+                return
             self.hide()
             match self.selected:
                 case SELECT.PRIORITY:
@@ -237,7 +241,7 @@ Auf gehts!""",
 
 
         @self.button7.clicked.connect
-        def select_priority():
+        def _select_priority():
             _unselect_all()
             if self.selected is SELECT.PRIORITY:
                 self.selected = None
@@ -246,7 +250,7 @@ Auf gehts!""",
                 self.priority.setStyleSheet("border: 2px solid black; background-color: grey")
 
         @self.button8.clicked.connect
-        def select_timing():
+        def _select_timing():
             _unselect_all()
             if self.selected is SELECT.TIMING:
                 self.selected = None
@@ -255,7 +259,7 @@ Auf gehts!""",
                 self.timing.setStyleSheet("border: 2px solid black; background-color: grey")
 
         @self.button9.clicked.connect
-        def select_balanced():
+        def _select_balanced():
             _unselect_all()
             if self.selected is SELECT.BALANCE:
                 self.selected = None
