@@ -1,10 +1,12 @@
+import contextlib
+import sys
 from bisect import bisect_right
 from collections import deque
 from datetime import datetime
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QFontDatabase, QFont
+from PyQt6.QtGui import QFont, QFontDatabase
 
 # import startup
 
@@ -34,7 +36,7 @@ class Application(QtWidgets.QApplication):
         db = db_
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
-        from src.classes import Space, Task, Skill
+        from src.classes import Skill, Space, Task
 
         class TaskDict(dict):
             def __missing__(self, key):
@@ -145,15 +147,12 @@ class Application(QtWidgets.QApplication):
         )
         db.commit()
 
-def sanitize_db(self):
-    """
-    Deletes all resources that are not used by any task from the database.
-    """
+
     def sanitize_db(self):
-            """
+        """
             Deletes all resources that are not used by any task from the database.
             """
-            query = db.execute(
+        query = db.execute(
                 """
         SELECT r.resource_id
         FROM resources r
@@ -162,21 +161,21 @@ def sanitize_db(self):
         WHERE task_uses_resource.task_id is NULL
         """
             )
-            i = None
-            for i, resource_id in enumerate(query.fetchall()):
-                db.execute(
-                    f"""
+        i = None
+        for i, resource_id in enumerate(query.fetchall()):
+            db.execute(
+                f"""
         DELETE FROM resources
         WHERE resource_id = {resource_id}
         """
-                )
-
-            import q
-
-            q(
-                i + 1 if i is not None else "Nothing found, so no",
-                "unused resources deleted.",
             )
+
+        import q
+
+        q(
+            i + 1 if i is not None else "Nothing found, so no",
+            "unused resources deleted.",
+        )
 
     def editor_opened(self, editor):
         self.list_of_task_editors.append(editor)
@@ -186,3 +185,17 @@ def sanitize_db(self):
         self.list_of_task_editors.remove(editor)
         self.list_of_windows.remove(editor)
         return bool(self.list_of_task_editors)
+
+    def shutdown(self):
+        with contextlib.suppress(RuntimeError):  # ignore annoying last-minute exceptions
+            self.tray.setVisible(False)
+            self.tray.deleteLater()
+
+        self.closeAllWindows()
+        config.db_write_count += 1
+        config.save()
+        from src.logic import filter_filter_history
+        with open(config.base_path / "filter_history.stay", "w") as f:
+            f.write("\n".join(filter_filter_history(self.filter_history)))
+
+        sys.exit(0)

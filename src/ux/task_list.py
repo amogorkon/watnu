@@ -466,7 +466,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.task_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self.edit_selected(self.task_table)
+            self._edit_selected(self.task_table)
 
         @self.button1.clicked.connect
         def _():

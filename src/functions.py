@@ -113,4 +113,4 @@ def typed_row(
     if res is None and default is not None:
         return default
 
-    raise ValueError(f"Expected {kind} but got {type(res)}")
+    raise ValueError(f"Expected {kind} ({res}) but got {type(res)} ({row})")

@@ -9,11 +9,10 @@ from beartype import beartype
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QKeySequence, QShortcut
-from PyQt6.QtSql import QSqlTableModel
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 import src.ui as ui
-from src.classes import ACTIVITY, ILK, Task
+from src.classes import ACTIVITY, ILK, LEVEL, Task
 from src.stuff import app, config, db
 from src.ux import space_editor, task_finished
 from src.ux_helpers import Space_Mixin, get_space_priority
@@ -103,12 +102,11 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             self.primary_activity.addItem(item.name, QVariant(item.value))
             self.secondary_activity.addItem(item.name, QVariant(item.value))
 
-        model = QSqlTableModel()
-        model.setTable("levels")
-        model.setSort(0, Qt.SortOrder.DescendingOrder)
-        model.select()
-        self.level.setModel(model)
-        self.level.setModelColumn(1)
+        for i, item in enumerate(LEVEL):
+            self.level.addItem(item.name)
+            self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
+
+
         self.level.setCurrentIndex(2)
 
         self.page.registerField(
@@ -564,10 +562,10 @@ VALUES (?, ?);
         )
 
     def save_cleanup(self):
+        """need to clean up first, because of foreign key constraints"""
         db.executescript(
             f"""
 BEGIN;
--- need to clean up first
 DELETE FROM task_requires_task WHERE task_of_concern == {self.task.id};
 DELETE FROM task_requires_task WHERE required_task == {self.task.id};
 DELETE FROM task_uses_resource WHERE task_id = {self.task.id};
@@ -592,27 +590,45 @@ COMMIT;
         if self.is_tradition.isChecked():
             task_type = ILK.tradition
 
+        data: dict[str, str | int | float] = {
+        "do": self.do.toPlainText(),
+        "notes": self.notes.toPlainText(),
+        "priority": self.priority.value(),
+        "level_id": self.level.currentData(),
+        "primary_activity_id": self.primary_activity.currentData(),
+        "secondary_activity_id": self.secondary_activity.currentData(),
+        "space_id": x if (x := self.space.currentData()) is not None else 0,
+        "ilk": task_type.value,
+        "draft": self.draft,
+        "fear": self.fear.value(),
+        "difficulty": self.difficulty.value(),
+        "embarrassment": self.embarrassment.value(),
+        "workload": self.workload(),
+        }
+        # assert all(v is not None for v in data.values()), breakpoint()
+        breakpoint()
+
         # TODO: space_id == 0 is NOT NULL!!!
         db.execute(
             f"""
 UPDATE tasks
 SET
-    do = ?,
-    notes = ?,
-    priority = {self.priority.value()},
-    level_id = {self.level.model().data(self.level.model().index(self.level.currentIndex(), 0))},
-    primary_activity_id = {x if (x := self.primary_activity.currentData()) is not None else "NULL"},
-    secondary_activity_id = {x if (x := self.secondary_activity.currentData()) is not None else "NULL"},
-    space_id = {x if (x := self.space.currentData()) is not None else 0},
-    ilk = {task_type.value},
-    draft = {self.draft},
-    fear = {self.fear.value()},
-    difficulty = {self.difficulty.value()},
-    embarrassment = {self.embarrassment.value()},
-    workload = {self.workload()}
+    do = :do,
+    notes = :notes,
+    priority = :priority,
+    level_id = :level_id,
+    primary_activity_id = :primary_activity_id,
+    secondary_activity_id = :secondary_activity_id,
+    space_id = :space_id,
+    ilk = :ilk,
+    draft = :draft,
+    fear = :fear,
+    difficulty = :difficulty,
+    embarrassment = :embarrassment,
+    workload = :workload
 WHERE id={self.task.id}
 """,
-            (self.do.toPlainText(), self.notes.toPlainText()),
+    data
         )
 
     def accept(self):

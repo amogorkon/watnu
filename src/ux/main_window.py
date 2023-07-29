@@ -1,6 +1,4 @@
-import contextlib
 import signal
-import sys
 import webbrowser
 from collections import defaultdict
 from pathlib import Path
@@ -12,7 +10,6 @@ from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QPushButton
 
 import src.ui as ui
-from src.logic import filter_filter_history
 from src.stuff import app, config, db
 from src.ux import (
     about,
@@ -62,9 +59,7 @@ class MyButton(QPushButton):
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def quit(self, num, frame):
         self.killed = True
-        self.cleanup()
-        self.close()
-        sys.exit(0)
+        app.shutdown()
 
     def __init__(self):
         super().__init__()
@@ -239,7 +234,7 @@ VALUES ('{d["space"]}')
 INSERT INTO tasks (do, space_id, done)
 VALUES ('{d["do"]}',
 (SELECT space_id from spaces WHERE name='{d["space"]}'),
-{int(bool(d["done"]))} 
+{int(bool(d["done"]))}
 )
 """
                         )
@@ -261,20 +256,10 @@ VALUES ('{d["do"]}',
         ):
             case QtWidgets.QMessageBox.StandardButton.Yes:
                 event.accept()
-                self.cleanup()
+                app.shutdown()
 
             case QtWidgets.QMessageBox.StandardButton.No:
                 event.ignore()
-
-    def cleanup(self):
-        with contextlib.suppress(RuntimeError):  # ignore annoying last-minute exceptions
-            app.tray.setVisible(False)
-            app.tray.deleteLater()
-
-        app.closeAllWindows()
-        config.save()
-        with open(config.base_path / "filter_history.stay", "w") as f:
-            f.write("\n".join(filter_filter_history(app.filter_history)))
 
     def set_statistics_icon(self):
         match statistics.get_today_finished():
