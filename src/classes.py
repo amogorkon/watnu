@@ -40,8 +40,13 @@ q = use(
 last_sql_access = 0
 # * enum numbering starts with 1!
 ILK = Enum("TaskType", "task habit tradition routine")
-LEVEL = Enum("LEVEL", "MUST SHOULD MAY SHOULD_NOT MUST_NOT")
 
+class LEVEL(Enum):
+    MUST_NOT = -2
+    SHOULD_NOT = -1
+    MAY = 0
+    SHOULD = 1
+    MUST = 2
 
 class EVERY(Enum):
     undetermined = -1
