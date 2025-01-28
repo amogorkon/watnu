@@ -96,6 +96,9 @@ class Config:
     read_totds: list[str] = []
     language: str = "en"
     show_totd: boolean = True
+    db_write_count: int = 0
+    db_write_plaintext: boolean = False
+    db_cipher_path: Path = Path("watnu.cipher")
 
     def save(self):
         print("saving config")
