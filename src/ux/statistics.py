@@ -79,20 +79,20 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             self.space_stats.setItem(i, 0, item)
 
             inner_query = db.execute(
-                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id} 
-                AND done 
-                AND NOT deleted 
-                AND NOT inactive 
+                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id}
+                AND done
+                AND NOT deleted
+                AND NOT inactive
                 AND NOT draft
 """
             )
             item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, default=0)))
             self.space_stats.setItem(i, 1, item)
             inner_query = db.execute(
-                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id} 
-                AND NOT done 
-                AND NOT deleted 
-                AND NOT inactive 
+                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id}
+                AND NOT done
+                AND NOT deleted
+                AND NOT inactive
                 AND NOT draft
 """
             )
@@ -100,9 +100,9 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             self.space_stats.setItem(i, 2, item)
 
             inner_query = db.execute(
-                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id} 
-                AND NOT deleted 
-                AND NOT inactive 
+                f"""SELECT count(id) FROM tasks WHERE space_id == {space_id}
+                AND NOT deleted
+                AND NOT inactive
                 AND NOT draft
 """
             )
@@ -123,7 +123,7 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             item.setData(Qt.ItemDataRole.UserRole, space_id)
             self.level_stats.setItem(i, 0, item)
             inner_query = db.execute(
-                f"""SELECT count(id) FROM tasks WHERE level_id == {level_id} 
+                f"""SELECT count(id) FROM tasks WHERE level_id == {level_id}
                 AND done AND NOT deleted AND NOT inactive AND NOT draft"""
             )
             item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, default=0)))
@@ -160,7 +160,7 @@ WHERE
 SELECT
 session_id, task_id, start, stop, finished, pause_time
 FROM
-sessions                           
+sessions
 """
         )
 
