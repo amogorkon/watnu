@@ -3,44 +3,23 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import reduce
 from math import sqrt
+from pipes import pipes
 from sqlite3 import Connection
 from time import time
 
 import numpy as np
-import use
 from Levenshtein import ratio
-
-from src.classes import EVERY, ILK, Task
-from src.functions import cached_getter
-from src.stuff import app
-
-fuzzy = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/fuzzylogic/master/src/fuzzylogic/functions.py"),
-    modes=use.recklessness,
-)
-
-pipes = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/libs/main/pipes.py"),
-    modes=use.recklessness,
-    import_as="pipes",
-).pipes
-
-use(
-    "nltk",
-    version="3.8.1",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "l䓔䱎㬰芰鯽倳疺苅ˤ崠㩡㦌䪑ˌ宐偏嵪",  # py3-any
-        "I帵螒倝延襂癑槓䕴茿利鹽簸艦Ȣ鼍䞗唀",  # None-None
-    },
-)
 from nltk.tokenize import WordPunctTokenizer  # noqa: E402
 
+from functions import bounded_sigmoid, sigmoid
+from src.classes import EVERY, ILK, Task
+from src.helpers import cached_getter
+from src.stuff import app
+
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
-habit_weight = fuzzy.sigmoid(k=0.0002, L=1, x0=5000)
+habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
 # neglection weight can trump a fresh habit_weight at 3915, no matter how much time was put in - HOURS
-neglection_weight = fuzzy.bounded_sigmoid(0, 5380, inverse=True)
+neglection_weight = bounded_sigmoid(0, 5380, inverse=True)
 
 
 def weight(time_spent, last_checked, now) -> float:
@@ -184,9 +163,9 @@ def reset_task(db: Connection, task: Task, now: float, every_x: int):
             )
             query = db.execute(
                 f"""
-    SELECT COUNT(*) FROM sessions WHERE task_id = {task.id} 
-    and stop > {(now - td).timestamp()} 
-    and (stop - start) > 5  
+    SELECT COUNT(*) FROM sessions WHERE task_id = {task.id}
+    and stop > {(now - td).timestamp()}
+    and (stop - start) > 5
     """
             )
 

@@ -6,9 +6,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, NamedTuple
 
-import use
+import numpy as np  # Directly import numpy
 
-from src.functions import (
+from src.helpers import (
     cached_func_static,
     cached_getter,
     cached_property,
@@ -17,24 +17,10 @@ from src.functions import (
 )
 from src.stuff import app, config, db
 
-np = use(
-    "numpy",
-    version="1.24.1",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
-    },
-    import_as="np",
-)
+# Import the local q.py module
+from src.q import Q
 
-import numpy as np  # to make pylance happy - they don't know justuse YET :)  # noqa: E402
-
-q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
-    modes=use.recklessness,
-    import_as="q",
-).Q()
+q = Q()
 
 
 last_sql_access = 0
@@ -410,7 +396,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         sibling_priorities = (
             {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
         )
-        normalized = own_priority / max(sibling_priorities | {1})
+        normalized = own_priority / max(sibling_priorities | {1})  #  set(1) if no siblings
         return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
     @cached_property

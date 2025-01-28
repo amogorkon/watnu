@@ -20,86 +20,30 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
 import src.app as app
+import numpy
+import pyqtgraph
+import beartype
+import icontract
+import src.configuration as configuration
+from src.classes import retrieve_spaces, retrieve_tasks
+from src.ux import tip_of_the_day
+from src.startup_checks import (
+    _check_for_cycles,
+    _check_for_deadline_without_workload,
+    _check_for_drafts,
+    _check_for_incompletable_tasks,
+    _check_for_overdue_tasks,
+    _clean_up_empty_tasks,
+)
 
 app = app.Application(sys.argv)
 
-import use
-
-# new_tips = use("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.py")
-
-q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
-    modes=use.recklessness,
-    import_as="q",
-).Q()
-
-
-# FIX: won't work with justuse :(
-# use(
-#     "cryptography",
-#     version="40.0.2",
-#     modes=use.auto_install,
-#     hash_algo=use.Hash.sha256,
-#     hashes={
-#         "S䅅䢒呹㞙叆鲟懕䘃嗷˱㸸蔐䞬鯯㧬㿐禳",  # pp39-win_amd64
-#         "Z巃猔ȣ㣀㱟䢖忢菠沆奿橗遬閶熌㗐鮥Ɛ",  # None-None
-#     },
-# )
-
-use(
-    "numpy",
-    version="1.24.1",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "i㹄臲嬁㯁㜇䕀蓴卄闳䘟菽掸䢋䦼亱弿椊",  # cp311-win_amd64
-    },
-    import_as="numpy",
-)
-
-use(
-    "pyqtgraph",
-    version="0.13.3",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "l䦘顳䑅葃弤㷗萧䃱翟僅㤏冈湞䤸茑胛啙",  # py3-any
-    },
-    import_as="pyqtgraph",
-)
-
-use(
-    "beartype",
-    version="0.12.0",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "M㻇睧㳱懁㖯糄巿蚩熆鲣㦶烺㒈䵒犝㞍覦",  # py3-any
-    },
-)
-
-use(
-    "icontract",
-    version="2.6.2",
-    modes=use.auto_install,
-    hash_algo=use.Hash.sha256,
-    hashes={
-        "I瓄繨鈁䦻㱄䡋禫登鶹棵鋌㓿䆛澖鞸岳拺",  # py3-any
-    },
-)
-
-stay = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/stay/master/src/stay/stay.py"),
-    hash_algo=use.Hash.sha256,
-    hash_value="47e11e8de6b07f24c95233fba1e7281c385b049f771f74c5647a837b51bd7ff4",
-    import_as="stay",
-)
 
 
 load = stay.Decoder()
 import src.configuration as configuration
 
-__version__ = use.Version("0.2.2")
+__version__ = "0.2.2"
 __author__ = "Anselm Kiefner"
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
@@ -124,6 +68,13 @@ class DB(sqlite3.Connection):
     def commit(self):
         super().commit()
         app.db_last_modified = time()
+
+    def is_connected(self):
+        try:
+            self.cursor()
+            return True
+        except Exception:
+            return False
 
 
 import contextlib
@@ -150,52 +101,14 @@ if config.first_start:
     ).Landing()
     concluded = win_landing.exec()
 
-
-# # Load the key
-# with open("filekey.key", "rb") as filekey:
-#     key = filekey.read()
-
-# # Create a Fernet object
-# fernet = Fernet(key)
-
-# # Open the file to encrypt
-# with open("file_to_encrypt.txt", "rb") as file:
-#     original = file.read()
-
-# # Encrypt the file
-# encrypted = fernet.encrypt(original)
-
-# # Write the encrypted data to a new file
-# with open("encrypted_file.txt", "wb") as encrypted_file:
-#     encrypted_file.write(encrypted)
-
 db = sqlite3.connect(config.db_path, factory=DB)
-if config.debugging:
-    db.set_trace_callback(q)
 
-qdb = QSqlDatabase.addDatabase("QSQLITE")
+# because we put LEVEL stuff etc. in the db, which is used as model in the editor...
+qsql_db = QSqlDatabase.addDatabase("QSQLITE")
+qsql_db.setDatabaseName(config.db_path)
 
-initial_globals = {
-    "config": config,
-    "app": app,
-    "__version__": __version__,
-    "db": db,
-}
-
-# push all the globals into 'src.stuff' so we can import them properly
-# and getting all the perks of IDE autocompletion
-use(
-    use.Path("stuff.py"),
-    initial_globals=initial_globals,
-    import_as="src.stuff",
-)
-from src.classes import retrieve_spaces, retrieve_tasks
-
-app.setUp(config, db)
-from src.ux import tip_of_the_day
-
-qdb.setDatabaseName(config.db_path)
-if not qdb.open() or not qdb.tables():
+if not db.is_connected():
+    breakpoint()
     config.first_start = True
     config.save()
     QMessageBox.critical(
@@ -205,6 +118,22 @@ if not qdb.open() or not qdb.tables():
     )
     app.tray.hide()
     sys.exit()
+
+if config.debugging:
+    db.set_trace_callback(q)
+
+
+initial_globals = {
+    "config": config,
+    "app": app,
+    "__version__": __version__,
+    "db": db,
+}
+
+from src.stuff import *  # Assuming src.stuff contains necessary imports
+
+app.setUp(config, db)
+from src.ux import tip_of_the_day
 
 if config.run_sql_stuff:
     # just in case..
