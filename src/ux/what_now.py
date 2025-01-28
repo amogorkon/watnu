@@ -10,7 +10,7 @@ from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
 import src.ui as ui
 from src.classes import ACTIVITY
-from src.functions import cached_getter
+from src.helpers import cached_getter
 from src.logic import balance, get_doable_tasks, prioritize, schedule
 from src.stuff import app, config
 from src.ux import task_editor, task_finished, task_running
@@ -19,6 +19,7 @@ _translate = QCoreApplication.translate
 
 
 SELECT = Enum("SELECT", "BALANCE PRIORITY TIMING")
+
 
 class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def __init__(self):
@@ -45,9 +46,6 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.timing_tasks = None
 
         self.selected = None
-
-
-
 
         @self.sec_timer.timeout.connect
         def _sec_timer_timeout():
@@ -204,7 +202,6 @@ Auf gehts!""",
             self.task_desc_balanced.adjustSize()
             self.task_space_balanced.setText(self.task_balanced.space.name)
 
-
         @self.button4.clicked.connect
         def _edit_task():
             if not self.selected:
@@ -239,7 +236,6 @@ Auf gehts!""",
             if win.exec():
                 self.lets_check_whats_next()
 
-
         @self.button7.clicked.connect
         def _select_priority():
             _unselect_all()
@@ -271,8 +267,6 @@ Auf gehts!""",
             self.priority.setStyleSheet(None)
             self.timing.setStyleSheet(None)
             self.balance.setStyleSheet(None)
-
-
 
     @cached_getter
     def lets_check_whats_next(self):
