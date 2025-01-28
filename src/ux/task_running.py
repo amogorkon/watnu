@@ -78,10 +78,10 @@ class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
             T = time()
             self.frame.setStyleSheet(
                 f"""
-* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0, 
-        stop:0 black, 
+* {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
+        stop:0 black,
         stop:1 white);
-background: qlineargradient(x1:0 y1:0, x2:1 y2:0, 
+background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         stop:0 {self.task.primary_color},
         stop:{sin(T * 0.9) * 0.5 + 0.5} {self.task.secondary_color},
         stop:1 white);
@@ -233,7 +233,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         # check if working conditions are optimal once a day
         query = db.execute(
             """
-        SELECT start 
+        SELECT start
         FROM sessions
         ORDER BY start DESC;
         """

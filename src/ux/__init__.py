@@ -13,6 +13,7 @@ from . import (
    inventory,
    landing,
    main_window,
+   password,
    settings,
    space_editor,
    statistics,

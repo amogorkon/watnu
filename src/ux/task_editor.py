@@ -106,7 +106,6 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             self.level.addItem(item.name)
             self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
 
-
         self.level.setCurrentIndex(2)
 
         self.page.registerField(

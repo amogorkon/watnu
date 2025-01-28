@@ -430,7 +430,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.Space_Mixin):
         """Arrange the tasks in the list for display."""
         self.tasks_table.setStyleSheet(
             """
-alternate-background-color: #bfffbf; 
+alternate-background-color: #bfffbf;
 background-color: #deffde;
 font-size: 12pt;
         """
@@ -509,7 +509,7 @@ font-size: 12pt;
         """Arrange the tasks in the list for display."""
         self.sub_sup_tasks_table.setStyleSheet(
             """
-alternate-background-color: #bfffbf; 
+alternate-background-color: #bfffbf;
 background-color: #deffde;
 font-size: 12pt;
         """
@@ -564,7 +564,7 @@ font-size: 12pt;
         """Arrange the concerned task for display."""
         self.concerned_task_table.setStyleSheet(
             """
-alternate-background-color: #bfffbf; 
+alternate-background-color: #bfffbf;
 background-color: #deffde;
 font-size: 12pt;
         """

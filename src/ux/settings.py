@@ -1,8 +1,8 @@
-import q
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QMessageBox
 
+import q
 import src.ui as ui
 from src.classes import typed, typed_row
 from src.stuff import app, db
@@ -60,7 +60,7 @@ VALUES ('{text}')
             if okPressed and text != "":
                 db.execute(
                     f"""
-UPDATE skills 
+UPDATE skills
 SET name = '{text}'
 WHERE skill_id == {skill_id};
 """
@@ -82,7 +82,7 @@ DELETE FROM tasks WHERE deleted == TRUE;
             )
             db.execute(
                 """
-DELETE FROM sessions 
+DELETE FROM sessions
 WHERE NOT EXISTS(SELECT NULL
 FROM tasks
 WHERE sessions.task_id = tasks.id)
