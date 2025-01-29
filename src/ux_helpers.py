@@ -3,14 +3,14 @@ from datetime import datetime
 from PyQt6.QtCore import QSize, QVariant
 from PyQt6.QtWidgets import QComboBox
 
+from src import db
 from src.classes import Task, typed, typed_row
+from src.helpers import pipes
 from src.logic import (
     filter_tasks_by_ilk,
     filter_tasks_by_space,
     filter_tasks_by_status,
-    pipes,
 )
-from src.stuff import db
 
 
 def get_space_id(name, index) -> int | None:

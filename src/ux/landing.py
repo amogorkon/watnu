@@ -2,8 +2,7 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
 import src.ui as ui
-
-from src.stuff import config
+from src import config
 
 _translate = QCoreApplication.translate
 

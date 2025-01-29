@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import QMessageBox
 
 import q
 import src.ui as ui
+from src import app, db
 from src.classes import typed, typed_row
-from src.stuff import app, db
 
 _translate = QCoreApplication.translate
 

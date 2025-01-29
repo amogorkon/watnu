@@ -4,13 +4,14 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt
 
 import src.ui as ui
-from src.classes import Task, cached_getter
-from src.stuff import app, db
+from src import app, db
+from src.classes import cached_getter
 
 
 class Character(QtWidgets.QDialog, ui.character.Ui_Dialog):
     def __init__(self):
         super().__init__()
+
         self.setupUi(self)
 
         self.skills_table.sortByColumn(0, Qt.SortOrder.AscendingOrder)

@@ -12,8 +12,8 @@ from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 import src.ui as ui
+from src import app, config, db
 from src.classes import ACTIVITY, ILK, LEVEL, Task
-from src.stuff import app, config, db
 from src.ux import space_editor, task_finished
 from src.ux_helpers import Space_Mixin, get_space_priority
 

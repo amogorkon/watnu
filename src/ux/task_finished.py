@@ -7,9 +7,9 @@ from PyQt6.QtCore import QThread
 from PyQt6.QtWidgets import QMessageBox
 
 import src.ui as ui
+from src import app, config
 from src.classes import ILK, Skill, Task
 from src.logic import skill_level
-from src.stuff import app, config
 from src.ux import task_editor
 
 

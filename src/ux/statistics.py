@@ -9,13 +9,16 @@ from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtGui import QIcon
 
 import src.ui as ui
+from src import app, config, db
 from src.classes import Task, cached_func_static, typed, typed_row
-from src.stuff import app, config, db
 
 _translate = QCoreApplication.translate
 
-ok = QIcon(str(config.base_path / "extra/feathericons/check.svg"))
-nok = QIcon(str(config.base_path / "extra/feathericons/x.svg"))
+
+def init_():
+    global OK, NOK
+    OK = QIcon(str(config.base_path / "extra/feathericons/check.svg"))
+    NOK = QIcon(str(config.base_path / "extra/feathericons/x.svg"))
 
 
 @beartype
@@ -33,6 +36,7 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        init_()
         from src.ux.task_list import TaskList
 
         self.gui_timer = QtCore.QTimer()
@@ -202,7 +206,7 @@ sessions
             item = QtWidgets.QTableWidgetItem(str(datetime.fromtimestamp(stop)))
             self.session_stats.setItem(i, 2, item)
             item = QtWidgets.QTableWidgetItem()
-            item.setIcon(ok if finished else nok)
+            item.setIcon(OK if finished else NOK)
             self.session_stats.setItem(i, 3, item)
             item = QtWidgets.QTableWidgetItem(f"{(stop - start) // 60:04}")
             self.session_stats.setItem(i, 4, item)

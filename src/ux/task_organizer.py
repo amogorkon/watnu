@@ -13,31 +13,34 @@ from PyQt6.QtWidgets import (
 )
 
 import src.ui as ui
-from src import ux_helpers
+from src import app, config, ux_helpers
 from src.classes import Task
 from src.logic import (
     filter_tasks_by_content,
 )
-from src.stuff import app, config
 from src.ux import task_editor, task_list
 
 _translate = QtCore.QCoreApplication.translate
 
-OK = QIcon(str(config.base_path / "extra/check.svg"))
-NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
-ARROW_DOWN = QIcon()
-ARROW_DOWN.addPixmap(
-    QtGui.QPixmap("ui\\../extra/arrow-down.svg"),
-    QtGui.QIcon.Mode.Normal,
-    QtGui.QIcon.State.Off,
-)
-ARROW_UP = QIcon()
-ARROW_UP.addPixmap(
-    QtGui.QPixmap("ui\\../extra/arrow-up.svg"),
-    QtGui.QIcon.Mode.Normal,
-    QtGui.QIcon.State.Off,
-)
+def init_():
+    global OK, NOK, ARROW_DOWN, ARROW_UP
+    OK = QIcon(str(config.base_path / "extra/check.svg"))
+    NOK = QIcon(str(config.base_path / "extra/cross.svg"))
+
+    ARROW_DOWN = QIcon()
+    ARROW_DOWN.addPixmap(
+        QtGui.QPixmap("ui\\../extra/arrow-down.svg"),
+        QtGui.QIcon.Mode.Normal,
+        QtGui.QIcon.State.Off,
+    )
+    ARROW_UP = QIcon()
+    ARROW_UP.addPixmap(
+        QtGui.QPixmap("ui\\../extra/arrow-up.svg"),
+        QtGui.QIcon.Mode.Normal,
+        QtGui.QIcon.State.Off,
+    )
+
 
 # TODO: use _translate
 translation = {
@@ -63,6 +66,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.Space_Mixin):
     ):
         super().__init__()
         self.setupUi(self)
+        init_()
 
         app.list_of_task_organizers.append(self)
         app.list_of_windows.append(self)

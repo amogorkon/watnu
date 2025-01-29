@@ -1,10 +1,10 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication
 
-_translate = QCoreApplication.translate
-
 import src.ui as ui
-from src.stuff import __version__
+from src.version import __version__
+
+_translate = QCoreApplication.translate
 
 
 class About(QtWidgets.QDialog, ui.about.Ui_Dialog):

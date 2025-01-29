@@ -1,9 +1,9 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QUrl
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 import src.ui as ui
-from src.stuff import config
+from src import config
 
 
 class Companions(QtWidgets.QDialog, ui.companions.Ui_Dialog):

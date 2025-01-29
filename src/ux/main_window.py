@@ -3,14 +3,14 @@ import webbrowser
 from collections import defaultdict
 from pathlib import Path
 
-import stay
-import use
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QPushButton
+from yaml import dump, load
 
 import src.ui as ui
-from src.stuff import app, config, db
+from src import app, config, db
+from src.q import q
 from src.ux import (
     about,
     attributions,
@@ -22,15 +22,6 @@ from src.ux import (
 )
 
 _translate = QCoreApplication.translate
-
-dump = stay.Encoder()
-load = stay.Decoder()
-
-q = use(
-    use.URL("https://raw.githubusercontent.com/amogorkon/q/main/q.py"),
-    modes=use.recklessness,
-    import_as="q",
-).Q()
 
 
 def set_icon(button, icon_path):
@@ -61,7 +52,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         self.killed = True
         app.shutdown()
 
-    def __init__(self):
+    def __init__(self,):
         super().__init__()
         self.setupUi(self)
         self.gui_timer = QtCore.QTimer()

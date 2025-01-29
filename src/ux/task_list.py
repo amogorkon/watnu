@@ -24,9 +24,9 @@ from PyQt6.QtWidgets import (
 )
 
 import src.ui as ui
+from src import app, config, db
 from src.classes import Task
 from src.logic import filter_tasks_by_content
-from src.stuff import app, config, db
 from src.ux import (
     choose_skills,
     choose_space,
@@ -46,14 +46,15 @@ from src.ux_helpers import (
 _translate = QtCore.QCoreApplication.translate
 
 
-OK = QIcon(str(config.base_path / "extra/check.svg"))
-NOK = QIcon(str(config.base_path / "extra/cross.svg"))
+def init_():
+    global OK, NOK, status_icons
+    OK = QIcon(str(config.base_path / "extra/check.svg"))
+    NOK = QIcon(str(config.base_path / "extra/cross.svg"))
 
-
-status_icons = {
-    C: QIcon(str(config.base_path / f"extra/status_icons/{''.join(str(int(x)) for x in C)}.svg"))
-    for C in list(product([True, False], repeat=4))
-}
+    status_icons = {
+        C: QIcon(str(config.base_path / f"extra/status_icons/{''.join(str(int(x)) for x in C)}.svg"))
+        for C in list(product([True, False], repeat=4))
+    }
 
 
 class Checklist(QWidget):
@@ -61,6 +62,7 @@ class Checklist(QWidget):
 
     def __init__(self, tasklist, column_names: list[QtWidgets.QCheckBox]):
         super().__init__()
+        init_()
         self.setWindowFlags(Qt.WindowType.Popup | QtCore.Qt.WindowType.FramelessWindowHint)
 
         self.checkboxes = QListWidget(self)
