@@ -2,8 +2,8 @@ from datetime import datetime
 
 from PyQt6.QtWidgets import QMessageBox
 
+from src import app
 from src.classes import Task
-from src.stuff import app
 from src.ux import task_editor
 
 
