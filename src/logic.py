@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import reduce
 from math import sqrt
-from pipes import pipes
 from sqlite3 import Connection
 from time import time
 
@@ -11,10 +10,9 @@ import numpy as np
 from Levenshtein import ratio
 from nltk.tokenize import WordPunctTokenizer  # noqa: E402
 
-from functions import bounded_sigmoid, sigmoid
 from src.classes import EVERY, ILK, Task
-from src.helpers import cached_getter
-from src.stuff import app
+from src.functions import bounded_sigmoid, sigmoid
+from src.helpers import cached_getter, pipes
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
 habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
