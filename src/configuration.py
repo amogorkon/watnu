@@ -55,7 +55,9 @@ class Config:
 
     def save(self):
         print("saving config")
-        self.config_path.write_text(dumps(attrs.asdict(self), indent=4))
+        config_dict = attrs.asdict(self)
+        config_dict['config_path'] = str(self.config_path)
+        self.config_path.write_text(dumps(config_dict, indent=4))
 
 
 def read(file) -> Config:
