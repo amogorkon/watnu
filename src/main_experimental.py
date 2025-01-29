@@ -306,7 +306,7 @@ if tasks := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"""Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1 
+        f"""Es gibt {f'{len(tasks)} Aufgaben ohne Arbeitsaufwand' if len(tasks) > 1
         else 'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?""",
     ):
         case QMessageBox.StandardButton.Yes:
@@ -328,7 +328,7 @@ if overdue := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"""Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1 
+        f"""Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1
         else 'eine überfällige Aufgabe'} - jetzt bearbeiten?""",
     ):
         case QMessageBox.StandardButton.Yes:
@@ -345,8 +345,8 @@ if incompleteable := [
     match QMessageBox.question(
         app.win_main,
         "Jetzt bearbeiten?",
-        f"""Es gibt {f'{len(incompleteable)} Aufgaben, die nicht innerhalb der gegebenen Zeit abgeschlossen werden können' 
-        if len(incompleteable) > 1 else 
+        f"""Es gibt {f'{len(incompleteable)} Aufgaben, die nicht innerhalb der gegebenen Zeit abgeschlossen werden können'
+        if len(incompleteable) > 1 else
         'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'} - jetzt bearbeiten?""",  # noqa: E501
     ):
         case QMessageBox.StandardButton.Yes:
