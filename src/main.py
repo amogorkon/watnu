@@ -5,26 +5,20 @@ Run with py main.py and watch the Magik happen!
 """
 import contextlib
 import ctypes
-import sqlite3
 import sys
 from datetime import datetime
-from pathlib import Path
-from time import time
 
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
-
-# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
-# must be set before a QCoreApplication instance is created
-from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
-import src.app
-import src.configuration as configuration
-from src import q
+from src import initialize_globals, path
 from src.classes import retrieve_spaces, retrieve_tasks
-from src.configuration import Config
+from src.q import Q
+
+q = Q()
+from src import app, config, db
 from src.startup_checks import (
     _check_for_cycles,
     _check_for_deadline_without_workload,
@@ -34,14 +28,8 @@ from src.startup_checks import (
     _clean_up_empty_tasks,
 )
 from src.ux import tip_of_the_day
+from src.version import __version__
 
-config: Config
-db: sqlite3.Connection
-__version__: tuple[int, int, int]
-
-app = src.app.Application(sys.argv)
-
-__version__ = (0, 3, 0)
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
 
@@ -61,29 +49,6 @@ class TrayIcon(QSystemTrayIcon):
             app.win_main.raise_()
 
 
-class DB(sqlite3.Connection):
-    def commit(self):
-        super().commit()
-        app.db_last_modified = time()
-
-    def is_connected(self):
-        try:
-            self.cursor()
-            return True
-        except Exception:
-            return False
-
-
-path = Path(__file__).resolve().parent
-# touch, just in case user killed the config or first start
-
-config_path = path / "config.stay"
-config_path.touch()
-config = configuration.read(config_path)
-config.config_path = config_path
-print("using config:", config_path)
-config.base_path = path
-
 app.icon = QIcon(str(config.base_path / "extra/feathericons/watnu1.png"))
 app.setWindowIcon(app.icon)
 
@@ -93,11 +58,11 @@ if config.first_start:
     win_landing = Landing()
     concluded = win_landing.exec()
 
-db = sqlite3.connect(config.db_path, factory=DB)
 
 # because we put LEVEL stuff etc. in the db, which is used as model in the editor...
 qsql_db = QSqlDatabase.addDatabase("QSQLITE")
 qsql_db.setDatabaseName(config.db_path)
+
 
 if not db.is_connected():
     breakpoint()
@@ -114,15 +79,10 @@ if not db.is_connected():
 if config.debugging:
     db.set_trace_callback(q)
 
+initialize_globals(db, app, config)
 
-initial_globals = {
-    "config": config,
-    "app": app,
-    "__version__": __version__,
-    "db": db,
-}
 
-app.setUp(config, db)
+app.setUp()
 
 if config.run_sql_stuff:
     # just in case..
