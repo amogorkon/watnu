@@ -1,17 +1,27 @@
+import json
+from pathlib import Path
+
 import requests
-import use
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 import src.ui as ui
-import tips as current_tips
-from src.stuff import config
+from src import config
 
-online_tips = use(use.URL("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.py"))
+# Fetch tips.json instead of tips.py
+try:
+    response = requests.get("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.json")
+    response.raise_for_status()
+    online_tips = json.loads(response.content)
+except (requests.RequestException, json.JSONDecodeError):
+    tips_json_path = Path(__file__).resolve().parent.parent / "tips.json"
+    with tips_json_path.open("r") as file:
+        online_tips = json.load(file)
 
-actual_tips = max(current_tips, online_tips, key=lambda mod: mod.version)
+# Determine the actual tips to use
+actual_tips = online_tips
 
 already_checked = set(config.read_totds)
-available_tips = {tip.name for tip in actual_tips.TIPS} - already_checked
+available_tips = {tip['name'] for tip in actual_tips['TIPS']} - already_checked
 
 
 class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
@@ -32,20 +42,20 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
 
         # set up the wizard pages based on the tips
         for name in available_tips:
-            tip = getattr(actual_tips.TIPS, name)
+            tip = next(t for t in actual_tips['TIPS'] if t['name'] == name)
             page = QtWidgets.QWizardPage()
-            page.setObjectName(f"wizardPage_{tip.name}")
+            page.setObjectName(f"wizardPage_{tip['name']}")
             verticalLayout = QtWidgets.QVBoxLayout(page)
             verticalLayout.setObjectName("verticalLayout")
             tip_text = QtWidgets.QLabel(parent=page)
             tip_text.setObjectName("tip_text")
-            tip_text.setText(getattr(tip, config.language))
+            tip_text.setText(tip[config.language])
             verticalLayout.addWidget(tip_text)
             tip_visual = QtWidgets.QLabel(parent=page)
             tip_visual.setObjectName("tip_visual")
             # tip.img_url is a str url to the image, so we load it from the web and display it as pixmap
-            if tip.img_url is not None:
-                response = requests.get(tip.img_url)
+            if tip['img_url'] is not None:
+                response = requests.get(tip['img_url'])
                 image_data = response.content
                 pixmap = QtGui.QPixmap()
                 loaded = pixmap.loadFromData(image_data, "PNG")
