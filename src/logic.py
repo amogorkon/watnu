@@ -10,6 +10,7 @@ import numpy as np
 from Levenshtein import ratio
 from nltk.tokenize import WordPunctTokenizer  # noqa: E402
 
+from src import app
 from src.classes import EVERY, ILK, Task
 from src.functions import bounded_sigmoid, sigmoid
 from src.helpers import cached_getter, pipes
