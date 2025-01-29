@@ -4,7 +4,7 @@ import unicodedata
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, NamedTuple
+from typing import Any, Generator, NamedTuple
 
 import numpy as np
 
@@ -708,10 +708,10 @@ SELECT name FROM levels WHERE level_id={level_id};
     return typed_row(query.fetchone(), 0, str)
 
 
-def disemvowel(text: str) -> str:
+def disemvowel(text: str) -> Generator[str, None, None]:
     for word in text.split():
         yield disemvowel(word)
     first, middle, last = text[0], text[1:-1], text[-1]
 
     ascii_text = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
-    return first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last
+    yield first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last
