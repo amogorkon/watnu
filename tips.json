@@ -1,0 +1,17 @@
+{
+    "version": 1,
+    "TIPS": [
+        {
+            "name": "main1",
+            "en": "The buttons are not arranged into a grid by chance! Use the NumPad Keys to activate them!",
+            "de": "Die Knöpfe sind nicht zufällig in einem Raster angeordnet! Benutze die NumPad Tasten um sie zu aktivieren!",
+            "img_url": "https://www.dropbox.com/s/i1x5n6q209tjxu5/Screenshot%202023-05-11%20um%2013.39.20.png?dl=1"
+        },
+        {
+            "name": "list1",
+            "en": "You can change the columns by right-clicking on the header",
+            "de": "Du kannst die Spalten durch Rechtsklick auf den Header ändern",
+            "img_url": null
+        }
+    ]
+}
