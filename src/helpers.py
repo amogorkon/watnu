@@ -5,11 +5,11 @@ from itertools import takewhile
 from textwrap import dedent
 from time import time
 from types import NoneType, UnionType
-from typing import Any, Callable
+from typing import Any
 
 from beartype import beartype
 
-from src.main import app
+from src import app
 
 
 def cached_func_static(func):
