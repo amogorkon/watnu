@@ -9,10 +9,10 @@ from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 
 import src.ui as ui
+from src import app, config
 from src.classes import ACTIVITY
 from src.helpers import cached_getter
 from src.logic import balance, get_doable_tasks, prioritize, schedule
-from src.stuff import app, config
 from src.ux import task_editor, task_finished, task_running
 
 _translate = QCoreApplication.translate
@@ -270,31 +270,31 @@ Auf gehts!""",
 
     @cached_getter
     def lets_check_whats_next(self):
-            """
-            This method selects the next task to be done based on the current state.
-            It sets the task priority, balance, and timing, and returns True if there are tasks to be done,
-            False if there are no tasks.
-            """
-            seed((config.coin ^ config.lucky_num) * config.count)
-            config.count += 1
+        """
+        This method selects the next task to be done based on the current state.
+        It sets the task priority, balance, and timing, and returns True if there are tasks to be done,
+        False if there are no tasks.
+        """
+        seed((config.coin ^ config.lucky_num) * config.count)
+        config.count += 1
 
-            self.groups = defaultdict(lambda: [])
+        self.groups = defaultdict(lambda: [])
 
-            self.tasks = get_doable_tasks(app.tasks.values())
+        self.tasks = get_doable_tasks(app.tasks.values())
 
-            if not self.tasks:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Hmm..",
-                    "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
-                )
-                self.hide()
-                return False
+        if not self.tasks:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Hmm..",
+                "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
+            )
+            self.hide()
+            return False
 
-            self._set_task_priority()
-            self._set_task_balanced()
-            self._set_timing_task()
-            return True
+        self._set_task_priority()
+        self._set_task_balanced()
+        self._set_timing_task()
+        return True
 
 # sourcery skip: use-function-docstrings-gpt3
 # sourcery skip: use-function-docstrings-gpt35
