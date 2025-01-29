@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, NamedTuple
 
-import numpy as np  # Directly import numpy
+import numpy as np
 
 from src.helpers import (
     cached_func_static,
@@ -15,10 +15,8 @@ from src.helpers import (
     typed,
     typed_row,
 )
-from src.stuff import app, config, db
-
-# Import the local q.py module
 from src.q import Q
+from src.stuff import app, config, db
 
 q = Q()
 
@@ -27,12 +25,14 @@ last_sql_access = 0
 # * enum numbering starts with 1!
 ILK = Enum("TaskType", "task habit tradition routine")
 
+
 class LEVEL(Enum):
     MUST_NOT = -2
     SHOULD_NOT = -1
     MAY = 0
     SHOULD = 1
     MUST = 2
+
 
 class EVERY(Enum):
     undetermined = -1
@@ -223,7 +223,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
     @cached_property
     def printable_percentage(self) -> str:
         """Return the percentage of the task that is done as a printable str."""
-        return f"{(self.time_spent / self.workload)*100:.2}%" if self.workload else ""
+        return f"{(self.time_spent / self.workload) * 100:.2}%" if self.workload else ""
 
     @cached_property
     def deadline(self) -> float:
@@ -285,7 +285,6 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         """Workload in minutes."""
         query = db.execute("SELECT workload FROM tasks WHERE id=?", (self.id,))
         return typed_row(query.fetchone(), 0, int, default=0)
-
 
     def set_deadline(self, deadline: float):
         """Sets the deadline for a task.
@@ -396,7 +395,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         sibling_priorities = (
             {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
         )
-        normalized = own_priority / max(sibling_priorities | {1})  #  set(1) if no siblings
+        normalized = own_priority / max(sibling_priorities | {1})  # set(1) if no siblings
         return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
     @cached_property

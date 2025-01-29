@@ -147,7 +147,6 @@ class Application(QtWidgets.QApplication):
         )
         db.commit()
 
-
     def sanitize_db(self):
         """
             Deletes all resources that are not used by any task from the database.
