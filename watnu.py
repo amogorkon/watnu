@@ -1,6 +1,6 @@
 import argparse
 
-parser = argparse.ArgumentParser(description="Watnu: The personal task scheduler.")
+parser = argparse.ArgumentParser(description="Watnu: The Personal Task Scheduler.")
 parser.add_argument(
     "-e",
     "--experimental",
@@ -10,6 +10,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 if args.experimental:
-    import src.main_experimental
+    import src.main_experimental  # noqa: F401
 else:
     import src.main  # noqa: F401
