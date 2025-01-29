@@ -3,6 +3,7 @@
 
 Run with py main.py and watch the Magik happen!
 """
+import contextlib
 import ctypes
 import sqlite3
 import sys
@@ -19,14 +20,11 @@ from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
-import src.app as app
-import numpy
-import pyqtgraph
-import beartype
-import icontract
+import src.app
 import src.configuration as configuration
+from src import q
 from src.classes import retrieve_spaces, retrieve_tasks
-from src.ux import tip_of_the_day
+from src.configuration import Config
 from src.startup_checks import (
     _check_for_cycles,
     _check_for_deadline_without_workload,
@@ -35,16 +33,15 @@ from src.startup_checks import (
     _check_for_overdue_tasks,
     _clean_up_empty_tasks,
 )
+from src.ux import tip_of_the_day
 
-app = app.Application(sys.argv)
+config: Config
+db: sqlite3.Connection
+__version__: tuple[int, int, int]
 
+app = src.app.Application(sys.argv)
 
-
-load = stay.Decoder()
-import src.configuration as configuration
-
-__version__ = "0.2.2"
-__author__ = "Anselm Kiefner"
+__version__ = (0, 3, 0)
 q("Python:", sys.version)
 q("Watnu Version:", __version__)
 
@@ -77,8 +74,6 @@ class DB(sqlite3.Connection):
             return False
 
 
-import contextlib
-
 path = Path(__file__).resolve().parent
 # touch, just in case user killed the config or first start
 
@@ -94,11 +89,8 @@ app.setWindowIcon(app.icon)
 
 # split tutorial from landing wizard, so the user can do the tutorial at any time
 if config.first_start:
-    win_landing = use(
-        use.Path("ux/landing.py"),
-        initial_globals={"config": config},
-        import_as="ux.landing",
-    ).Landing()
+    from src.ux.landing import Landing
+    win_landing = Landing()
     concluded = win_landing.exec()
 
 db = sqlite3.connect(config.db_path, factory=DB)
@@ -130,16 +122,14 @@ initial_globals = {
     "db": db,
 }
 
-from src.stuff import *  # Assuming src.stuff contains necessary imports
-
 app.setUp(config, db)
-from src.ux import tip_of_the_day
 
 if config.run_sql_stuff:
     # just in case..
     (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
 
-    use("sql_stuff.py", initial_globals={"config": config})
+    from src import sql_stuff
+    sql_stuff.run(initial_globals={"config": config})
     config.run_sql_stuff = False
     config.save()
 
@@ -186,14 +176,6 @@ app.spaces = {s.space_id: s for s in retrieve_spaces()}
 # get all tasks from the db
 app.tasks = {t.id: t for t in retrieve_tasks()}
 
-from src.startup_checks import (
-    _check_for_cycles,
-    _check_for_deadline_without_workload,
-    _check_for_drafts,
-    _check_for_incompletable_tasks,
-    _check_for_overdue_tasks,
-    _clean_up_empty_tasks,
-)
 
 now = datetime.now()
 
