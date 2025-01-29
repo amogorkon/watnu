@@ -9,6 +9,14 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QFont, QFontDatabase
 
 # import startup
+# ImportError: QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
+# must be set before a QCoreApplication instance is created
+from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
+
+
+def init_():
+    global config, db
+    from src import config, db
 
 
 class Application(QtWidgets.QApplication):
@@ -20,7 +28,7 @@ class Application(QtWidgets.QApplication):
         # self.startup_win = startup.Startup()
 
 # sourcery skip: use-function-docstrings-gpt35
-    def setUp(self, config_, db_):
+    def setUp(self,):
         """Set up the application.
 
         Args:
@@ -30,10 +38,8 @@ class Application(QtWidgets.QApplication):
         Returns:
             None.
         """
+        init_()
         self.db_last_modified = 0
-        global config, db
-        config = config_
-        db = db_
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
         from src.classes import Skill, Space, Task
@@ -56,8 +62,6 @@ class Application(QtWidgets.QApplication):
                 self[key] = value
                 return value
 
-        config = config_
-        db = db_
         path = config.base_path / "filter_history.stay"
         path.touch()
         with open(path, "r") as f:
