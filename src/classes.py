@@ -8,6 +8,7 @@ from typing import Any, NamedTuple
 
 import numpy as np
 
+from src import app, config, db
 from src.helpers import (
     cached_func_static,
     cached_getter,
@@ -16,7 +17,6 @@ from src.helpers import (
     typed_row,
 )
 from src.q import Q
-from src.stuff import app, config, db
 
 q = Q()
 
@@ -633,7 +633,7 @@ WHERE tasks.id = {self.id}
             yield k, getattr(self, k)
 
     @classmethod
-    def from_id(cls, ID: int, db=db) -> "Task":
+    def from_id(cls, ID: int) -> "Task":
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
     def reload(self):
@@ -675,7 +675,7 @@ WHERE tasks.id = {self.id}
 {'deleted' if self.deleted else "not deleted"}"""
 
 
-def _retrieve_task_by_id(ID: int, db=db) -> Task:
+def _retrieve_task_by_id(ID: int) -> Task:
     """Load a task directly from the database by its ID."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks WHERE id == {ID};")
     res = query.fetchone()
@@ -685,14 +685,14 @@ def _retrieve_task_by_id(ID: int, db=db) -> Task:
 
 
 @cached_func_static
-def retrieve_tasks(db=db) -> list[Task]:
+def retrieve_tasks() -> list[Task]:
     """Load all tasks from the database."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks;")
     return [Task(**dict(zip(Task.__slots__, res))) for res in query.fetchall()]
 
 
 @cached_func_static
-def retrieve_spaces(db=db) -> list[Space]:
+def retrieve_spaces() -> list[Space]:
     """Load all spaces from the database."""
     query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces;")
     return [Space(**dict(zip(Space.__slots__, res))) for res in query.fetchall()]
