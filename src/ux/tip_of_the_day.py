@@ -11,17 +11,14 @@ from src import config
 try:
     response = requests.get("https://raw.githubusercontent.com/amogorkon/watnu/main/tips.json")
     response.raise_for_status()
-    online_tips = json.loads(response.content)
+    tips = json.loads(response.content)
 except (requests.RequestException, json.JSONDecodeError):
-    tips_json_path = Path(__file__).resolve().parent.parent / "tips.json"
-    with tips_json_path.open("r") as file:
-        online_tips = json.load(file)
+    tips_json_path = Path(__file__).resolve().parent.parent.parent / "tips.json"
+    tips = json.loads(tips_json_path.read_text())
 
-# Determine the actual tips to use
-actual_tips = online_tips
 
 already_checked = set(config.read_totds)
-available_tips = {tip['name'] for tip in actual_tips['TIPS']} - already_checked
+available_tips = {tip['name'] for tip in tips['TIPS']} - already_checked
 
 
 class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
@@ -42,7 +39,7 @@ class TipOfTheDay(QtWidgets.QWizard, ui.tip_of_the_day.Ui_Wizard):
 
         # set up the wizard pages based on the tips
         for name in available_tips:
-            tip = next(t for t in actual_tips['TIPS'] if t['name'] == name)
+            tip = next(t for t in tips['TIPS'] if t['name'] == name)
             page = QtWidgets.QWizardPage()
             page.setObjectName(f"wizardPage_{tip['name']}")
             verticalLayout = QtWidgets.QVBoxLayout(page)
