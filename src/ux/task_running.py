@@ -9,9 +9,9 @@ from PyQt6.QtCore import Qt, QTimer
 
 import src.ui as ui
 import src.ux as ux
+from src import app, config, db
 from src.classes import Task, typed
 from src.logic import skill_level
-from src.stuff import app, config, db
 
 
 class Running(QtWidgets.QDialog, ui.task_running.Ui_Dialog):
@@ -258,7 +258,7 @@ Checkliste für optimale Produktivität:
 - Das Richtige auf den Ohren?
 """,
             )
-        mantra = choice((config.base_path / "mantras.stay").read_text(encoding="utf8").splitlines())
+        mantra = choice((config.base_path / "mantra.txt").read_text(encoding="utf8").splitlines())
 
         QtWidgets.QMessageBox.information(
             self,
