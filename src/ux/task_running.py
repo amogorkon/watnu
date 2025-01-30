@@ -258,7 +258,7 @@ Checkliste für optimale Produktivität:
 - Das Richtige auf den Ohren?
 """,
             )
-        mantra = choice((config.base_path / "mantra.txt").read_text(encoding="utf8").splitlines())
+        mantra = choice((config.base_path / "mantras.txt").read_text(encoding="utf8").splitlines())
 
         QtWidgets.QMessageBox.information(
             self,
