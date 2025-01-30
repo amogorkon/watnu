@@ -54,13 +54,15 @@ class Config:
     db_cipher_path: Path = Path("watnu.cipher")
 
     def save(self):
-        print("saving config")
-        config_dict = attrs.asdict(self)
-        config_dict['config_path'] = str(self.config_path)
-        self.config_path.write_text(dumps(config_dict, indent=4))
+        self.config_path.write_text(dumps(attrs.asdict(self), indent=4, default=str))
 
 
 def read(file) -> Config:
-    with open(file, 'r') as f:
-        config_dict = load(f)
-    return Config(**config_dict)
+    try:
+        with open(file, 'r') as f:
+            config_dict = load(f)
+    except FileNotFoundError:
+        return Config()  # Return default config if file not found
+
+    default_config = Config()
+    return attrs.evolve(default_config, **config_dict)
