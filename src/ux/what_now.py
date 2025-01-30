@@ -291,13 +291,11 @@ Auf gehts!""",
             self.hide()
             return False
 
-        self._set_task_priority()
-        self._set_task_balanced()
-        self._set_timing_task()
+        self.set_task_priority()
+        self.set_task_balanced()
+        self.set_timing_task()
         return True
 
-# sourcery skip: use-function-docstrings-gpt3
-# sourcery skip: use-function-docstrings-gpt35
     def reject(self):
         super().reject()
         self.hide()
@@ -309,14 +307,14 @@ Auf gehts!""",
             win.gui_timer.start(100)
             win.show()
 
-    def _set_task_priority(self):
+    def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
         self.task_priority = self.priority_tasks[0]
         self.task_desc_priority.setText(self.task_priority.do)
         self.task_desc_priority.adjustSize()
         self.task_space_priority.setText(self.task_priority.space.name)
 
-    def _set_timing_task(self):
+    def set_timing_task(self):
         try:
             self.timing_tasks = schedule(self.tasks)
             self.task_timing = self.timing_tasks[0]
@@ -324,12 +322,12 @@ Auf gehts!""",
             self.task_space_timing.setText(self.task_timing.space.name)
 
         except IndexError:
-            self.set_empty()
+            self.set_timing_empty()
         else:
-            self._set_timing_header(False, True)
+            self.set_timing_header(False, True)
         self.task_desc_timing.adjustSize()
 
-    def _set_timing_empty(self):
+    def set_timing_empty(self):
         self.task_desc_timing.setText("nix was präsiert")
         self.set_timing_header(True, False)
         self.task_timing = None
@@ -340,12 +338,12 @@ Auf gehts!""",
         self.deadline_minutes.display("")
         self.deadline_seconds.display("")
 
-    def _set_timing_header(self, italic, enabled):
+    def set_timing_header(self, italic, enabled):
         self.taskfont.setItalic(italic)
         self.task_desc_timing.setFont(self.taskfont)
         self.timing.setEnabled(enabled)
 
-    def _set_task_balanced(self):
+    def set_task_balanced(self):
         activity_time_spent = Counter()
 
         for task in app.tasks.values():
