@@ -40,19 +40,15 @@ class MyButton(QPushButton):
     def __init__(self):
         super().__init__()
 
-    # def keyPressEvent(self, event):
-    #     if event.key() == QtCore.Qt.Key_Control:
-    #         print("control pressed")
-    #     else:
-    #         super().keyPressEvent(event)
-
 
 class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     def quit(self, num, frame):
         self.killed = True
         app.shutdown()
 
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         super().__init__()
         self.setupUi(self)
         self.gui_timer = QtCore.QTimer()
@@ -109,9 +105,7 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button7.clicked.connect
         def tetraplex():
-            # app.win_companions.show()
-            # webbrowser.open("https://github.com/amogorkon/tetraplex")
-            breakpoint()
+            webbrowser.open("https://chat.deepseek.com/")
 
         @self.button8.clicked.connect
         def checklist():
