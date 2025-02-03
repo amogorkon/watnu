@@ -113,15 +113,13 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
             item = QtWidgets.QTableWidgetItem(str(typed_row(inner_query.fetchone(), 0, int, default=0)))
             self.space_stats.setItem(i, 3, item)
 
-        for i, (level_id, name) in enumerate(
-            (
-                (-2, "MUST NOT"),
-                (-1, "SHOULD NOT"),
-                (0, "COULD"),
-                (1, "SHOULD"),
-                (2, "MUST"),
-            )
-        ):
+        for i, (level_id, name) in enumerate((
+            (-2, "MUST NOT"),
+            (-1, "SHOULD NOT"),
+            (0, "COULD"),
+            (1, "SHOULD"),
+            (2, "MUST"),
+        )):
             self.level_stats.setRowCount(i + 1)
             item = QtWidgets.QTableWidgetItem(name)
             item.setData(Qt.ItemDataRole.UserRole, space_id)
@@ -168,7 +166,14 @@ sessions
 """
         )
 
-        for i, (session_id, task_id, start, stop, finished, pause_time,) in enumerate(
+        for i, (
+            session_id,
+            task_id,
+            start,
+            stop,
+            finished,
+            pause_time,
+        ) in enumerate(
             (
                 typed_row(row, 0, int),
                 typed_row(row, 1, int),
@@ -266,9 +271,9 @@ def aggregate():
         task_counter[datetime.fromtimestamp(stop).replace(hour=0, minute=0, second=0, microsecond=0)] += 1
     calendar_data = np.zeros((days_ago + 1,), dtype=int)
     for day, count in task_counter.items():
-        calendar_data[
-            abs((day - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days)
-        ] = count
+        calendar_data[abs((day - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days)] = (
+            count
+        )
 
 
 def get_today_finished():
