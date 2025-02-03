@@ -593,60 +593,6 @@
      <property name="topMargin">
       <number>10</number>
      </property>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="button9">
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>wähle Balance aus</string>
-       </property>
-       <property name="shortcut">
-        <string>9</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QPushButton" name="button7">
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>wähle Priorität aus</string>
-       </property>
-       <property name="shortcut">
-        <string>7</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QPushButton" name="button8">
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>wähle Timing aus</string>
-       </property>
-       <property name="shortcut">
-        <string>8</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="button6">
        <property name="font">
@@ -683,36 +629,22 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QPushButton" name="button3">
+     <item row="2" column="0">
+      <widget class="QPushButton" name="button1">
        <property name="font">
         <font>
          <italic>false</italic>
         </font>
        </property>
        <property name="text">
-        <string>Was kommt als Nächstes?</string>
+        <string>Wirf Münze</string>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../extra/coin.svg</normaloff>../extra/coin.svg</iconset>
        </property>
        <property name="shortcut">
-        <string>3</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="button2">
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>Schon erledigt!</string>
-       </property>
-       <property name="shortcut">
-        <string>2</string>
+        <string>1</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
@@ -737,22 +669,93 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QPushButton" name="button1">
+     <item row="2" column="1">
+      <widget class="QPushButton" name="button2">
        <property name="font">
         <font>
          <italic>false</italic>
         </font>
        </property>
        <property name="text">
-        <string>Wirf Münze</string>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>../extra/coin.svg</normaloff>../extra/coin.svg</iconset>
+        <string>Schon erledigt!</string>
        </property>
        <property name="shortcut">
-        <string>1</string>
+        <string>2</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="button3">
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>Was kommt als Nächstes?</string>
+       </property>
+       <property name="shortcut">
+        <string>3</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QPushButton" name="button7">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>wähle Priorität aus</string>
+       </property>
+       <property name="shortcut">
+        <string>7</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="button8">
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>wähle Timing aus</string>
+       </property>
+       <property name="shortcut">
+        <string>8</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="button9">
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>wähle Balance aus</string>
+       </property>
+       <property name="shortcut">
+        <string>9</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
