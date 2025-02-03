@@ -8,7 +8,7 @@ import numpy as np
 from beartype import beartype
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtGui import QKeySequence, QShortcut, QtGui
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 import src.ui as ui
@@ -300,6 +300,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         @self.button1.clicked.connect
         def set_status():
+            # This function is intentionally left empty as a placeholder for future implementation.
             pass
 
         @self.button2.clicked.connect
@@ -326,6 +327,9 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
 
         @self.button4.clicked.connect
         def button4():
+            """
+            Placeholder function for button4 action.
+            """
             pass
 
         @self.button5.clicked.connect
@@ -428,7 +432,10 @@ DELETE FROM spaces where name=='{space_name}'
         def _():
             space_id = self.space.currentData()
             if space_id is not None:
-                for (primary_activity_id, secondary_activity_id,) in db.execute(
+                for (
+                    primary_activity_id,
+                    secondary_activity_id,
+                ) in db.execute(
                     f"""
 SELECT primary_activity_id, secondary_activity_id
 FROM spaces
@@ -460,7 +467,7 @@ WHERE space_id = {space_id}
             config.last_edited_space = self.space.currentText() or config.last_edited_space
             config.save()
 
-    def _save(self):
+    def _save(self) -> None:
         config.save()
 
         self._save_task_details()
@@ -481,7 +488,7 @@ WHERE space_id = {space_id}
         # it's possible to edit a task while whatnow is open - so we need to update the whatnow window
         app.win_what.lets_check_whats_next()
 
-    def save_repeats(self):
+    def save_repeats(self) -> None:
         if self.repeats is not None:
             db.execute(
                 f"""
@@ -497,7 +504,7 @@ VALUES (
             """
             )
 
-    def save_deadline(self):
+    def save_deadline(self) -> None:
         if self.deadline != float("inf"):
             db.execute(
                 f"""
@@ -507,17 +514,17 @@ VALUES ({self.task.id}, '{self.deadline}')
             """
             )
 
-    def save_constraints(self):
+    def save_constraints(self) -> None:
         if np.any(self.constraints):
             db.execute(
                 f"""
     INSERT INTO constraints
     (task_id, flags)
-    VALUES ({self.task.id}, '{''.join(str(x) for x in self.constraints.flatten())}')
+    VALUES ({self.task.id}, '{"".join(str(x) for x in self.constraints.flatten())}')
             """
             )
 
-    def save_resources(self):
+    def save_resources(self) -> None:
         for url in (self.resources.itemText(i) for i in range(self.resources.count())):
             db.execute(
                 "INSERT OR IGNORE INTO resources (url) VALUES (?);",
@@ -532,7 +539,7 @@ VALUES ({self.task.id}, '{self.deadline}')
                 (self.task.id, resource_id),
             )
 
-    def save_subsup(self):
+    def save_subsup(self) -> None:
         db.executemany(
             """
 INSERT OR IGNORE INTO task_requires_task
@@ -560,7 +567,7 @@ VALUES (?, ?);
             [(self.task.id, skill_id) for skill_id in self.skill_ids],
         )
 
-    def save_cleanup(self):
+    def save_cleanup(self) -> None:
         """need to clean up first, because of foreign key constraints"""
         db.executescript(
             f"""
@@ -576,11 +583,11 @@ COMMIT;
 """
         )
 
-    def workload(self):
+    def workload(self) -> int:
         """Return the workload in minutes from the GUI."""
         return self.workload_minutes.value() + 60 * self.workload_hours.value()
 
-    def _save_task_details(self):
+    def _save_task_details(self) -> None:
         task_type = ILK.task
         if self.is_habit.isChecked():
             task_type = ILK.habit
@@ -590,19 +597,19 @@ COMMIT;
             task_type = ILK.tradition
 
         data: dict[str, str | int | float] = {
-        "do": self.do.toPlainText(),
-        "notes": self.notes.toPlainText(),
-        "priority": self.priority.value(),
-        "level_id": self.level.currentData(),
-        "primary_activity_id": self.primary_activity.currentData(),
-        "secondary_activity_id": self.secondary_activity.currentData(),
-        "space_id": x if (x := self.space.currentData()) is not None else 0,
-        "ilk": task_type.value,
-        "draft": self.draft,
-        "fear": self.fear.value(),
-        "difficulty": self.difficulty.value(),
-        "embarrassment": self.embarrassment.value(),
-        "workload": self.workload(),
+            "do": self.do.toPlainText(),
+            "notes": self.notes.toPlainText(),
+            "priority": self.priority.value(),
+            "level_id": self.level.currentData(),
+            "primary_activity_id": self.primary_activity.currentData(),
+            "secondary_activity_id": self.secondary_activity.currentData(),
+            "space_id": x if (x := self.space.currentData()) is not None else 0,
+            "ilk": task_type.value,
+            "draft": self.draft,
+            "fear": self.fear.value(),
+            "difficulty": self.difficulty.value(),
+            "embarrassment": self.embarrassment.value(),
+            "workload": self.workload(),
         }
         # assert all(v is not None for v in data.values()), breakpoint()
         breakpoint()
@@ -627,26 +634,26 @@ SET
     workload = :workload
 WHERE id={self.task.id}
 """,
-    data
+            data,
         )
 
-    def accept(self):
+    def accept(self) -> None:
         self.draft = False
         self._save()
         self.task.reload()
         super().accept()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self._kill()
 
-    def hideEvent(self, event):
+    def hideEvent(self, event: QtGui.QHideEvent) -> None:
         self._kill()
 
-    def reject(self):
+    def reject(self) -> None:
         super().reject()
         self._kill()
 
-    def _kill(self):
+    def _kill(self) -> None:
         self.gui_timer.stop()
         # sometimes Qt hides and then closes the window, so this is called twice
         with contextlib.suppress(ValueError):
@@ -666,7 +673,7 @@ WHERE id={self.task.id}
         self.close()
         self.deleteLater()
 
-    def _clone(self):
+    def _clone(self) -> None:
         win = Editor()
         win.supertasks = self.supertasks
         win.subtasks = self.subtasks
@@ -682,7 +689,7 @@ WHERE id={self.task.id}
         win.total_priority.setValue(self.total_priority.value())
         win.show()
 
-    def set_as(self, status: str, set_flag):
+    def set_as(self, status: str, set_flag: bool) -> None:
         if status == "done" and set_flag:
             task_finished.Finisher(self.task).exec()
         else:
@@ -697,7 +704,7 @@ WHERE id == {self.task.id}
         setattr(self.task, status, set_flag)
         self._build_button1_menu()
 
-    def _build_button1_menu(self):
+    def _build_button1_menu(self) -> None:
         menu = QtWidgets.QMenu()
         if self.task.done:
             menu.addAction("nicht erledigt", partial(self.set_as, "done", False))
@@ -723,7 +730,7 @@ WHERE id == {self.task.id}
             menu.addAction("inaktiv", partial(self.set_as, "inactive", True))
         self.button1.setMenu(menu)
 
-    def delete_task(self):
+    def delete_task(self) -> None:
         self.task.delete()
         self.reject()
         app.win_what.lets_check_whats_next()
