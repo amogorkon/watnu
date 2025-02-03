@@ -10,13 +10,16 @@ import os
 import platform
 import sys
 from datetime import datetime
+from pathlib import Path
 
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
-from src import initialize_globals, path
+from src import initialize_globals, home_path
+
+
 from src.classes import retrieve_spaces, retrieve_tasks
 from src.q import Q
 
@@ -67,7 +70,7 @@ if config.first_start:
 
 # because we put LEVEL stuff etc. in the db, which is used as model in the editor...
 qsql_db = QSqlDatabase.addDatabase("QSQLITE")
-qsql_db.setDatabaseName(config.db_path)
+qsql_db.setDatabaseName(str(config.db_path))
 
 
 if not db.is_connected():
@@ -92,7 +95,7 @@ app.setUp()
 
 if config.run_sql_stuff:
     # just in case..
-    (path / f"{config.db_path}.bak").write_bytes((path / config.db_path).read_bytes())
+    (home_path / f"{config.db_path}.bak").write_bytes((home_path / config.db_path).read_bytes())
 
     from src import sql_stuff
 
@@ -126,22 +129,17 @@ if config.autostart:
             winreg.DeleteValue(key, "Watnu")
             winreg.CloseKey(key)
 
-        startup_folder = os.path.join(
-            os.getenv("APPDATA"),
-            "Microsoft",
-            "Windows",
-            "Start Menu",
-            "Programs",
-            "Startup",
+        startup_folder = (
+            Path(os.getenv("APPDATA")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
         )
-        script_path = os.path.abspath(sys.argv[0])
-        shortcut_path = os.path.join(startup_folder, "watnu.lnk")
+        script_path = Path(sys.argv[0]).resolve()
+        shortcut_path = startup_folder / "watnu.lnk"
 
         shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(shortcut_path)
-        shortcut.TargetPath = script_path
-        shortcut.WorkingDirectory = os.path.dirname(script_path)
-        shortcut.IconLocation = script_path
+        shortcut = shell.CreateShortCut(str(shortcut_path))
+        shortcut.TargetPath = str(script_path)
+        shortcut.WorkingDirectory = str(script_path.parent)
+        shortcut.IconLocation = str(script_path)
         shortcut.WindowStyle = 7  # 7 means minimized
         shortcut.save()
 
@@ -161,12 +159,12 @@ if config.autostart:
         winreg.CloseKey(key)
 
     elif platform.system() == "Linux":
-        autostart_dir = os.path.expanduser("~/.config/autostart")
-        os.makedirs(autostart_dir, exist_ok=True)
+        autostart_dir = Path.home() / ".config" / "autostart"
+        autostart_dir.mkdir(parents=True, exist_ok=True)
         desktop_entry = f"""
 [Desktop Entry]
 Type=Application
-Exec={sys.executable} {os.path.abspath(sys.argv[0])} --no-terminal
+Exec={sys.executable} {Path(sys.argv[0]).resolve()} --no-terminal
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
@@ -174,7 +172,7 @@ Name[en_US]=Watnu
 Name=Watnu
 Comment=Start Watnu on login
 """
-        with open(os.path.join(autostart_dir, "watnu.desktop"), "w") as f:
+        with (autostart_dir / "watnu.desktop").open("w") as f:
             f.write(desktop_entry)
 
 # get all spaces from the db
