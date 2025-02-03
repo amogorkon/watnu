@@ -22,17 +22,16 @@ from src.ux import task_editor, task_list
 
 _translate = QtCore.QCoreApplication.translate
 
-# TODO: use _translate
 translation = {
-    "do": "Beschreibung",
-    "space": "Raum",
-    "level": "Level",
-    "priority": "Priorität",
-    "deadline": "Deadline",
-    "done": "Erledigt",
-    "draft": "Entwurf",
-    "inactive": "Inaktiv",
-    "deleted": "Gelöscht",
+    "do": _translate("Organizer", "Beschreibung"),
+    "space": _translate("Organizer", "Raum"),
+    "level": _translate("Organizer", "Level"),
+    "priority": _translate("Organizer", "Priorität"),
+    "deadline": _translate("Organizer", "Deadline"),
+    "done": _translate("Organizer", "Erledigt"),
+    "draft": _translate("Organizer", "Entwurf"),
+    "inactive": _translate("Organizer", "Inaktiv"),
+    "deleted": _translate("Organizer", "Gelöscht"),
 }
 
 
