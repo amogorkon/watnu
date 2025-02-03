@@ -59,9 +59,9 @@ class Skill(NamedTuple):
     id: int
 
     @cached_property
-    def time_spent(self):
+    def time_spent(self) -> int:
         query = db.execute(f"""SELECT task_id from task_trains_skill where skill_id={self.id}""")
-        tasks = (app.tasks[ID] for ID, in query.fetchall())
+        tasks = (app.tasks[ID] for (ID,) in query.fetchall())
         return sum(
             task.time_spent for task in tasks if not task.deleted and not task.draft and not task.inactive
         )
@@ -161,9 +161,9 @@ class Task:
         Return the repeats for this task.
 
         Returns:
-            Every[EVERY, int]: Returns a namedtuple Every for EVERY unit of time,
-                                ints of unit, per EVERY unit of time, ints of unit.
-        """ """"""
+            Every[EVERY, int] | None: Returns a namedtuple Every for EVERY unit of time,
+                                      ints of unit, per EVERY unit of time, ints of unit.
+        """
         return (
             Every(
                 EVERY(
@@ -286,7 +286,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         query = db.execute("SELECT workload FROM tasks WHERE id=?", (self.id,))
         return typed_row(query.fetchone(), 0, int, default=0)
 
-    def set_deadline(self, deadline: float):
+    def set_deadline(self, deadline: float) -> None:
         """Sets the deadline for a task.
 
         If deadline is set to infinity, the deadline is removed from the database.
@@ -349,7 +349,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         )
         return [Skill(typed_row(skill_id, 0, int)) for skill_id in query.fetchall()]
 
-    def set_adjust_time_spent(self, value) -> None:
+    def set_adjust_time_spent(self, value: int) -> None:
         self.set_("adjust_time_spent", value)
 
     @cached_property
@@ -363,7 +363,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         """Return the time spent on this task in seconds, including adjustment."""
         return self.adjust_time_spent + self.time_spent
 
-    def get_total_priority(self, priority=None, space_priority=None) -> float:
+    def get_total_priority(self, priority: float = None, space_priority: float = None) -> float:
         """
         Calculates the total priority of the task, taking into account its own priority, space priority,
         and the priority of its subtasks.
@@ -404,7 +404,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         # what about supertasks?
         return self_doable and not any(s.is_doable for s in self.subtasks)
 
-    def get_short_do(self, max_len=None):
+    def get_short_do(self, max_len: int = None) -> str:
         """
         Get the first line of the do, or the first line truncated to max_len.
 
@@ -435,10 +435,10 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
 
         return line + ("" if len(lines) == 1 else " […]")
 
-    def delete(self):
+    def delete(self) -> None:
         self.set_("deleted", True)
 
-    def really_delete(self):
+    def really_delete(self) -> None:
         db.execute(
             f"""
         DELETE FROM tasks WHERE id={self.id}
@@ -551,7 +551,7 @@ WHERE tasks.id = {self.id}
         Finally, a set of `Task` objects corresponding to the required tasks is returned.
 
         Returns:
-            A set of `Task` objects corresponding to the required tasks.
+            set[Task]: A set of `Task` objects corresponding to the required tasks.
 
         Raises:
             None.
@@ -602,7 +602,7 @@ WHERE tasks.id = {self.id}
     def set_last_checked(self, time_: float) -> None:
         self.set_("last_checked", time_)
 
-    def set_(self, name: str, value: Any, to_db=True):
+    def set_(self, name: str, value: Any, to_db: bool = True) -> Any:
         if to_db:
             db.execute(
                 f"UPDATE tasks SET {name}=? WHERE id={self.id}",
@@ -613,22 +613,22 @@ WHERE tasks.id = {self.id}
 
         return value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Task({self.id}, ...)"
 
-    def __repr__(self):
-        return f"Task(**{ {k: getattr(self, k) for k in Task.__slots__}})"
+    def __repr__(self) -> str:
+        return f"Task(**{ {k: getattr(self, k) for k in Task.__slots__} })"
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         print(f"attempted assignment to read-only attribute {name}={value}")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return False if other is None else self.id == other.id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.id
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[tuple[str, Any], None, None]:
         for k in self.__slots__:
             yield k, getattr(self, k)
 
@@ -636,14 +636,14 @@ WHERE tasks.id = {self.id}
     def from_id(cls, ID: int) -> "Task":
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
-    def reload(self):
+    def reload(self) -> Task:
         """Reload the task from the database.
 
         Args:
             None
 
         Returns:
-            The task itself.
+            Task: The task itself.
 
         Examples:
             >>> task = Task(id=1)
@@ -668,11 +668,11 @@ WHERE tasks.id = {self.id}
             not self.deleted,
         )
 
-    def get_status_text(self):
-        return f"""{'done' if self.done else "not done"}
-{'draft' if self.draft else "not draft"}
-{'inactive' if self.inactive else "active"}
-{'deleted' if self.deleted else "not deleted"}"""
+    def get_status_text(self) -> str:
+        return f"""{"done" if self.done else "not done"}
+{"draft" if self.draft else "not draft"}
+{"inactive" if self.inactive else "active"}
+{"deleted" if self.deleted else "not deleted"}"""
 
 
 def _retrieve_task_by_id(ID: int) -> Task:
