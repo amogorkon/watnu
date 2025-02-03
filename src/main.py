@@ -1,7 +1,7 @@
 # ruff: noqa: E402
 """The entry point for watnu.
 
-Run with py main.py and watch the Magik happen!
+Run from watnu.py and watch the Magik happen!
 """
 
 import contextlib
@@ -114,9 +114,7 @@ if config.autostart:
 
         # Hide the terminal if started via autostart
         if ctypes.windll.shell32.IsUserAnAdmin():
-            ctypes.windll.user32.ShowWindow(
-                ctypes.windll.kernel32.GetConsoleWindow(), 0
-            )
+            ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
         with contextlib.suppress(FileNotFoundError):
             key = winreg.OpenKey(
@@ -144,6 +142,7 @@ if config.autostart:
         shortcut.TargetPath = script_path
         shortcut.WorkingDirectory = os.path.dirname(script_path)
         shortcut.IconLocation = script_path
+        shortcut.WindowStyle = 7  # 7 means minimized
         shortcut.save()
 
         key = winreg.OpenKey(
@@ -196,9 +195,7 @@ _check_for_cycles(list(app.tasks.values()))
 _check_for_deadline_without_workload(list(app.tasks.values()))
 _check_for_overdue_tasks(list(app.tasks.values()), now)
 _check_for_incompletable_tasks(list(app.tasks.values()), now)
-_check_for_cycles(
-    list(app.tasks.values())
-)  # again, the user might have introduced cycles in previous checks
+_check_for_cycles(list(app.tasks.values()))  # again, the user might have introduced cycles in previous checks
 
 app.win_what.lets_check_whats_next()
 app.win_main.unlock()
