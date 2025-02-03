@@ -27,8 +27,9 @@ class Application(QtWidgets.QApplication):
         self.startup_time = datetime.now().timestamp()
         # self.startup_win = startup.Startup()
 
-# sourcery skip: use-function-docstrings-gpt35
-    def setUp(self,):
+    def setUp(
+        self,
+    ):
         """Set up the application.
 
         Args:
@@ -124,7 +125,7 @@ class Application(QtWidgets.QApplication):
             f"{greet_time}, {f'{config.call_name}' if config.call_name else 'willkommen zurück'}!",
             10000,
         )
-        self.win_what = what_now.What_Now()
+        self.win_what = what_now.WhatNow()
         self.win_character = character.Character()
         self.win_settings = settings.Settings()
         self.win_running = None
@@ -153,17 +154,17 @@ class Application(QtWidgets.QApplication):
 
     def sanitize_db(self):
         """
-            Deletes all resources that are not used by any task from the database.
-            """
+        Deletes all resources that are not used by any task from the database.
+        """
         query = db.execute(
-                """
+            """
         SELECT r.resource_id
         FROM resources r
         LEFT JOIN task_uses_resource
         ON task_uses_resource.resource_id = r.resource_id
         WHERE task_uses_resource.task_id is NULL
         """
-            )
+        )
         i = None
         for i, resource_id in enumerate(query.fetchall()):
             db.execute(
@@ -198,6 +199,7 @@ class Application(QtWidgets.QApplication):
         config.db_write_count += 1
         config.save()
         from src.logic import filter_filter_history
+
         with open(config.base_path / "filter_history.stay", "w") as f:
             f.write("\n".join(filter_filter_history(self.filter_history)))
 
