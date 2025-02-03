@@ -468,7 +468,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.task_table.cellDoubleClicked.connect
         def task_list_doubleclicked(row, column):
-            self._edit_selected(self.task_table)
+            self.edit_selected(self.task_table)
 
         @self.button1.clicked.connect
         def _():
@@ -506,7 +506,7 @@ DELETE FROM spaces where name=='{space_name}'
 
         @self.button3.clicked.connect
         def organize_task():
-            self._organize_selected(self.task_table)
+            self.organize_selected(self.task_table)
 
         @self.button4.clicked.connect
         def edit_task():
@@ -523,7 +523,6 @@ DELETE FROM spaces where name=='{space_name}'
                     "Es kann jeweils nur eine Aufgabe gestartet werden.",
                     5000,
                 )
-                return
             else:
                 self.hide()
                 task_running.Running(selected.pop())
@@ -657,18 +656,17 @@ font-size: 12pt;
             )
         )
 
-        # TODO: use _translate
         translation = {
-            "do": "Beschreibung",
-            "status": "Status",
-            "space": "Raum",
-            "level": "Level",
-            "priority": "Priorität",
-            "deadline": "Deadline",
-            "done": "Erledigt",
-            "draft": "Entwurf",
-            "inactive": "Inaktiv",
-            "deleted": "Gelöscht",
+            "do": _translate("TaskList", "Beschreibung"),
+            "status": _translate("TaskList", "Status"),
+            "space": _translate("TaskList", "Raum"),
+            "level": _translate("TaskList", "Level"),
+            "priority": _translate("TaskList", "Priorität"),
+            "deadline": _translate("TaskList", "Deadline"),
+            "done": _translate("TaskList", "Erledigt"),
+            "draft": _translate("TaskList", "Entwurf"),
+            "inactive": _translate("TaskList", "Inaktiv"),
+            "deleted": _translate("TaskList", "Gelöscht"),
         }
 
         currently_selected_rows = self.task_table.selectionModel()
@@ -765,7 +763,7 @@ font-size: 12pt;
                 menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
         self.button1.setMenu(menu)
 
-    def _edit_selected(self, widget):
+    def edit_selected(self, widget):
         selected = self.get_selected_tasks()
         if not selected:
             self.statusBar.showMessage("Keine Aufgabe ausgewählt", 5000)
@@ -780,7 +778,7 @@ font-size: 12pt;
                 win = task_editor.Editor(task)
                 win.show()
 
-    def _organize_selected(self, widget):
+    def organize_selected(self, widget):
         selected = self.get_selected_tasks()
         if not selected:
             self.statusBar.showMessage("Keine Aufgabe ausgewählt", 5000)
