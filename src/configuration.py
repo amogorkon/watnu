@@ -23,7 +23,6 @@ def print_attr(self, attribute, value):
     field_transformer=lambda cls, fields: [field.evolve(converter=field.type) for field in fields],
 )
 class Config:
-    # bool("False") is a non-empty string -> True :|
     config_path: Path = Path("config.json")
     first_start: bool = True
     db_path: str = "watnu.sqlite"
@@ -31,12 +30,12 @@ class Config:
     lucky_num: int = 1
     count: int = 1
     telegram_user: int = 0
-    telegram_token: str = None
+    telegram_token: str | None = None
     tictoc_volume: int = 50
     activity_color_body: str = "darkred"
     activity_color_mind: str = "darkblue"
     activity_color_soul: str = "indigo"
-    generated_faces_token: str = None
+    generated_faces_token: str | None = None
     tutorial_active: bool = True
     run_sql_stuff: bool = False
     icon: str = "./extra/feathericons/watnu1.png"
@@ -59,7 +58,7 @@ class Config:
 
 def read(file) -> Config:
     try:
-        with open(file, 'r') as f:
+        with open(file, "r") as f:
             config_dict = load(f)
     except FileNotFoundError:
         return Config()  # Return default config if file not found
