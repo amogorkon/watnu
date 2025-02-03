@@ -9,15 +9,14 @@ from src.configuration import Config
 
 app: Application = Application(sys.argv)
 
-path = Path(__file__).resolve().parent
-# touch, just in case user killed the config or first start
-
-config_path = path / "config.json"
-config_path.touch()
+home_path = Path.home() / "watnu"
+home_path.mkdir(parents=True, exist_ok=True)
+# sys.args = parser.parse_args() sic!
+config_path = home_path / "config_experimental.json" if sys.args.experimental else home_path / "config.json"
+config_path.touch(exist_ok=True)
 config: Config = configuration.read(config_path)
 config.config_path = config_path
 print("using config:", config_path)
-config.base_path = path
 
 
 class DB(sqlite3.Connection):
