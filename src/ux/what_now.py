@@ -17,11 +17,21 @@ from src.ux import task_editor, task_finished, task_running
 
 _translate = QCoreApplication.translate
 
-
 SELECT = Enum("SELECT", "BALANCE PRIORITY TIMING")
 
+STYLE_SELECTED = """
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background-color: qlineargradient(
+        spread:pad, x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 255),
+        stop:0.5 rgba(200, 200, 200, 255),
+        stop:1 rgba(255, 255, 255, 255)
+    );
+    color: black;
+"""
 
-class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
+
+class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -156,7 +166,7 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 case SELECT.TIMING:
                     done = task_finished.Finisher(self.task_timing).exec()
                 case SELECT.BALANCE:
-                    done = task_finished.Finisher(self.task_balance).exec()
+                    done = task_finished.Finisher(self.task_balanced).exec()
             if done:
                 self.lets_check_whats_next()
 
@@ -164,43 +174,11 @@ class What_Now(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         def _skip_task():
             match self.selected:
                 case SELECT.PRIORITY:
-                    _skip_priority()
+                    self.skip_priority()
                 case SELECT.TIMING:
-                    _skip_timing()
+                    self.skip_timing()
                 case SELECT.BALANCE:
-                    _skip_balanced()
-
-        def _skip_priority():
-            old_task = self.task_priority
-            self.priority_tasks.rotate(-1)
-            self.task_priority.set_last_checked(time())
-            self.task_priority = self.priority_tasks[0]
-            self.task_desc_priority.setText(self.task_priority.do)
-            self.task_desc_priority.adjustSize()
-            self.task_space_priority.setText(self.task_priority.space.name)
-
-            if old_task == self.task_priority:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Hmm..",
-                    """Es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.
-Auf gehts!""",
-                )
-
-        def _skip_timing():
-            self.timing_tasks.rotate(-1)
-            self.task_timing.set_last_checked(time())
-            self.task_timing = self.timing_tasks[0]
-            self.task_desc_timing.setText(self.task_timing.do)
-            self.task_space_timing.setText(self.task_timing.space.name)
-
-        def _skip_balanced():
-            self.task_balanced.set_last_checked(time())
-            self.balanced_tasks.rotate(-1)
-            self.task_balanced = self.balanced_tasks[0]
-            self.task_desc_balanced.setText(self.task_balanced.do)
-            self.task_desc_balanced.adjustSize()
-            self.task_space_balanced.setText(self.task_balanced.space.name)
+                    self.skip_balanced()
 
         @self.button4.clicked.connect
         def _edit_task():
@@ -236,37 +214,59 @@ Auf gehts!""",
             if win.exec():
                 self.lets_check_whats_next()
 
-        @self.button7.clicked.connect
-        def _select_priority():
-            _unselect_all()
-            if self.selected is SELECT.PRIORITY:
-                self.selected = None
-            else:
-                self.selected = SELECT.PRIORITY
-                self.priority.setStyleSheet("border: 2px solid black; background-color: grey")
+        self.task_selection_button_group = QtWidgets.QButtonGroup(self)
+        self.task_selection_button_group.addButton(self.button7)
+        self.task_selection_button_group.addButton(self.button8)
+        self.task_selection_button_group.addButton(self.button9)
+        self.task_selection_button_group.setExclusive(True)
 
-        @self.button8.clicked.connect
-        def _select_timing():
-            _unselect_all()
-            if self.selected is SELECT.TIMING:
-                self.selected = None
-            else:
-                self.selected = SELECT.TIMING
-                self.timing.setStyleSheet("border: 2px solid black; background-color: grey")
+        def _select_priority(event):
+            if self.task_priority:
+                _unselect_all()
+                if self.selected is SELECT.PRIORITY:
+                    self.selected = None
+                else:
+                    self.selected = SELECT.PRIORITY
+                    self.priority.setStyleSheet(STYLE_SELECTED)
 
-        @self.button9.clicked.connect
-        def _select_balanced():
-            _unselect_all()
-            if self.selected is SELECT.BALANCE:
-                self.selected = None
-            else:
-                self.selected = SELECT.BALANCE
-                self.balance.setStyleSheet("border: 2px solid black; background-color: grey")
+        def _select_timing(event):
+            if self.task_timing:
+                _unselect_all()
+                if self.selected is SELECT.TIMING:
+                    self.selected = None
+                else:
+                    self.selected = SELECT.TIMING
+                    self.timing.setStyleSheet(STYLE_SELECTED)
+
+        def _select_balance(event):
+            if self.task_balanced:
+                _unselect_all()
+                if self.selected is SELECT.BALANCE:
+                    self.selected = None
+                else:
+                    self.selected = SELECT.BALANCE
+                    self.balance.setStyleSheet(STYLE_SELECTED)
 
         def _unselect_all():
             self.priority.setStyleSheet(None)
             self.timing.setStyleSheet(None)
             self.balance.setStyleSheet(None)
+
+        self.priority.mousePressEvent = _select_priority
+        self.timing.mousePressEvent = _select_timing
+        self.balance.mousePressEvent = _select_balance
+        self.button7.setVisible(False)
+        self.button8.setVisible(False)
+        self.button9.setVisible(False)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_7 and self.task_priority:
+            self.priority.mousePressEvent(None)
+        elif event.key() == Qt.Key.Key_8 and self.task_timing:
+            self.timing.mousePressEvent(None)
+        elif event.key() == Qt.Key.Key_9 and self.task_balanced:
+            self.balance.mousePressEvent(None)
+        super().keyPressEvent(event)
 
     @cached_getter
     def lets_check_whats_next(self):
@@ -306,6 +306,38 @@ Auf gehts!""",
         for win in app.list_of_task_lists:
             win.gui_timer.start(100)
             win.show()
+
+    def skip_priority(self):
+        old_task = self.task_priority
+        self.priority_tasks.rotate(-1)
+        self.task_priority.set_last_checked(time())
+        self.task_priority = self.priority_tasks[0]
+        self.task_desc_priority.setText(self.task_priority.do)
+        self.task_desc_priority.adjustSize()
+        self.task_space_priority.setText(self.task_priority.space.name)
+
+        if old_task == self.task_priority:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Hmm..",
+                """Es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.
+Auf gehts!""",
+            )
+
+    def skip_timing(self):
+        self.timing_tasks.rotate(-1)
+        self.task_timing.set_last_checked(time())
+        self.task_timing = self.timing_tasks[0]
+        self.task_desc_timing.setText(self.task_timing.do)
+        self.task_space_timing.setText(self.task_timing.space.name)
+
+    def skip_balanced(self):
+        self.task_balanced.set_last_checked(time())
+        self.balanced_tasks.rotate(-1)
+        self.task_balanced = self.balanced_tasks[0]
+        self.task_desc_balanced.setText(self.task_balanced.do)
+        self.task_desc_balanced.adjustSize()
+        self.task_space_balanced.setText(self.task_balanced.space.name)
 
     def set_task_priority(self):
         self.priority_tasks = prioritize(self.tasks)
