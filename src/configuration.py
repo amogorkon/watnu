@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from json import JSONDecodeError, dumps, load
 from pathlib import Path
-from typing import Optional, get_args, get_origin
+from typing import get_args, get_origin, get_type_hints
 
 import attrs
 
@@ -19,21 +21,25 @@ def print_attr(self, attribute, value):
 
 
 def field_transformer(cls, fields):
+    resolved_types = get_type_hints(cls)
     new_fields = []
+
     for field in fields:
-        field_type = field.type
+        field_name = field.name
+        field_type = resolved_types[field_name]
         origin = get_origin(field_type)
         args = get_args(field_type)
 
-        match (origin, args):
-            case (Union, _) if type(None) in args:  # noqa: F841
-                # Handle Optional[T] (Union[T, None])
+        match origin:
+            case UnionType if type(None) in args:
+                # Handle (Path | None)
                 non_none_type = next(a for a in args if a is not type(None))
 
                 def converter(x, t=non_none_type):
                     return t(x) if x is not None else None
 
             case _:
+                # Direct type conversion for concrete types
                 converter = field_type
 
         new_fields.append(field.evolve(converter=converter))
@@ -46,9 +52,9 @@ def field_transformer(cls, fields):
     field_transformer=field_transformer,
 )
 class Config:
-    config_path: Optional[Path] = None
+    config_path: Path | None = None
     telegram_token: str | None = None
-    generated_faces_token: Optional[str] = None
+    generated_faces_token: str | None = None
     first_start: bool = True
     db_path: Path = Path("watnu.sqlite")
     coin: int = 0b1
@@ -79,12 +85,14 @@ class Config:
         self.config_path.write_text(dumps(attrs.asdict(self), indent=4, default=str))
 
 
-def read(file) -> Config:
+def read(config_path: Path) -> Config:
     try:
-        with open(file, "r") as f:
+        with config_path.open("r") as f:
             config_dict = load(f)
     except (FileNotFoundError, JSONDecodeError):
         config_dict = {}
 
     default_config = Config()
-    return attrs.evolve(default_config, **config_dict)
+    x = attrs.evolve(default_config, **config_dict)
+    assert isinstance(x.base_path, Path)
+    return x
