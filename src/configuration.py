@@ -31,7 +31,7 @@ def field_transformer(cls, fields):
         args = get_args(field_type)
 
         match origin:
-            case UnionType if type(None) in args:
+            case UnionType if type(None) in args:  # noqa: F841
                 # Handle (Path | None)
                 non_none_type = next(a for a in args if a is not type(None))
 
