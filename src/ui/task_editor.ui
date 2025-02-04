@@ -181,7 +181,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>C:/Users/micro/.designer/extra/feathericons/minus.svg</normaloff>C:/Users/micro/.designer/extra/feathericons/minus.svg</iconset>
+              <normaloff>../extra/feathericons/minus.svg</normaloff>../extra/feathericons/minus.svg</iconset>
             </property>
            </widget>
           </item>
@@ -192,7 +192,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>C:/Users/micro/.designer/extra/feathericons/plus.svg</normaloff>C:/Users/micro/.designer/extra/feathericons/plus.svg</iconset>
+              <normaloff>../extra/feathericons/plus.svg</normaloff>../extra/feathericons/plus.svg</iconset>
             </property>
            </widget>
           </item>
@@ -492,7 +492,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/skills.svg</normaloff>C:/Users/micro/.designer/extra/skills.svg</iconset>
+             <normaloff>../extra/skills.svg</normaloff>../extra/skills.svg</iconset>
            </property>
            <property name="shortcut">
             <string>9</string>
@@ -512,7 +512,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/chevrons-down.svg</normaloff>C:/Users/micro/.designer/extra/chevrons-down.svg</iconset>
+             <normaloff>../extra/chevrons-down.svg</normaloff>../extra/chevrons-down.svg</iconset>
            </property>
           </widget>
          </item>
@@ -535,7 +535,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/repeats.svg</normaloff>C:/Users/micro/.designer/extra/repeats.svg</iconset>
+             <normaloff>../extra/repeats.svg</normaloff>../extra/repeats.svg</iconset>
            </property>
            <property name="shortcut">
             <string>8</string>
@@ -555,7 +555,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/chevrons-up.svg</normaloff>C:/Users/micro/.designer/extra/chevrons-up.svg</iconset>
+             <normaloff>../extra/chevrons-up.svg</normaloff>../extra/chevrons-up.svg</iconset>
            </property>
           </widget>
          </item>
@@ -575,7 +575,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/mind.svg</normaloff>C:/Users/micro/.designer/extra/mind.svg</iconset>
+             <normaloff>../extra/mind.svg</normaloff>../extra/mind.svg</iconset>
            </property>
           </widget>
          </item>
@@ -598,7 +598,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/constraints.svg</normaloff>C:/Users/micro/.designer/extra/constraints.svg</iconset>
+             <normaloff>../extra/constraints.svg</normaloff>../extra/constraints.svg</iconset>
            </property>
            <property name="shortcut">
             <string>2</string>
@@ -621,7 +621,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/feathericons/log-in.svg</normaloff>C:/Users/micro/.designer/extra/feathericons/log-in.svg</iconset>
+             <normaloff>../extra/feathericons/log-in.svg</normaloff>../extra/feathericons/log-in.svg</iconset>
            </property>
            <property name="shortcut">
             <string>7</string>
@@ -650,7 +650,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/soul.svg</normaloff>C:/Users/micro/.designer/extra/soul.svg</iconset>
+             <normaloff>../extra/soul.svg</normaloff>../extra/soul.svg</iconset>
            </property>
           </widget>
          </item>
@@ -664,7 +664,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>C:/Users/micro/.designer/extra/body.svg</normaloff>C:/Users/micro/.designer/extra/body.svg</iconset>
+             <normaloff>../extra/body.svg</normaloff>../extra/body.svg</iconset>
            </property>
           </widget>
          </item>
@@ -725,7 +725,7 @@
                    <string/>
                   </property>
                   <property name="pixmap">
-                   <pixmap>C:/Users/micro/.designer/extra/fear.png</pixmap>
+                   <pixmap>../extra/fear.png</pixmap>
                   </property>
                   <property name="scaledContents">
                    <bool>false</bool>
@@ -761,7 +761,7 @@
                    <string/>
                   </property>
                   <property name="pixmap">
-                   <pixmap>C:/Users/micro/.designer/extra/complexity.png</pixmap>
+                   <pixmap>../extra/complexity.png</pixmap>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -797,7 +797,7 @@
                    <string/>
                   </property>
                   <property name="pixmap">
-                   <pixmap>C:/Users/micro/.designer/extra/feathericons/eye.svg</pixmap>
+                   <pixmap>../extra/feathericons/eye.svg</pixmap>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>

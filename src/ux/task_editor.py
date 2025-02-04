@@ -8,7 +8,7 @@ import numpy as np
 from beartype import beartype
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
-from PyQt6.QtGui import QKeySequence, QShortcut, QtGui
+from PyQt6.QtGui import QCloseEvent, QHideEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 import src.ui as ui
@@ -29,10 +29,10 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
         self,
         task: Task = None,
         /,
-        *,  # positional only
+        *,
         cloning: bool = False,
         templating: bool = False,
-        as_sup: Literal[-1] | Literal[0] | Literal[1] = 0,
+        as_sup: Literal[-1, 0, 1] = 0,
         current_space: str | None = None,
         draft: bool = False,
     ):
@@ -643,10 +643,10 @@ WHERE id={self.task.id}
         self.task.reload()
         super().accept()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         self._kill()
 
-    def hideEvent(self, event: QtGui.QHideEvent) -> None:
+    def hideEvent(self, event: QHideEvent) -> None:
         self._kill()
 
     def reject(self) -> None:
