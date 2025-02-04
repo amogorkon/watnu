@@ -332,7 +332,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         db.commit()
 
     @cached_property
-    def supertasks(self) -> set["Task"]:
+    def supertasks(self) -> set[Task]:
         query = db.execute(
             f"""
 SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
@@ -353,7 +353,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         self.set_("adjust_time_spent", value)
 
     @cached_property
-    def doable_supertasks(self) -> set["Task"]:
+    def doable_supertasks(self) -> set[Task]:
         return {
             task for task in self.supertasks if not (task.done or task.deleted or task.inactive or task.draft)
         }
@@ -542,7 +542,7 @@ WHERE tasks.id = {self.id}
                 return "black"
 
     @cached_property
-    def subtasks(self) -> set["Task"]:
+    def subtasks(self) -> set[Task]:
         """Returns a set of subtasks that are required to complete this task.
 
         This function queries the database to find all tasks that are required to complete this task.
@@ -582,14 +582,14 @@ WHERE tasks.id = {self.id}
 
         return {app.tasks[id_] for id_ in ids}
 
-    def set_subtasks(self, tasks: set["Task"]) -> None:
+    def set_subtasks(self, tasks: set[Task]) -> None:
         db.executemany(
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
             [(self.id, t.id) for t in tasks],
         )
         db.commit()
 
-    def set_supertasks(self, tasks: set["Task"]) -> None:
+    def set_supertasks(self, tasks: set[Task]) -> None:
         db.executemany(
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
             [(t.id, self.id) for t in tasks],
@@ -633,7 +633,7 @@ WHERE tasks.id = {self.id}
             yield k, getattr(self, k)
 
     @classmethod
-    def from_id(cls, ID: int) -> "Task":
+    def from_id(cls, ID: int) -> Task:
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
     def reload(self) -> Task:

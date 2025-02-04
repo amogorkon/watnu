@@ -17,9 +17,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtWidgets import QMessageBox, QSystemTrayIcon
 
-from src import initialize_globals, home_path
-
-
+from src import home_path, initialize_globals
 from src.classes import retrieve_spaces, retrieve_tasks
 from src.q import Q
 

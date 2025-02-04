@@ -467,11 +467,14 @@ DELETE FROM spaces where name=='{space_name}'
         self.update()
 
         @self.task_table.cellDoubleClicked.connect
-        def task_list_doubleclicked(row, column):
+        def _task_list_doubleclicked(row, column):
             self.edit_selected(self.task_table)
 
         @self.button1.clicked.connect
-        def _():
+        def _button1_clicked():
+            """
+            Handle the event when button 1 is clicked.
+            """
             pass
 
         def _button2_clicked():
@@ -505,11 +508,11 @@ DELETE FROM spaces where name=='{space_name}'
         self.button2.clicked.connect(_button2_clicked)
 
         @self.button3.clicked.connect
-        def organize_task():
+        def _organize_task():
             self.organize_selected(self.task_table)
 
         @self.button4.clicked.connect
-        def edit_task():
+        def _edit_task():
             self.edit_selected(self.task_table)
 
         @self.button5.clicked.connect
