@@ -50,9 +50,10 @@ import inspect
 import re
 import sys
 from datetime import datetime
-from pathlib import Path
 from pydoc import TextRepr
 from time import time
+
+from src import config
 
 __author__ = "Ka-Ping Yee <ping@zesty.ca>"
 
@@ -66,10 +67,10 @@ NORMAL, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN = ESCAPE_SEQUENCES
 BASESTRING_TYPES = (str, bytes)
 TEXT_TYPES = (str,)
 
-path = Path(sys.argv[0]).parents[0]
-path = path / "logs"
-path.mkdir(exist_ok=True)
-OUTPUT_PATH = path / "watnu.log"
+
+log_path = config.config_path.parent / "log"
+log_path.mkdir(exist_ok=True)
+OUTPUT_PATH = log_path / "watnu.log"
 OUTPUT_PATH.touch()
 
 
@@ -257,15 +258,13 @@ class Q(object):
                 fmt = f"%{len(str(firstlineno + len(lines)))}d"
                 for i, line in enumerate(lines):
                     s.newline()
-                    s.add(
-                        [
-                            i == info.index and MAGENTA or "",
-                            fmt % (i + firstlineno),
-                            i == info.index and "> " or ": ",
-                            line,
-                            NORMAL,
-                        ]
-                    )
+                    s.add([
+                        i == info.index and MAGENTA or "",
+                        fmt % (i + firstlineno),
+                        i == info.index and "> " or ": ",
+                        line,
+                        NORMAL,
+                    ])
                 self.writer.write(s.chunks)
                 raise
 
