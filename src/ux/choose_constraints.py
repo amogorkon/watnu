@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import numpy as np
 from PyQt6 import QtGui, QtWidgets
@@ -13,7 +14,7 @@ from src.classes import Task
 
 
 class ConstraintChooser(QtWidgets.QDialog, ui.choose_constraints.Ui_Dialog):
-    def __init__(self, editor: "ux.task_editor.Editor", task: Task = None):
+    def __init__(self, editor: ux.task_editor.Editor, task: Task | None = None):
         super().__init__()
         self.setupUi(self)
         self.editor = editor
