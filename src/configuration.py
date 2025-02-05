@@ -32,7 +32,7 @@ def field_transformer(cls, fields):
 
         match origin:
             case UnionType if type(None) in args:  # noqa: F841
-                # Handle (Path | None)
+                # Handle (Path | None), NOT Optional[Path] or Union[Path, None]
                 non_none_type = next(a for a in args if a is not type(None))
 
                 def converter(x, t=non_none_type):
