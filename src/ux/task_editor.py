@@ -43,34 +43,40 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
         self._init_task_edit(task) if task else self._init_task_new(current_space)
         self._init_ui_elements()
         self._init_signals()
+        self.build_space_list(first_item_text="")
         self._post_init_setup(cloning, templating, as_sup)
 
-        self.build_space_list(first_item_text="")
+    def _init_fields(self, task, cloning, templating, as_sup, current_space, draft):
+        self.task = task
+        self.cloning = cloning
+        self.templating = templating
+        self.as_sup = as_sup
+        self.current_space = current_space
+        self.draft = draft
 
-        for item in ACTIVITY:
-            if item == ACTIVITY.unspecified:
-                continue
-            self.primary_activity.addItem(item.name, QVariant(item.value))
-            self.secondary_activity.addItem(item.name, QVariant(item.value))
+        self.deadline = float("inf")
+        self.repeats: namedtuple = None
+        self.constraints: np.ndarray = np.zeros((7, 288))
+        self.subtasks: list[int] = []
+        self.supertasks: list[int] = []
+        self.skill_ids: list[int] = []
 
-        for i, item in enumerate(LEVEL):
-            self.level.addItem(item.name)
-            self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
-
-        self.level.setCurrentIndex(2)
-
-        self.page.registerField(
-            "task*",
-            self.do,
-            "plainText",
-            changedSignal=self.do.textChanged,
-        )
-
-        if self.task.space:
-            assert self.task.space_id == self.task.space.space_id, breakpoint()
-
+    def _init_ui_elements(self):
+        app.list_of_task_editors.append(self)
+        app.list_of_windows.append(self)
+        self.setWindowTitle(f"Task {self.task.id}")
+        self.original_window_title = self.windowTitle()
+        self.statusBar = QtWidgets.QStatusBar()
+        self.page_layout.addWidget(self.statusBar)
+        self.statusBar.setSizeGripEnabled(False)
+        # fira rules!
+        self.do.setFont(app.fira_font)
+        self.notes.setFont(app.fira_font)
         self.gui_timer = QTimer()
-        self.gui_timer.start(100)
+        self.setButtonText(
+            QWizard.WizardButton.CustomButton1,
+            "als Entwurf speichern",
+        )
 
         def _show_state_depending():
             statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
@@ -97,97 +103,44 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
                     self.is_routine.setChecked(True)
                     self.button8.setEnabled(True)
 
-            self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
-            self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
-
-            if self.task.deadline == float("inf"):
-                self.choose_deadline_button.hide()
-            else:
-                self.choose_deadline_button.show()
-
-            if not self.task.constraints:
-                self.choose_constraints_button.hide()
-            else:
-                self.choose_constraints_button.show()
-
-            if not self.task.repeats:
-                self.choose_repeats_button.hide()
-            else:
-                self.choose_repeats_button.show()
-
-            if not self.task.skill_ids:
-                self.choose_skills_button.hide()
-            else:
-                self.choose_skills_button.show()
-
-            if not self.task.subtasks:
-                self.organize_subtasks.hide()
-            else:
-                self.organize_subtasks.show()
-
-            if not self.task.supertasks:
-                self.organize_supertasks.hide()
-            else:
-                self.organize_supertasks.show()
-
-            if app.win_running:
-                self.button5.setEnabled(False)
-
         _show_state_depending()  # first time
         self.gui_timer.timeout.connect(_show_state_depending)
 
-        self.setButtonText(
-            QWizard.WizardButton.CustomButton1,
-            "als Entwurf speichern",
-        )
+        self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
+        self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
 
-        @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
-        def _():
-            self.draft = True
-            self._save()
-            self.done(12)
+        if self.task.deadline == float("inf"):
+            self.choose_deadline_button.hide()
+        else:
+            self.choose_deadline_button.show()
 
-        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
-        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
+        if not self.task.constraints:
+            self.choose_constraints_button.hide()
+        else:
+            self.choose_constraints_button.show()
 
-        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
+        if not self.task.repeats:
+            self.choose_repeats_button.hide()
+        else:
+            self.choose_repeats_button.show()
 
-        if cloning:
-            self.statusBar.showMessage("Bearbeite Klon...", 5000)
-            self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
+        if not self.task.skill_ids:
+            self.choose_skills_button.hide()
+        else:
+            self.choose_skills_button.show()
 
-        if templating:
-            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
+        if not self.task.subtasks:
+            self.organize_subtasks.hide()
+        else:
+            self.organize_subtasks.show()
 
-        # clone as subtask of the given task
-        if as_sup == -1:
-            self.supertasks = [self.task.id]
+        if not self.task.supertasks:
+            self.organize_supertasks.hide()
+        else:
+            self.organize_supertasks.show()
 
-        # given task is a subtask of the new task
-        if as_sup == 1:
-            self.subtasks = [self.task.id]
-
-        # just a reminder for the user which task is sub-/supertask
-        if as_sup:
-            self.do.setPlaceholderText(self.task.do)
-            self.do.setPlainText("")
-            self.notes.setPlaceholderText(self.task.notes)
-            self.notes.setPlainText("")
-
-        def create_task():
-            win = Editor(current_space=self.space.currentText())
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            win.show()
-
-        menu = QtWidgets.QMenu()
-        menu.addAction("ohne Vorlage", create_task)
-        menu.addAction("als Klon von dieser Aufgabe", self._clone)
-        self.button6.setMenu(menu)
-
-        self.activateWindow()
-
-        # button9
+        if app.win_running:
+            self.button5.setEnabled(False)
 
         def _space_add():
             text, okPressed = QtWidgets.QInputDialog.getText(
@@ -258,7 +211,7 @@ DELETE FROM spaces where name==?
             if self.space.currentData() is None:
                 self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
                 return
-            space_editor.Space_Editor(self.space.currentText()).exec()
+            space_editor.SpaceEditor(self.space.currentText()).exec()
 
         menu.addAction("bearbeiten", space_edit)
 
@@ -267,80 +220,15 @@ DELETE FROM spaces where name==?
         # shortcut for num9 to click button9 (Spaces)
         self.button9a.setShortcut("9")
 
-        @self.space.currentIndexChanged.connect
-        def _():
-            space_id = self.space.currentData()
-            if space_id is not None:
-                for (
-                    primary_activity_id,
-                    secondary_activity_id,
-                ) in db.execute(
-                    f"""
-SELECT primary_activity_id, secondary_activity_id
-FROM spaces
-WHERE space_id = {space_id}
-                """
-                ).fetchall():
-                    if primary_activity_id is not None:
-                        self.primary_activity.setCurrentIndex(
-                            self.primary_activity.findData(QVariant(primary_activity_id))
-                        )
-                    else:
-                        self.primary_activity.setCurrentIndex(0)
-                    if secondary_activity_id is not None:
-                        self.secondary_activity.setCurrentIndex(
-                            self.secondary_activity.findData(QVariant(secondary_activity_id))
-                        )
-                    else:
-                        self.secondary_activity.setCurrentIndex(0)
-
-            self.total_priority.setValue(
-                self.task.get_total_priority(
-                    priority=self.priority.value(),
-                    space_priority=get_space_priority(self.space.currentData()),
-                )
-            )
-
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            config.last_edited_space = self.space.currentText() or config.last_edited_space
-            config.save()
-
-    def _init_fields(self, task, cloning, templating, as_sup, current_space, draft):
-        self.task = task
-        self.cloning = cloning
-        self.templating = templating
-        self.as_sup = as_sup
-        self.current_space = current_space
-        self.draft = draft
-
-        self.deadline = float("inf")
-        self.repeats: namedtuple = None
-        self.constraints: np.ndarray = np.zeros((7, 288))
-        self.subtasks: list[int] = []
-        self.supertasks: list[int] = []
-        self.skill_ids: list[int] = []
-
-    def _init_ui_elements(self):
-        app.list_of_task_editors.append(self)
-        app.list_of_windows.append(self)
-        self.setWindowTitle(f"Task {self.task.id}")
-        self.original_window_title = self.windowTitle()
-        self.statusBar = QtWidgets.QStatusBar()
-        self.page_layout.addWidget(self.statusBar)
-        self.statusBar.setSizeGripEnabled(False)
-        # fira rules!
-        self.do.setFont(app.fira_font)
-        self.notes.setFont(app.fira_font)
-
     def _init_signals(self):
         self.button1.clicked.connect(lambda e: print(e))
 
         url = "https://www.youtube.com/watch?v=kvZEzEOPRfw"
         self.button(QWizard.WizardButton.HelpButton).clicked.connect(lambda: webbrowser.open(url))
-
         self.button(QWizard.WizardButton.CustomButton2).setText(_translate("Wizard", "löschen"))
         self.button(QWizard.WizardButton.CustomButton2).clicked.connect(self.delete_task)
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
 
         @self.kind_of.buttonToggled.connect
         def kind_of_toggled():
@@ -381,13 +269,17 @@ WHERE space_id = {space_id}
             self.accept()
             # self.done(12)
 
-        def toggle_fullscreen():
-            if self.isFullScreen():
-                self.showNormal()
-            else:
-                self.showFullScreen()
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
+            lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
+        )
 
-        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
+        @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
+        def _():
+            self.draft = True
+            self._save()
+            self.done(12)
+
+        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
         def organize(depends_on):
             win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
@@ -430,6 +322,45 @@ WHERE space_id = {space_id}
         def repeats_button():
             choose_repeats.RepeatChooser(self, self.task).exec()
 
+        @self.space.currentIndexChanged.connect
+        def _():
+            space_id = self.space.currentData()
+            if space_id is not None:
+                for (
+                    primary_activity_id,
+                    secondary_activity_id,
+                ) in db.execute(
+                    f"""
+SELECT primary_activity_id, secondary_activity_id
+FROM spaces
+WHERE space_id = {space_id}
+                """
+                ).fetchall():
+                    if primary_activity_id is not None:
+                        self.primary_activity.setCurrentIndex(
+                            self.primary_activity.findData(QVariant(primary_activity_id))
+                        )
+                    else:
+                        self.primary_activity.setCurrentIndex(0)
+                    if secondary_activity_id is not None:
+                        self.secondary_activity.setCurrentIndex(
+                            self.secondary_activity.findData(QVariant(secondary_activity_id))
+                        )
+                    else:
+                        self.secondary_activity.setCurrentIndex(0)
+
+            self.total_priority.setValue(
+                self.task.get_total_priority(
+                    priority=self.priority.value(),
+                    space_priority=get_space_priority(self.space.currentData()),
+                )
+            )
+
+        @self.space.currentIndexChanged.connect
+        def space_switched():
+            config.last_edited_space = self.space.currentText() or config.last_edited_space
+            config.save()
+
     def _init_task_edit(self, task):
         self.deadline = task.deadline
         self.skill_ids = self.task.skill_ids
@@ -465,7 +396,64 @@ WHERE space_id = {space_id}
         self.draft = True
 
     def _post_init_setup(self, cloning, templating, as_sup):
-        pass
+        # clone as subtask of the given task
+        if as_sup == -1:
+            self.supertasks = [self.task.id]
+
+        # given task is a subtask of the new task
+        if as_sup == 1:
+            self.subtasks = [self.task.id]
+
+        # just a reminder for the user which task is sub-/supertask
+        if as_sup:
+            self.do.setPlaceholderText(self.task.do)
+            self.do.setPlainText("")
+            self.notes.setPlaceholderText(self.task.notes)
+            self.notes.setPlainText("")
+
+        for item in ACTIVITY:
+            if item == ACTIVITY.unspecified:
+                continue
+            self.primary_activity.addItem(item.name, QVariant(item.value))
+            self.secondary_activity.addItem(item.name, QVariant(item.value))
+
+        for i, item in enumerate(LEVEL):
+            self.level.addItem(item.name)
+            self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
+
+        self.level.setCurrentIndex(2)
+
+        self.page.registerField(
+            "task*",
+            self.do,
+            "plainText",
+            changedSignal=self.do.textChanged,
+        )
+
+        if self.task.space:
+            assert self.task.space_id == self.task.space.space_id, breakpoint()
+
+        self.gui_timer.start(100)
+
+        if cloning:
+            self.statusBar.showMessage("Bearbeite Klon...", 5000)
+            self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
+
+        if templating:
+            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
+
+        def create_task():
+            win = Editor(current_space=self.space.currentText())
+            app.list_of_task_editors.append(win)
+            app.list_of_windows.append(win)
+            win.show()
+
+        menu = QtWidgets.QMenu()
+        menu.addAction("ohne Vorlage", create_task)
+        menu.addAction("als Klon von dieser Aufgabe", self._clone)
+        self.button6.setMenu(menu)
+
+        self.activateWindow()
 
     def _save(self) -> None:
         config.save()
