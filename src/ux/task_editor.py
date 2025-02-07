@@ -199,10 +199,11 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
             )
             if okPressed and text != "":
                 db.execute(
-                    f"""
+                    """
 INSERT OR IGNORE INTO spaces (name)
-VALUES ('{text}')
-"""
+VALUES (?)
+""",
+                    (text,),
                 )
                 db.commit()
                 space_editor.Space_Editor(text).exec()
@@ -231,9 +232,10 @@ VALUES ('{text}')
                 ):
                     case QtWidgets.QMessageBox.StandardButton.Yes:
                         db.execute(
-                            f"""
-DELETE FROM spaces where name=='{space_name}'
-"""
+                            """
+DELETE FROM spaces where name==?
+""",
+                            (space_name,),
                         )
                         db.commit()
                         self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
@@ -489,37 +491,40 @@ WHERE space_id = {space_id}
     def save_repeats(self) -> None:
         if self.repeats is not None:
             db.execute(
-                f"""
-INSERT INTO repeats
-(task_id, every_ilk, x_every, min_distance, x_per)
-VALUES (
-{self.task.id},
-{self.repeats.every_ilk.value},
-{self.repeats.x_every},
-{self.repeats.x_per},
-{self.repeats.per_ilk.value}
-)
-            """
+                """
+                INSERT INTO repeats
+                (task_id, every_ilk, x_every, min_distance, x_per)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    self.task.id,
+                    self.repeats.every_ilk.value,
+                    self.repeats.x_every,
+                    self.repeats.x_per,
+                    self.repeats.per_ilk.value,
+                ),
             )
 
     def save_deadline(self) -> None:
         if self.deadline != float("inf"):
             db.execute(
-                f"""
-INSERT INTO deadlines
-(task_id, time_of_reference)
-VALUES ({self.task.id}, '{self.deadline}')
-            """
+                """
+                INSERT INTO deadlines
+                (task_id, time_of_reference)
+                VALUES (?, ?)
+                """,
+                (self.task.id, self.deadline),
             )
 
     def save_constraints(self) -> None:
         if np.any(self.constraints):
             db.execute(
-                f"""
-    INSERT INTO constraints
-    (task_id, flags)
-    VALUES ({self.task.id}, '{"".join(str(x) for x in self.constraints.flatten())}')
-            """
+                """
+                INSERT INTO constraints
+                (task_id, flags)
+                VALUES (?, ?)
+                """,
+                (self.task.id, "".join(str(x) for x in self.constraints.flatten())),
             )
 
     def save_resources(self) -> None:
@@ -540,45 +545,52 @@ VALUES ({self.task.id}, '{self.deadline}')
     def save_subsup(self) -> None:
         db.executemany(
             """
-INSERT OR IGNORE INTO task_requires_task
-(task_of_concern, required_task)
-VALUES (?, ?)
-;
-""",
+            INSERT OR IGNORE INTO task_requires_task
+            (task_of_concern, required_task)
+            VALUES (?, ?)
+            """,
             [(self.task.id, task_id) for task_id in self.subtasks],
         )
         db.executemany(
             """
-INSERT OR IGNORE INTO task_requires_task
-(task_of_concern, required_task)
-VALUES (?, ?)
-;
-""",
+            INSERT OR IGNORE INTO task_requires_task
+            (task_of_concern, required_task)
+            VALUES (?, ?)
+            """,
             [(task_id, self.task.id) for task_id in self.supertasks],
         )
         db.executemany(
             """
-INSERT INTO task_trains_skill
-(task_id, skill_id)
-VALUES (?, ?);
-""",
+            INSERT INTO task_trains_skill
+            (task_id, skill_id)
+            VALUES (?, ?);
+            """,
             [(self.task.id, skill_id) for skill_id in self.skill_ids],
         )
 
     def save_cleanup(self) -> None:
         """need to clean up first, because of foreign key constraints"""
         db.executescript(
-            f"""
-BEGIN;
-DELETE FROM task_requires_task WHERE task_of_concern == {self.task.id};
-DELETE FROM task_requires_task WHERE required_task == {self.task.id};
-DELETE FROM task_uses_resource WHERE task_id = {self.task.id};
-DELETE FROM task_trains_skill WHERE task_id = {self.task.id};
-DELETE FROM constraints WHERE task_id = {self.task.id};
-DELETE FROM deadlines WHERE task_id = {self.task.id};
-DELETE FROM repeats WHERE task_id = {self.task.id};
-COMMIT;
-"""
+            """
+            BEGIN;
+            DELETE FROM task_requires_task WHERE task_of_concern == ?;
+            DELETE FROM task_requires_task WHERE required_task == ?;
+            DELETE FROM task_uses_resource WHERE task_id = ?;
+            DELETE FROM task_trains_skill WHERE task_id = ?;
+            DELETE FROM constraints WHERE task_id = ?;
+            DELETE FROM deadlines WHERE task_id = ?;
+            DELETE FROM repeats WHERE task_id = ?;
+            COMMIT;
+            """,
+            (
+                self.task.id,
+                self.task.id,
+                self.task.id,
+                self.task.id,
+                self.task.id,
+                self.task.id,
+                self.task.id,
+            ),
         )
 
     def workload(self) -> int:
@@ -614,25 +626,25 @@ COMMIT;
 
         # TODO: space_id == 0 is NOT NULL!!!
         db.execute(
-            f"""
-UPDATE tasks
-SET
-    do = :do,
-    notes = :notes,
-    priority = :priority,
-    level_id = :level_id,
-    primary_activity_id = :primary_activity_id,
-    secondary_activity_id = :secondary_activity_id,
-    space_id = :space_id,
-    ilk = :ilk,
-    draft = :draft,
-    fear = :fear,
-    difficulty = :difficulty,
-    embarrassment = :embarrassment,
-    workload = :workload
-WHERE id={self.task.id}
-""",
-            data,
+            """
+            UPDATE tasks
+            SET
+                do = :do,
+                notes = :notes,
+                priority = :priority,
+                level_id = :level_id,
+                primary_activity_id = :primary_activity_id,
+                secondary_activity_id = :secondary_activity_id,
+                space_id = :space_id,
+                ilk = :ilk,
+                draft = :draft,
+                fear = :fear,
+                difficulty = :difficulty,
+                embarrassment = :embarrassment,
+                workload = :workload
+            WHERE id = :task_id
+            """,
+            {**data, "task_id": self.task.id},
         )
 
     def accept(self) -> None:
@@ -692,11 +704,12 @@ WHERE id={self.task.id}
             task_finished.Finisher(self.task).exec()
         else:
             db.execute(
-                f"""
+                """
 UPDATE tasks
-SET '{property}' = {set_flag}
-WHERE id == {self.task.id}
-"""
+SET ? = ?
+WHERE id == ?
+""",
+                (status, set_flag, self.task.id),
             )
             db.commit()
         setattr(self.task, status, set_flag)
