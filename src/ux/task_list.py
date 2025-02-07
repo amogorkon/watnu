@@ -715,55 +715,60 @@ font-size: 12pt;
 
     def _build_button1_menu(self):
         menu = QtWidgets.QMenu()
+        DRAFT = ("Entwurf", partial(self._set_as, "draft", True))
+        INACTIVE = ("inaktiv", partial(self._set_as, "inactive", True))
+        DONE = ("erledigt", partial(self._set_as, "done", True))
+        DELETED = ("gelöscht", partial(self._set_as, "deleted", True))
+
         match self.status.currentIndex():
             case 0:  # open
-                menu.addAction("Entwurf", partial(self._set_as, "draft", True))
-                menu.addAction("inaktiv", partial(self._set_as, "inactive", True))
-                menu.addAction("erledigt", partial(self._set_as, "done", True))
-                menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
+                menu.addAction(*DRAFT)
+                menu.addAction(*INACTIVE)
+                menu.addAction(*DONE)
+                menu.addAction(*DELETED)
             case 1:  # draft
                 menu.addAction("offen", self._set_as_open)
                 menu.addAction(
                     "kein Entwurf",
                     partial(self._set_as, "draft", False),
                 )
-                menu.addAction("inaktiv", partial(self._set_as, "inactive", True))
-                menu.addAction("erledigt", partial(self._set_as, "done", True))
-                menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
+                menu.addAction(*INACTIVE)
+                menu.addAction(*DONE)
+                menu.addAction(*DELETED)
             case 2:  # inactive
                 menu.addAction("offen", self._set_as_open)
-                menu.addAction("Entwurf", partial(self._set_as, "draft", True))
+                menu.addAction(*DRAFT)
                 menu.addAction(
                     "nicht inaktiv",
                     partial(self._set_as, "inactive", False),
                 )
-                menu.addAction("erledigt", partial(self._set_as, "done", True))
-                menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
+                menu.addAction(*DONE)
+                menu.addAction(*DELETED)
 
             case 3:  # done
                 menu.addAction("offen", self._set_as_open)
-                menu.addAction("Entwurf", partial(self._set_as, "draft", True))
-                menu.addAction("inaktiv", partial(self._set_as, "inactive", True))
+                menu.addAction(*DRAFT)
+                menu.addAction(*INACTIVE)
                 menu.addAction(
                     "nicht erledigt",
                     partial(self._set_as, "done", False),
                 )
-                menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
+                menu.addAction(*DELETED)
             case 4:  # deleted
                 menu.addAction("offen", self._set_as_open)
-                menu.addAction("Entwurf", partial(self._set_as, "draft", True))
-                menu.addAction("inaktiv", partial(self._set_as, "inactive", True))
-                menu.addAction("erledigt", partial(self._set_as, "done", True))
+                menu.addAction(*DRAFT)
+                menu.addAction(*INACTIVE)
+                menu.addAction(*DONE)
                 menu.addAction(
                     "nicht gelöscht",
                     partial(self._set_as, "deleted", False),
                 )
             case 5:  # all
                 menu.addAction("offen", self._set_as_open)
-                menu.addAction("Entwurf", partial(self._set_as, "draft", True))
-                menu.addAction("inaktiv", partial(self._set_as, "inactive", True))
-                menu.addAction("erledigt", partial(self._set_as, "done", True))
-                menu.addAction("gelöscht", partial(self._set_as, "deleted", True))
+                menu.addAction(*DRAFT)
+                menu.addAction(*INACTIVE)
+                menu.addAction(*DONE)
+                menu.addAction(*DELETED)
         self.button1.setMenu(menu)
 
     def edit_selected(self, widget):
