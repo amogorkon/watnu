@@ -15,13 +15,13 @@ import src.ui as ui
 from src import app, config, db
 from src.classes import ACTIVITY, ILK, LEVEL, Task
 from src.ux import space_editor, task_finished
-from src.ux_helpers import Space_Mixin, get_space_priority
+from src.ux_helpers import SpaceMixin, get_space_priority
 
 _translate = QCoreApplication.translate
 
 
 @beartype
-class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, Space_Mixin):
+class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
     """Editor for new or existing tasks."""
 
     def __init__(
@@ -206,7 +206,7 @@ VALUES (?)
                     (text,),
                 )
                 db.commit()
-                space_editor.Space_Editor(text).exec()
+                space_editor.SpaceEditor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
                     win.build_space_list()

@@ -40,7 +40,7 @@ def deadline_as_str(deadline: float) -> str:
         return ""
 
 
-class Space_Mixin:
+class SpaceMixin:
     def build_space_list(self, first_item_text="alle Räume") -> None:
         self.space: QComboBox
 

@@ -35,7 +35,7 @@ translation = {
 }
 
 
-class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.Space_Mixin):
+class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
     def __init__(
         self,
         task: Task | None = None,

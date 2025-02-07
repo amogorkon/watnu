@@ -37,7 +37,7 @@ from src.ux import (
     task_running,
 )
 from src.ux_helpers import (
-    Space_Mixin,
+    SpaceMixin,
     deadline_as_str,
     filter_tasks,
     get_space_id,
@@ -96,7 +96,7 @@ class Checklist(QWidget):
         layout.setSpacing(0)
 
 
-class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
+class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
     def rearrange_list(self, item):
         """Callback for easy rearranging of the list, no filtering."""
         # save the current selected rows in the task_table
@@ -272,7 +272,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
         menu = QtWidgets.QMenu()
 
         def _space_set():
-            match (win := choose_space.Space_Selection()).exec():
+            match (win := choose_space.SpaceSelection()).exec():
                 case QtWidgets.QDialog.DialogCode.Accepted:
                     space = get_space_id(
                         win.space.currentText(),
@@ -306,7 +306,7 @@ VALUES ('{text}')
 """
                 )
                 db.commit()
-                space_editor.Space_Editor(text).exec()
+                space_editor.SpaceEditor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
                     win.build_space_list()
@@ -356,7 +356,7 @@ DELETE FROM spaces where name=='{space_name}'
             if self.space.currentData() is None:
                 self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
                 return
-            space_editor.Space_Editor(self.space.currentText()).exec()
+            space_editor.SpaceEditor(self.space.currentText()).exec()
 
         menu.addAction("bearbeiten", space_edit)
 
@@ -400,7 +400,7 @@ VALUES ('{text}')
 """
                 )
                 db.commit()
-                space_editor.Space_Editor(text).exec()
+                space_editor.SpaceEditor(text).exec()
                 self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
                 for win in app.list_of_task_editors:
                     win.build_space_list()
@@ -450,7 +450,7 @@ DELETE FROM spaces where name=='{space_name}'
             if self.space.currentData() is None:
                 self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
                 return
-            space_editor.Space_Editor(self.space.currentText()).exec()
+            space_editor.SpaceEditor(self.space.currentText()).exec()
 
         menu.addAction("bearbeiten", skill_edit)
         self.button9b.setMenu(menu)

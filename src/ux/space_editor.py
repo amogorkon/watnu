@@ -9,7 +9,7 @@ from src.classes import ACTIVITY
 _translate = QCoreApplication.translate
 
 
-class Space_Editor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
+class SpaceEditor(QtWidgets.QDialog, ui.space_editor.Ui_Dialog):
     def __init__(self, space_name: str):
         super().__init__()
         self.setupUi(self)
