@@ -77,7 +77,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.Space_Mixin):
         # buttonBox.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.reject)
         # self.layout.addWidget(self.buttonBox)
 
-        self.field_filter.setText(app.filter_history[0] if app.filter_history else "")
+        self.field_filter.setText(app.history[0] if app.history else "")
 
         self.task = task
         self.subtasks: set[Task] = set()

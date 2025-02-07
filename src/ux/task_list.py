@@ -126,7 +126,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, Space_Mixin):
         "Timer for polling if something has changed and regenerate the GUI."
         self.gui_timer.start(100)
         self.last_generated = 0
-        self.field_filter.setCompleter(QCompleter(app.filter_history))
+        self.field_filter.setCompleter(QCompleter(app.history))
         self.tasks: list[Task] = []
         self.selected_tasks: set[Task] = selected_tasks or {}
         if self.selected_tasks:
@@ -572,9 +572,9 @@ DELETE FROM spaces where name=='{space_name}'
         def _filter_changed():
             text = self.field_filter.text().casefold()
             self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
-            if len(text) > 3 and text not in app.filter_history and not text.isspace():
-                app.filter_history.appendleft(self.field_filter.text())
-            self.field_filter.completer().setModel(QStringListModel(app.filter_history))
+            if len(text) > 3 and text not in app.history and not text.isspace():
+                app.history.appendleft(self.field_filter.text())
+            self.field_filter.completer().setModel(QStringListModel(app.history))
             self.update()
 
     def _set_as_open(self):
