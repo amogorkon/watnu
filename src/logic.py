@@ -331,33 +331,40 @@ def filter_tasks_by_space(tasks: Iterable[Task], space_id: int) -> Iterable[Task
     )
 
 
-def filter_filter_history_whitespace(history: Iterable[str]):
+def filter_history_whitespace(history: Iterable[str]) -> Iterable[str]:
     for text in history:
         if not text.isspace():
             yield text
 
 
-def filter_filter_history_if_included(history: Iterable[str]):
-    """Remove sub-strings from the history and only keep the longest entries."""
+def filter_history_if_included(history: Iterable[str]) -> Iterable[str]:
+    """Remove sub-strings from the history and only keep the longest entries, ignoring whitespace within strings."""
     seen = set()
     for text in history:
-        if any(text in s for s in seen):
+        stripped_text = text.strip()
+        if any(stripped_text in s for s in seen):
             continue
-        seen.add(text)
+        seen.add(stripped_text)
         yield text
 
 
-@pipes
-def filter_filter_history(history: Iterable[str]):
-    return history >> filter_filter_history_whitespace >> filter_filter_history_if_included
+def ensure_newline(history: Iterable[str]) -> Iterable[str]:
+    """Ensure every item in the history is followed by exactly one newline character."""
+    for text in history:
+        yield text.rstrip("\n") + "\n"
 
 
 @pipes
-def calculate_sum_of_timeslots_for_next_year(constraints: np.array):
+def filter_history(history: Iterable[str]) -> Iterable[str]:
+    return history >> filter_history_whitespace >> filter_history_if_included >> ensure_newline
+
+
+@pipes
+def calculate_sum_of_timeslots_for_next_year(constraints: np.array) -> int:
     """
     Calculate the sum of timeslots allocated for this task for the next 52 weeks (~365 days).
 
     Args:
         constraints (np.array): 5 min timeslots per week
     """
-    sum(constraints) * 52
+    return sum(constraints) * 52
