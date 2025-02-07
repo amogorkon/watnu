@@ -267,12 +267,13 @@ def filter_tasks_by_status(tasks: list[Task], status: int) -> Iterable[Task]:
 
 def filter_tasks_by_constraints(tasks: Iterable[Task], /, *, now: datetime) -> Iterable[Task]:
     for task in tasks:
-        if task.constraints is None:
-            yield task
-        elif task.constraints[
-            now.weekday(),
-            now.time().hour * 6 + now.time().minute // 5,
-        ]:
+        if (
+            task.constraints is None
+            or task.constraints[
+                now.weekday(),
+                now.time().hour * 6 + now.time().minute // 5,
+            ]
+        ):
             yield task
 
 
