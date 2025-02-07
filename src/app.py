@@ -63,10 +63,10 @@ class Application(QtWidgets.QApplication):
                 self[key] = value
                 return value
 
-        path = config.base_path / "filter_history.stay"
+        path = config.config_path.parent / "filter_history.txt"
         path.touch()
         with open(path, "r") as f:
-            self.filter_history = deque(f.readlines(), maxlen=100)
+            self.history = deque(f.readlines(), maxlen=100)
 
         from src.ux import (
             character,
@@ -198,9 +198,9 @@ class Application(QtWidgets.QApplication):
         self.closeAllWindows()
         config.db_write_count += 1
         config.save()
-        from src.logic import filter_filter_history
+        from src.logic import filter_history
 
-        with open(config.base_path / "filter_history.stay", "w") as f:
-            f.write("\n".join(filter_filter_history(self.filter_history)))
+        with open(config.config_path.parent / "filter_history.txt", "w") as f:
+            f.writelines(filter_history(self.history))
 
         sys.exit(0)
