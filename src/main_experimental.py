@@ -134,7 +134,6 @@ config_path = path / "config-experimental.stay"
 config_path.touch()
 config = configuration.read(config_path)
 config.config_path = config_path
-print("using config:", config_path)
 config.base_path = path
 
 app.icon = QIcon(str(config.base_path / "extra/feathericons/watnu1.png"))
