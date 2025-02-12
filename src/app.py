@@ -25,7 +25,7 @@ class Application(QtWidgets.QApplication):
     def __init__(self, argv):
         super().__init__(argv)
         self.startup_time = datetime.now().timestamp()
-        # self.startup_win = startup.Startup()
+        # self.startup_win = startup.Startup()  # TODO
 
     def setUp(
         self,
