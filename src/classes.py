@@ -151,7 +151,28 @@ class Task:
         "notes",
     )
 
+    @staticmethod
+    def clean_orphaned_tasks():
+        """Clean up orphaned task references in the database."""
+        orphaned_tasks = db.execute(
+            """
+            SELECT required_task FROM task_requires_task
+            WHERE required_task NOT IN (SELECT id FROM tasks)
+            UNION
+            SELECT task_of_concern FROM task_requires_task
+            WHERE task_of_concern NOT IN (SELECT id FROM tasks)
+            """
+        ).fetchall()
+
+        for (orphaned_task,) in orphaned_tasks:
+            db.execute(
+                "DELETE FROM task_requires_task WHERE required_task=? OR task_of_concern=?",
+                (orphaned_task, orphaned_task),
+            )
+        db.commit()
+
     def __init__(self, **kwargs):
+        Task.clean_orphaned_tasks()
         for name, value in kwargs.items():
             self.set_(name, value, to_db=False)
 
@@ -543,43 +564,13 @@ WHERE tasks.id = {self.id}
 
     @cached_property
     def subtasks(self) -> set[Task]:
-        """Returns a set of subtasks that are required to complete this task.
-
-        This function queries the database to find all tasks that are required to complete this task.
-        It then checks if each required task is present in the `app.tasks` dictionary. If a required task
-        is not present, it is removed from the list of required tasks and the database is updated accordingly.
-        Finally, a set of `Task` objects corresponding to the required tasks is returned.
-
-        Returns:
-            set[Task]: A set of `Task` objects corresponding to the required tasks.
-
-        Raises:
-            None.
-
-        Args:
-            self: The `Task` object for which to find the subtasks.
-
-        Examples:
-            task = Task()
-            subtasks = task.subtasks()
-        """
+        """Returns a set of subtasks that are required to complete this task."""
         query = db.execute(
             f"""
-    SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
+            SELECT required_task FROM task_requires_task WHERE task_of_concern={self.id}
             """
         )
         ids = [typed_row(row, 0, int) for row in query.fetchall() if row is not None]
-        # TODO: this should not be necessary
-        for id_ in ids:
-            if id_ not in app.tasks:
-                # clean up the database (this should not happen, but it does)
-                db.execute(
-                    "DELETE FROM task_requires_task WHERE required_task=? or task_of_concern=?",
-                    (id_, id_),
-                )
-                ids.remove(id_)
-        db.commit()
-
         return {app.tasks[id_] for id_ in ids}
 
     def set_subtasks(self, tasks: set[Task]) -> None:
