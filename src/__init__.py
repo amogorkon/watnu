@@ -20,7 +20,6 @@ config_path = home_path / "config_experimental.json" if sys.args.experimental el
 config_path.touch(exist_ok=True)
 config: Config = configuration.read(config_path)
 config.config_path = config_path
-print("using config:", config_path)
 
 
 class DB(sqlite3.Connection):
