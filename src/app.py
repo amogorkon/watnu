@@ -25,7 +25,8 @@ class Application(QtWidgets.QApplication):
     def __init__(self, argv):
         super().__init__(argv)
         self.startup_time = datetime.now().timestamp()
-        # self.startup_win = startup.Startup()  # TODO
+        # TODO: Implement startup window
+        # self.startup_win = startup.Startup()
 
     def setUp(
         self,
@@ -88,7 +89,7 @@ class Application(QtWidgets.QApplication):
         "Multiple Editors can be open at the same time."
         self.list_of_task_organizers: list[task_organizer.Organizer] = []
         "Multiple Organizers can be open at the same time."
-        self.list_of_task_checklists: list[task_checklist.Checklist] = []
+        self.list_of_task_checklists: list[task_checklist.CheckList] = []
         self.last_edited_space: str | None = None
         self.win_main = main_window.MainWindow()
 
