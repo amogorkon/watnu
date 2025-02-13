@@ -39,14 +39,14 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
         print(f"{repr(task)} {current_space=} {draft=} {cloning=} {templating=} {as_sup=}")
         self.setupUi(self)
 
-        self._init_fields(task, cloning, templating, as_sup, current_space, draft)
+        self._init_defaults(task, cloning, templating, as_sup, current_space, draft)
+        self.build_space_list(first_item_text="")
         self._init_task_edit(task) if task else self._init_task_new(current_space)
         self._init_ui_elements()
         self._init_signals()
-        self.build_space_list(first_item_text="")
         self._post_init_setup(cloning, templating, as_sup)
 
-    def _init_fields(self, task, cloning, templating, as_sup, current_space, draft):
+    def _init_defaults(self, task, cloning, templating, as_sup, current_space, draft):
         self.task = task
         self.cloning = cloning
         self.templating = templating
@@ -67,7 +67,7 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
         self.setWindowTitle(f"Task {self.task.id}")
         self.original_window_title = self.windowTitle()
         self.statusBar = QtWidgets.QStatusBar()
-        self.page_layout.addWidget(self.statusBar)
+        self.page1.layout().addWidget(self.statusBar)
         self.statusBar.setSizeGripEnabled(False)
         # fira rules!
         self.do.setFont(app.fira_font)
@@ -82,6 +82,8 @@ class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
             statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
             title_status = " - " + ", ".join(statuses) if statuses else ""
             self.setWindowTitle(f"{self.original_window_title}{title_status}")
+
+            self.button(QWizard.WizardButton.FinishButton).setEnabled(len(self.do.toPlainText()))
 
             # disable buttons if task.do is empty
             has_content = bool(self.do.toPlainText())
@@ -217,62 +219,38 @@ DELETE FROM spaces where name==?
 
         self.button9a.setMenu(menu)
 
-        # shortcut for num9 to click button9 (Spaces)
-        self.button9a.setShortcut("9")
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
+        self.button(QWizard.WizardButton.CustomButton2).setText(_translate("Wizard", "löschen"))
 
     def _init_signals(self):
         self.button1.clicked.connect(lambda e: print(e))
+        self.button2.clicked.connect(self._time_constraints_button)
+        self.button3.clicked.connect(lambda: self.organize(True))
+        self.button4.clicked.connect(lambda: None)
+        self.button5.clicked.connect(self.start_task)
+        self.button6.clicked.connect(lambda: None)
+        self.button7.clicked.connect(lambda: choose_deadline.DeadlineChooser(self, self.task).exec())
+        self.button8.clicked.connect(lambda: choose_repeats.RepeatChooser(self, self.task).exec())
 
         url = "https://www.youtube.com/watch?v=kvZEzEOPRfw"
         self.button(QWizard.WizardButton.HelpButton).clicked.connect(lambda: webbrowser.open(url))
-        self.button(QWizard.WizardButton.CustomButton2).setText(_translate("Wizard", "löschen"))
         self.button(QWizard.WizardButton.CustomButton2).clicked.connect(self.delete_task)
-        self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
-        self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
 
-        @self.kind_of.buttonToggled.connect
-        def kind_of_toggled():
-            if self.is_task.isChecked() or self.is_habit.isChecked():
-                self.button8.setEnabled(False)
-            else:
-                self.button8.setEnabled(True)
+        # shortcut for num9 to click button9 (Spaces)
+        self.button9a.setShortcut("9")
 
-        @self.resource_add.clicked.connect
-        def resource_added():
-            text, okPressed = QtWidgets.QInputDialog.getText(
-                self,
-                "Resource hinzufügen",
-                "Welche URL?",
-                QtWidgets.QLineEdit.EchoMode.Normal,
-                "",
-            )
+        self.kind_of.buttonToggled.connect(
+            lambda: self.button8.setEnabled(self.is_task.isChecked() or self.is_habit.isChecked())
+        )
 
-            if okPressed and text != "":
-                self.resources.addItem(text)
-
-        @self.priority.valueChanged.connect
-        def _priority_valueChanged():
-            self.total_priority.setValue(
-                self.task.get_total_priority(
-                    priority=self.priority.value(),
-                    space_priority=get_space_priority(self.space.currentData()),
-                )
-            )
-
-        @self.resource_remove.clicked.connect
-        def _():
-            self.resources.removeItem(self.resources.currentIndex())
-
-        @self.button2.clicked.connect
-        def time_constraints_button():
-            task_finished.Finisher(self.task, direct=True).exec()
-            self.accept()
-            # self.done(12)
+        self.resource_remove.clicked.connect(lambda: self.resources.removeItem(self.resources.currentIndex()))
 
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
             lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
         )
 
+        # Draft Button
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
         def _():
             self.draft = True
@@ -281,15 +259,8 @@ DELETE FROM spaces where name==?
 
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
-        def organize(depends_on):
-            win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
-            self.hide()
-            win.show()
-            win.raise_()
-
-        self.button3.clicked.connect(lambda: organize(True))
-        self.organize_subtasks.clicked.connect(lambda: organize(True))
-        self.organize_supertasks.clicked.connect(lambda: organize(False))
+        self.organize_subtasks.clicked.connect(lambda: self.organize(True))
+        self.organize_supertasks.clicked.connect(lambda: self.organize(False))
         self.choose_constraints_button.clicked.connect(
             lambda: choose_constraints.ConstraintChooser(self, self.task).exec()
         )
@@ -297,69 +268,7 @@ DELETE FROM spaces where name==?
             lambda: choose_deadline.DeadlineChooser(self, self.task).exec()
         )
 
-        @self.button4.clicked.connect
-        def button4():
-            """
-            Placeholder function for button4 action.
-            """
-            pass
-
-        @self.button5.clicked.connect
-        def start_button():
-            self._save()
-            self.done(12)
-            task_running.Running(self.task)
-
-        @self.button6.clicked.connect
-        def _():
-            pass
-
-        @self.button7.clicked.connect
-        def deadline():
-            choose_deadline.DeadlineChooser(self, self.task).exec()
-
-        @self.button8.clicked.connect
-        def repeats_button():
-            choose_repeats.RepeatChooser(self, self.task).exec()
-
-        @self.space.currentIndexChanged.connect
-        def _():
-            space_id = self.space.currentData()
-            if space_id is not None:
-                for (
-                    primary_activity_id,
-                    secondary_activity_id,
-                ) in db.execute(
-                    f"""
-SELECT primary_activity_id, secondary_activity_id
-FROM spaces
-WHERE space_id = {space_id}
-                """
-                ).fetchall():
-                    if primary_activity_id is not None:
-                        self.primary_activity.setCurrentIndex(
-                            self.primary_activity.findData(QVariant(primary_activity_id))
-                        )
-                    else:
-                        self.primary_activity.setCurrentIndex(0)
-                    if secondary_activity_id is not None:
-                        self.secondary_activity.setCurrentIndex(
-                            self.secondary_activity.findData(QVariant(secondary_activity_id))
-                        )
-                    else:
-                        self.secondary_activity.setCurrentIndex(0)
-
-            self.total_priority.setValue(
-                self.task.get_total_priority(
-                    priority=self.priority.value(),
-                    space_priority=get_space_priority(self.space.currentData()),
-                )
-            )
-
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            config.last_edited_space = self.space.currentText() or config.last_edited_space
-            config.save()
+        self.space.currentIndexChanged.connect(self._space_index_changed)
 
     def _init_task_edit(self, task):
         self.deadline = task.deadline
@@ -389,6 +298,7 @@ WHERE space_id = {space_id}
 
     def _init_task_new(self, current_space):
         self.space.setCurrentIndex(self.space.findText(current_space or config.last_edited_space))
+
         query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
         db.commit()
         self.task = Task.from_id(query.lastrowid)
@@ -423,7 +333,7 @@ WHERE space_id = {space_id}
 
         self.level.setCurrentIndex(2)
 
-        self.page.registerField(
+        self.page1.registerField(
             "task*",
             self.do,
             "plainText",
@@ -609,7 +519,6 @@ WHERE space_id = {space_id}
             "embarrassment": self.embarrassment.value(),
             "workload": self.workload(),
         }
-        # assert all(v is not None for v in data.values()), breakpoint()
         breakpoint()
 
         # TODO: space_id == 0 is NOT NULL!!!
@@ -661,7 +570,7 @@ WHERE space_id = {space_id}
         assert self not in app.list_of_task_editors, breakpoint()
         assert self not in app.list_of_windows, breakpoint()
 
-        if self.task.do == "" and self.task.notes == "":  # TODO: this is a hack
+        if self.task.do == "" and self.task.notes == "":
             self.task.really_delete()
 
         if not app.win_what.isHidden():
@@ -734,6 +643,68 @@ WHERE id == ?
         self.reject()
         app.win_what.lets_check_whats_next()
 
+    def resource_added(self):
+        text, okPressed = QtWidgets.QInputDialog.getText(
+            self,
+            "Resource hinzufügen",
+            "Welche URL?",
+            QtWidgets.QLineEdit.EchoMode.Normal,
+            "",
+        )
+
+        if okPressed and text != "":
+            self.resources.addItem(text)
+
+    def organize(self, depends_on):
+        win = task_organizer.Organizer(task=self.task, editor=self, depends_on=depends_on)
+        self.hide()
+        win.show()
+        win.raise_()
+
+    def start_task(self):
+        self._save()
+        self.done(12)
+        task_running.Running(self.task)
+
+    def _space_index_changed(self):
+        space_id = self.space.currentData()
+        if space_id is not None:
+            for (
+                primary_activity_id,
+                secondary_activity_id,
+            ) in db.execute(
+                f"""
+SELECT primary_activity_id, secondary_activity_id
+FROM spaces
+WHERE space_id = {space_id}
+            """
+            ).fetchall():
+                if primary_activity_id is not None:
+                    self.primary_activity.setCurrentIndex(
+                        self.primary_activity.findData(QVariant(primary_activity_id))
+                    )
+                else:
+                    self.primary_activity.setCurrentIndex(0)
+                if secondary_activity_id is not None:
+                    self.secondary_activity.setCurrentIndex(
+                        self.secondary_activity.findData(QVariant(secondary_activity_id))
+                    )
+                else:
+                    self.secondary_activity.setCurrentIndex(0)
+
+        self.total_priority.setValue(
+            self.task.get_total_priority(
+                priority=self.priority.value(),
+                space_priority=get_space_priority(self.space.currentData()),
+            )
+        )
+        config.last_edited_space = self.space.currentText() or config.last_edited_space
+        config.save()
+
+    def _time_constraints_button(self):
+        task_finished.Finisher(self.task, direct=True).exec()
+        self.accept()
+
 
 from src.ux import (  # noqa: E402
     choose_constraints,
@@ -742,3 +713,17 @@ from src.ux import (  # noqa: E402
     task_organizer,
     task_running,
 )
+
+
+# some orphaned code, check if it's needed
+
+#     lambda: self.total_priority.setValue(
+# self.resource_add.clicked.connect(self.resource_add)
+
+# self.priority.valueChanged.connect(
+#             space_priority=get_space_priority(self.space.currentData()),
+#             priority=self.priority.value(),
+#         self.task.get_total_priority(
+#     )
+#         )
+# )
