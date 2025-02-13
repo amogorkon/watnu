@@ -5,20 +5,12 @@ from typing import NamedTuple
 import numpy as np
 from beartype import beartype
 from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 
 import src.ui as ui
-from src import app, config, db
+from src import app, db
 from src.classes import Task, cached_func_static, typed, typed_row
-
-_translate = QCoreApplication.translate
-
-
-def init_():
-    global OK, NOK
-    OK = QIcon(str(config.base_path / "extra/feathericons/check.svg"))
-    NOK = QIcon(str(config.base_path / "extra/feathericons/x.svg"))
+from src.ux.icons import NOK, OK
 
 
 @beartype
@@ -36,7 +28,6 @@ class Statistics(QtWidgets.QDialog, ui.statistics.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        init_()
         from src.ux.task_list import TaskList
 
         self.gui_timer = QtCore.QTimer()
@@ -285,7 +276,7 @@ def get_today_finished():
     ).fetchone()[0]
 
 
-def get_tasks_finished_today() -> list[Task]:
+def get_tasks_finished_today() -> set[Task]:
     now = datetime.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     return {
@@ -297,7 +288,7 @@ def get_tasks_finished_today() -> list[Task]:
     }
 
 
-def get_tasks_finished_yesterday() -> list[Task]:
+def get_tasks_finished_yesterday() -> set[Task]:
     now = datetime.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday_start = today_start - timedelta(days=1)
