@@ -1,7 +1,6 @@
 import urllib
 import webbrowser
 from functools import partial
-from itertools import product
 from pathlib import Path
 from time import time
 
@@ -30,12 +29,14 @@ from src.logic import filter_tasks_by_content
 from src.ux import (
     choose_skills,
     choose_space,
+    skill_editor,
     space_editor,
     task_editor,
     task_finished,
     task_organizer,
     task_running,
 )
+from src.ux.icons import NOK, OK, status_icons
 from src.ux_helpers import (
     SpaceMixin,
     deadline_as_str,
@@ -46,23 +47,11 @@ from src.ux_helpers import (
 _translate = QtCore.QCoreApplication.translate
 
 
-def init_():
-    global OK, NOK, status_icons
-    OK = QIcon(str(config.base_path / "extra/check.svg"))
-    NOK = QIcon(str(config.base_path / "extra/cross.svg"))
-
-    status_icons = {
-        C: QIcon(str(config.base_path / f"extra/status_icons/{''.join(str(int(x)) for x in C)}.svg"))
-        for C in list(product([True, False], repeat=4))
-    }
-
-
 class Checklist(QWidget):
     """Must be a separate class because you can only setWindowFlags on top-level widgets."""
 
     def __init__(self, tasklist, column_names: list[QtWidgets.QCheckBox]):
         super().__init__()
-        init_()
         self.setWindowFlags(Qt.WindowType.Popup | QtCore.Qt.WindowType.FramelessWindowHint)
 
         self.checkboxes = QListWidget(self)
@@ -97,42 +86,32 @@ class Checklist(QWidget):
 
 
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
-    def rearrange_list(self, item):
-        """Callback for easy rearranging of the list, no filtering."""
-        # save the current selected rows in the task_table
-        selection = self.task_table.selectedRanges()
-        # also save the current scroll position and sorting
-        scroll_pos = self.task_table.verticalScrollBar().value()
-        sort_col = self.task_table.horizontalHeader().sortIndicatorSection()
-        sort_order = self.task_table.horizontalHeader().sortIndicatorOrder()
-
-        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
-        self.update()
-        # restore the sorting, scroll position and selection
-        self.task_table.horizontalHeader().setSortIndicator(sort_col, sort_order)
-        self.task_table.verticalScrollBar().setValue(scroll_pos)
-
-        for i in selection:
-            self.task_table.setRangeSelected(i, True)
-
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
         self.setupUi(self)
-
         app.list_of_task_lists.append(self)
         app.list_of_windows.append(self)
 
+        self._init_defaults(selected_tasks)
+        self._init_ui_elements()
+        self._init_signals()
+        self._post_init_setup()
+
+    def _init_defaults(self, selected_tasks):
+        self.selected_tasks: set[Task] = selected_tasks or {}
+        self.last_generated = 0
+        self.tasks: list[Task] = []
+        self.field_filter.setCompleter(QCompleter(app.history))
         self.gui_timer = QTimer()
         "Timer for polling if something has changed and regenerate the GUI."
         self.gui_timer.start(100)
-        self.last_generated = 0
-        self.field_filter.setCompleter(QCompleter(app.history))
-        self.tasks: list[Task] = []
-        self.selected_tasks: set[Task] = selected_tasks or {}
+
+    def _init_ui_elements(self):
         if self.selected_tasks:
+            self.status.setCurrentIndex(5)
             self.setWindowTitle(f"Aufgabenliste ( auf {len(self.selected_tasks)} Aufgaben gefiltert)")
 
-        # displayed columns: tuple[Header, displayed, how to get value]
+            # displayed columns: tuple[Header, displayed, how to get value]
 
         self.columns = (
             ("space", lambda t: str(t.space.name)),
@@ -156,113 +135,14 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
         self.check_status = QtWidgets.QListWidgetItem("status")
         self.check_status.setCheckState(QtCore.Qt.CheckState.Checked)
 
-        self.column_selection.checkboxes.itemChanged.connect(self.rearrange_list)
-
-        def _show_column_selection():
-            self.column_selection.setHidden(False)
-            # mouse cursor position
-            global_pos = QtGui.QCursor.pos()
-            self.column_selection.move(global_pos)
-
-            screen_geometry = app.primaryScreen().geometry()
-            if self.column_selection.frameGeometry().right() > screen_geometry.right():
-                self.column_selection.move(
-                    global_pos.x() - self.column_selection.width(),
-                    global_pos.y(),
-                )
-            if self.column_selection.frameGeometry().bottom() > screen_geometry.bottom():
-                self.column_selection.move(
-                    global_pos.x(),
-                    global_pos.y() - self.column_selection.height(),
-                )
-
         self.task_table.horizontalHeader().setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        self.task_table.horizontalHeader().customContextMenuRequested.connect(_show_column_selection)
-
-        @self.gui_timer.timeout.connect
-        def db_changed_check():
-            if Path(config.db_path).stat().st_mtime > self.last_generated:
-                self.build_task_table()
-
-        def _delete_item():
-            if not (selected := self.get_selected_tasks()):
-                return
-            # if we are dealing with tasks in the bin, we need to ask if we want to delete permanently
-            if self.status.currentIndex() == 4:
-                match QMessageBox.question(
-                    self,
-                    f"Aufgabe{'' if len(selected) == 1 else 'n'} löschen",
-                    "Wirklich - unwiderruflich - löschen?",
-                ):
-                    case QMessageBox.StandardButton.Yes:
-                        for task in selected:
-                            task.really_delete()
-                    case _:
-                        return
-            else:
-                for task in selected:
-                    task.delete()
-
-        QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(_delete_item)
-
-        def toggle_fullscreen():
-            if self.isFullScreen():
-                self.showNormal()
-            else:
-                self.showFullScreen()
-
-        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
-
-        def copy_to_clipboard():
-            if not (selected := self.get_selected_tasks()):
-                return
-            text = turn_tasks_into_text(selected)
-            clipboard = QGuiApplication.clipboard()
-            clipboard.setText(text)
-
-        QShortcut(
-            QKeySequence(
-                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_C),
-            ),
-            self,
-        ).activated.connect(copy_to_clipboard)
-
-        QShortcut(
-            QKeySequence(
-                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
-            ),
-            self,
-        ).activated.connect(lambda: self.field_filter.setFocus())
-
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._showContextMenu)
-
-        self.build_space_list()
-        self._first_space_switch = True
-        if self.selected_tasks:
-            self.space.setCurrentIndex(0)
-        else:
-            self.space.setCurrentIndex(
-                x
-                if (x := self.space.findText(config.last_selected_space or config.last_edited_space)) > -1
-                else 0
-            )
-
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            self.build_task_table()
-            config.last_selected_space = self.space.currentText() or ""
-            config.save()
-
         self._build_button1_menu()
 
-        def create_task():
-            win = task_editor.Editor(current_space=self.space.currentText())
-            win.show()
-
+        # Task edit...
         menu = QtWidgets.QMenu()
-
-        menu.addAction("neu", create_task)
+        menu.addAction("neu", lambda: task_editor.Editor(current_space=self.space.currentText()).show())
         menu.addAction("als Klon", self.clone_as_is)
         menu.addAction("kloniert als Subtask", self.clone_as_sub)
         menu.addAction("kloniert als Supertask", self.clone_as_sup)
@@ -270,189 +150,28 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
 
         # space menu
         menu = QtWidgets.QMenu()
-
-        def _space_set():
-            match (win := choose_space.SpaceSelection()).exec():
-                case QtWidgets.QDialog.DialogCode.Accepted:
-                    space = get_space_id(
-                        win.space.currentText(),
-                        win.space.currentIndex(),
-                    )
-                case _:  # Cancelled
-                    return
-            for task in (selected := self.get_selected_tasks()):
-                task.set_("space_id", space)
-            self.build_task_table()
-            self.statusBar.showMessage(
-                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
-                5000,
-            )
-
-        menu.addAction("für ausgewählte Aufgaben setzen", _space_set)
-
-        def _space_add():
-            text, okPressed = QtWidgets.QInputDialog.getText(
-                self,
-                "Neuer Space",
-                "Name des neuen Space",
-                QtWidgets.QLineEdit.EchoMode.Normal,
-                "",
-            )
-            if okPressed and text != "":
-                db.execute(
-                    f"""
-INSERT OR IGNORE INTO spaces (name)
-VALUES ('{text}')
-"""
-                )
-                db.commit()
-                space_editor.SpaceEditor(text).exec()
-                self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
-                for win in app.list_of_task_editors:
-                    win.build_space_list()
-                for win in app.list_of_task_lists:
-                    win.build_space_list()
-
-        menu.addAction("hinzufügen", _space_add)
-
-        def _space_delete():
-            space_name = self.space.currentText()
-            if [task for task in app.tasks.values() if task.space.name == space_name]:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Sorry..",
-                    f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
-                )
-            else:
-                match QtWidgets.QMessageBox.question(
-                    self,
-                    "Wirklich den ausgewählten Raum löschen?",
-                    f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
-                ):
-                    case QtWidgets.QMessageBox.StandardButton.Yes:
-                        db.execute(
-                            f"""
-DELETE FROM spaces where name=='{space_name}'
-"""
-                        )
-                        db.commit()
-                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
-                        for win in app.list_of_task_lists:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_editors:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_organizers:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-
-        menu.addAction("löschen", _space_delete)
-
-        def space_edit():
-            if self.space.currentData() is None:
-                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
-                return
-            space_editor.SpaceEditor(self.space.currentText()).exec()
-
-        menu.addAction("bearbeiten", space_edit)
-
+        menu.addAction("für ausgewählte Aufgaben setzen", self._space_set)
+        menu.addAction("hinzufügen", self._space_add)
+        menu.addAction("löschen", self._space_delete)
+        menu.addAction(
+            "bearbeiten",
+            lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
+            if self.space.currentData() is None
+            else space_editor.SpaceEditor(self.space.currentText()).exec(),
+        )
         self.button9a.setMenu(menu)
 
         # skill menu
         menu = QtWidgets.QMenu()
-
-        def _skill_set():
-            match (win := choose_skills.Skill_Selection()).exec():
-                case QtWidgets.QDialog.DialogCode.Accepted:
-                    space = get_space_id(
-                        win.space.currentText(),
-                        win.space.currentIndex(),
-                    )
-                case _:  # Cancelled
-                    return
-            for task in (selected := self.get_selected_tasks()):
-                task.set_("space_id", space)
-            self.build_task_table()
-            self.statusBar.showMessage(
-                f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
-                5000,
-            )
-
-        menu.addAction("für ausgewählte Aufgaben setzen", _space_set)
-
-        def _skill_add():
-            text, okPressed = QtWidgets.QInputDialog.getText(
-                self,
-                "Neuer Space",
-                "Name des neuen Space",
-                QtWidgets.QLineEdit.EchoMode.Normal,
-                "",
-            )
-            if okPressed and text != "":
-                db.execute(
-                    f"""
-INSERT OR IGNORE INTO spaces (name)
-VALUES ('{text}')
-"""
-                )
-                db.commit()
-                space_editor.SpaceEditor(text).exec()
-                self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
-                for win in app.list_of_task_editors:
-                    win.build_space_list()
-                for win in app.list_of_task_lists:
-                    win.build_space_list()
-
-        menu.addAction("hinzufügen", _space_add)
-
-        def _skill_delete():
-            space_name = self.space.currentText()
-            if [task for task in app.tasks.values() if task.space.name == space_name]:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Sorry..",
-                    f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
-                )
-            else:
-                match QtWidgets.QMessageBox.question(
-                    self,
-                    "Wirklich den ausgewählten Raum löschen?",
-                    f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
-                ):
-                    case QtWidgets.QMessageBox.StandardButton.Yes:
-                        db.execute(
-                            f"""
-DELETE FROM spaces where name=='{space_name}'
-"""
-                        )
-                        db.commit()
-                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
-                        for win in app.list_of_task_lists:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_editors:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_organizers:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-
-        menu.addAction("löschen", _skill_delete)
-
-        def skill_edit():
-            if self.space.currentData() is None:
-                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
-                return
-            space_editor.SpaceEditor(self.space.currentText()).exec()
-
-        menu.addAction("bearbeiten", skill_edit)
+        menu.addAction("für ausgewählte Aufgaben setzen", self._space_set)
+        menu.addAction("hinzufügen", self._space_add)
+        menu.addAction("löschen", self._skill_delete)
+        menu.addAction(
+            "bearbeiten",
+            lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
+            if self.space.currentData() is None
+            else space_editor.SpaceEditor(self.space.currentText()).exec(),
+        )
         self.button9b.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()
@@ -466,116 +185,316 @@ DELETE FROM spaces where name=='{space_name}'
         self.layout.addWidget(self.statusBar)
         self.update()
 
-        @self.task_table.cellDoubleClicked.connect
-        def _task_list_doubleclicked(row, column):
-            self.edit_selected(self.task_table)
+    def _init_signals(self):
+        self.column_selection.checkboxes.itemChanged.connect(self.rearrange_list)
+        self.task_table.horizontalHeader().customContextMenuRequested.connect(self._show_column_selection)
 
-        @self.button1.clicked.connect
-        def _button1_clicked():
-            """
-            Handle the event when button 1 is clicked.
-            """
-            pass
+        @self.gui_timer.timeout.connect
+        def db_changed_check():
+            if Path(config.db_path).stat().st_mtime > self.last_generated:
+                self.build_task_table()
 
-        def _button2_clicked():
-            selected = self.get_selected_tasks()
-            for task in selected:
-                if task is None:
-                    continue
-                match self.status.currentIndex():
-                    # open
-                    case 0:
-                        task_finished.Finisher(task, direct=True).exec()
-                    # draft
-                    case 1:
-                        task.set_("draft", False)
-                    # inactive
-                    case 2:
-                        task.set_("inactive", False)
-                    # done
-                    case 3:
-                        task.set_("done", False)
-                    # deleted
-                    case 4:
-                        task.set_("deleted", False)
-                    # all
-                    case 5:
-                        pass
+        @self.space.currentIndexChanged.connect
+        def space_switched():
             self.build_task_table()
-            self.task_table.clearSelection()
+            config.last_selected_space = self.space.currentText() or ""
+            config.save()
 
-        QShortcut(QKeySequence(Qt.Key.Key_2), self.task_table).activated.connect(_button2_clicked)
-        self.button2.clicked.connect(_button2_clicked)
+        self.task_table.cellDoubleClicked.connect(lambda x, y: self.edit_selected(self.task_table))
 
-        @self.button3.clicked.connect
-        def _organize_task():
-            self.organize_selected(self.task_table)
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(self._delete_item)
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
+            lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
+        )
+        QShortcut(
+            QKeySequence(
+                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_C),
+            ),
+            self,
+        ).activated.connect(self.copy_to_clipboard)
 
-        @self.button4.clicked.connect
-        def _edit_task():
-            self.edit_selected(self.task_table)
+        QShortcut(
+            QKeySequence(
+                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
+            ),
+            self,
+        ).activated.connect(lambda: self.field_filter.setFocus())
 
-        @self.button5.clicked.connect
-        def _start_task():
-            selected = self.get_selected_tasks()
+        QShortcut(QKeySequence(Qt.Key.Key_2), self.task_table).activated.connect(self._button2_clicked)
 
-            if not selected:
-                return
-            elif len(selected) > 1:
-                self.statusBar.showMessage(
-                    "Es kann jeweils nur eine Aufgabe gestartet werden.",
-                    5000,
-                )
-            else:
-                self.hide()
-                task_running.Running(selected.pop())
+        self.button1.clicked.connect(lambda: None)
+        self.button2.clicked.connect(self._button2_clicked)
+        self.button3.clicked.connect(lambda: self.organize_selected(self.task_table))
+        self.button4.clicked.connect(lambda: self.edit_selected(self.task_table))
 
-        # button8
+        self.ilk.currentIndexChanged.connect(self.build_task_table)
 
-        @self.ilk.currentIndexChanged.connect
-        def ilk_switched():
-            self.build_task_table()
-
-        @self.status.currentIndexChanged.connect
-        def _status_switched():
-            self.button2.setEnabled(True)
-            match self.status.currentIndex():
-                # open
-                case 0:
-                    self.button2.setText("Erledigt!")
-                # draft
-                case 1:
-                    self.button2.setText("kein Entwurf")
-                # inactive
-                case 2:
-                    self.button2.setText("Aktivieren")
-                # done
-                case 3:
-                    self.button2.setText("doch nicht erledigt")
-                # deleted
-                case 4:
-                    self.button2.setText("wiederherstellen")
-                # all
-                case 5:
-                    self.button2.setEnabled(False)
-                    self.button2.setText("")
-            self._build_button1_menu()
-            self.build_task_table()
-
-        if self.selected_tasks:
-            self.status.setCurrentIndex(5)
+        self.status.currentIndexChanged.connect(self._status_switched)
 
         # once we change the filter, we wait for 1 sec before applying the filter,
         # in order to avoid constant refiltering for something the user doesn't actually want.
-        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, _filter_changed))
+        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, self._filter_changed))
 
-        def _filter_changed():
-            text = self.field_filter.text().casefold()
-            self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
-            if len(text) > 3 and text not in app.history and not text.isspace():
-                app.history.appendleft(self.field_filter.text())
-            self.field_filter.completer().setModel(QStringListModel(app.history))
-            self.update()
+    def _post_init_setup(self):
+        self.build_space_list()
+        self._first_space_switch = True
+        if self.selected_tasks:
+            self.space.setCurrentIndex(0)
+        else:
+            self.space.setCurrentIndex(
+                x
+                if (x := self.space.findText(config.last_selected_space or config.last_edited_space)) > -1
+                else 0
+            )
+
+            self.build_task_table()
+            self.task_table.clearSelection()
+
+    def _start_task(self):
+        selected = self.get_selected_tasks()
+
+        if not selected:
+            return
+        elif len(selected) > 1:
+            self.statusBar.showMessage(
+                "Es kann jeweils nur eine Aufgabe gestartet werden.",
+                5000,
+            )
+        else:
+            self.hide()
+            task_running.Running(selected.pop())
+
+    def _button2_clicked(self):
+        selected = self.get_selected_tasks()
+        for task in selected:
+            if task is None:
+                continue
+            match self.status.currentIndex():
+                # open
+                case 0:
+                    task_finished.Finisher(task, direct=True).exec()
+                # draft
+                case 1:
+                    task.set_("draft", False)
+                # inactive
+                case 2:
+                    task.set_("inactive", False)
+                # done
+                case 3:
+                    task.set_("done", False)
+                # deleted
+                case 4:
+                    task.set_("deleted", False)
+                # all
+                case 5:
+                    pass  # sic
+
+    def _skill_set(self):
+        match (win := choose_skills.Skill_Selection()).exec():
+            case QtWidgets.QDialog.DialogCode.Accepted:
+                space = get_space_id(
+                    win.space.currentText(),
+                    win.space.currentIndex(),
+                )
+            case _:  # Cancelled
+                return
+        for task in (selected := self.get_selected_tasks()):
+            task.set_("space_id", space)
+        self.build_task_table()
+        self.statusBar.showMessage(
+            f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
+            5000,
+        )
+
+    def _status_switched(self):
+        self.button2.setEnabled(True)
+        match self.status.currentIndex():
+            # open
+            case 0:
+                self.button2.setText("Erledigt!")
+            # draft
+            case 1:
+                self.button2.setText("kein Entwurf")
+            # inactive
+            case 2:
+                self.button2.setText("Aktivieren")
+            # done
+            case 3:
+                self.button2.setText("doch nicht erledigt")
+            # deleted
+            case 4:
+                self.button2.setText("wiederherstellen")
+            # all
+            case 5:
+                self.button2.setEnabled(False)
+                self.button2.setText("")
+        self._build_button1_menu()
+        self.build_task_table()
+
+    def _space_delete(self):
+        space_name = self.space.currentText()
+        if [task for task in app.tasks.values() if task.space.name == space_name]:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Sorry..",
+                f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
+            )
+        else:
+            match QtWidgets.QMessageBox.question(
+                self,
+                "Wirklich den ausgewählten Raum löschen?",
+                f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
+            ):
+                case QtWidgets.QMessageBox.StandardButton.Yes:
+                    db.execute(
+                        f"""
+DELETE FROM spaces where name=='{space_name}'
+"""
+                    )
+                    db.commit()
+                    self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
+                    for win in (
+                        app.list_of_task_lists + app.list_of_task_editors + app.list_of_task_organizers
+                    ):
+                        win.build_space_list()
+                        if win.space.currentText() == space_name:
+                            win.space.setCurrentIndex(0)
+
+    def _space_set(self):
+        match (win := choose_space.SpaceSelection()).exec():
+            case QtWidgets.QDialog.DialogCode.Accepted:
+                space = get_space_id(
+                    win.space.currentText(),
+                    win.space.currentIndex(),
+                )
+            case _:  # Cancelled
+                return
+        for task in (selected := self.get_selected_tasks()):
+            task.set_("space_id", space)
+        self.build_task_table()
+        self.statusBar.showMessage(
+            f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
+            5000,
+        )
+
+    def _space_add(self):
+        text, okPressed = QtWidgets.QInputDialog.getText(
+            self,
+            "Neuer Space",
+            "Name des neuen Space",
+            QtWidgets.QLineEdit.EchoMode.Normal,
+            "",
+        )
+        if okPressed and text != "":
+            db.execute(
+                f"""
+INSERT OR IGNORE INTO spaces (name)
+VALUES ('{text}')
+"""
+            )
+            db.commit()
+            space_editor.SpaceEditor(text).exec()
+            self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
+            for win in app.list_of_task_editors:
+                win.build_space_list()
+            for win in app.list_of_task_lists:
+                win.build_space_list()
+
+    def _skill_add(self):
+        text, okPressed = QtWidgets.QInputDialog.getText(
+            self,
+            "Neuer Skill",
+            "Name des neuen Skills",
+            QtWidgets.QLineEdit.EchoMode.Normal,
+            "",
+        )
+        if okPressed and text != "":
+            db.execute(
+                f"""
+INSERT OR IGNORE INTO skills (name)
+VALUES ('{text}')
+"""
+            )
+            db.commit()
+            skill_editor.SpaceEditor(text).exec()
+            self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
+            for win in app.list_of_task_editors:
+                win.build_space_list()
+            for win in app.list_of_task_lists:
+                win.build_space_list()
+
+    def copy_to_clipboard(self):
+        if not (selected := self.get_selected_tasks()):
+            return
+        text = turn_tasks_into_text(selected)
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(text)
+
+    def _skill_delete(self):
+        skill_name = self.space.currentText()
+        if [task for task in app.tasks.values() if task.skills.name == skill_name]:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Sorry..",
+                f"Der Raum '{skill_name}' ist nicht leer und kann daher nicht gelöscht werden.",
+            )
+        else:
+            match QtWidgets.QMessageBox.question(
+                self,
+                "Wirklich den ausgewählten Skill löschen?",
+                f"Soll der Skill '{skill_name}' wirklich gelöscht werden?",
+            ):
+                case QtWidgets.QMessageBox.StandardButton.Yes:
+                    db.execute(
+                        f"""
+DELETE FROM skills where name=='{skill_name}'
+"""
+                    )
+                    db.commit()
+                    self.statusBar.showMessage(f"Skill '{skill_name}' gelöscht.", 5000)
+                    for win in (
+                        app.list_of_task_lists + app.list_of_task_editors + app.list_of_task_organizers
+                    ):
+                        win.build_space_list()
+                        if win.skill.currentText() == skill_name:
+                            win.skill.setCurrentIndex(0)
+
+    def _delete_item(self):
+        if not (selected := self.get_selected_tasks()):
+            return
+        # if we are dealing with tasks in the bin, we need to ask if we want to delete permanently
+        if self.status.currentIndex() == 4:
+            match QMessageBox.question(
+                self,
+                f"Aufgabe{'' if len(selected) == 1 else 'n'} löschen",
+                "Wirklich - unwiderruflich - löschen?",
+            ):
+                case QMessageBox.StandardButton.Yes:
+                    for task in selected:
+                        task.really_delete()
+                case _:
+                    return
+        else:
+            for task in selected:
+                task.delete()
+
+    def _show_column_selection(self):
+        self.column_selection.setHidden(False)
+        # mouse cursor position
+        global_pos = QtGui.QCursor.pos()
+        self.column_selection.move(global_pos)
+
+        screen_geometry = app.primaryScreen().geometry()
+        if self.column_selection.frameGeometry().right() > screen_geometry.right():
+            self.column_selection.move(
+                global_pos.x() - self.column_selection.width(),
+                global_pos.y(),
+            )
+        if self.column_selection.frameGeometry().bottom() > screen_geometry.bottom():
+            self.column_selection.move(
+                global_pos.x(),
+                global_pos.y() - self.column_selection.height(),
+            )
 
     def _set_as_open(self):
         selected = [task for task in self.get_selected_tasks() if task.is_open]
@@ -841,6 +760,14 @@ font-size: 12pt;
             if (x := self.task_table.item(row, 0).isSelected()) and x is not None
         }
 
+    def _filter_changed(self):
+        text = self.field_filter.text().casefold()
+        self.arrange_table(list(filter_tasks_by_content(self.tasks, text.casefold())))
+        if len(text) > 3 and text not in app.history and not text.isspace():
+            app.history.appendleft(self.field_filter.text())
+        self.field_filter.completer().setModel(QStringListModel(app.history))
+        self.update()
+
     def share_via_telegram(self, task):
         text = task.do
         url = ""
@@ -853,6 +780,24 @@ font-size: 12pt;
             win.build_task_list()
             win.subtasks.remove
             win.arrange_sub_sup_task_table()
+
+    def rearrange_list(self, item):
+        """Callback for easy rearranging of the list, no filtering."""
+        # save the current selected rows in the task_table
+        selection = self.task_table.selectedRanges()
+        # also save the current scroll position and sorting
+        scroll_pos = self.task_table.verticalScrollBar().value()
+        sort_col = self.task_table.horizontalHeader().sortIndicatorSection()
+        sort_order = self.task_table.horizontalHeader().sortIndicatorOrder()
+
+        self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
+        self.update()
+        # restore the sorting, scroll position and selection
+        self.task_table.horizontalHeader().setSortIndicator(sort_col, sort_order)
+        self.task_table.verticalScrollBar().setValue(scroll_pos)
+
+        for i in selection:
+            self.task_table.setRangeSelected(i, True)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == QtCore.Qt.RightButton:
