@@ -1,7 +1,7 @@
 from pathlib import Path
 from time import time
 
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore
 from PyQt6.QtCore import QKeyCombination, Qt, QTimer
 from PyQt6.QtGui import QFont, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -19,6 +19,7 @@ from src.logic import (
     filter_tasks_by_content,
 )
 from src.ux import task_editor, task_list
+from src.ux.icons import ARROW_DOWN, ARROW_UP, NOK, OK
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -34,6 +35,12 @@ translation = {
     "deleted": _translate("Organizer", "Gelöscht"),
 }
 
+CSS_STYLE = """
+alternate-background-color: #bfffbf;
+background-color: #deffde;
+font-size: 12pt;
+"""
+
 
 class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
     def __init__(
@@ -44,42 +51,22 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         depends_on=True,
     ):
         super().__init__()
-
-        global OK, NOK, ARROW_DOWN, ARROW_UP
-        OK = QIcon(str(config.base_path / "extra/check.svg"))
-        NOK = QIcon(str(config.base_path / "extra/cross.svg"))
-
-        ARROW_DOWN = QIcon()
-        ARROW_DOWN.addPixmap(
-            QtGui.QPixmap("ui\\../extra/arrow-down.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
-        ARROW_UP = QIcon()
-        ARROW_UP.addPixmap(
-            QtGui.QPixmap("ui\\../extra/arrow-up.svg"),
-            QtGui.QIcon.Mode.Normal,
-            QtGui.QIcon.State.Off,
-        )
-
         self.setupUi(self)
+
+        self._init_defaults(task, depends_on, filters, editor)
+        self._init_ui_elements()
+        self._init_signals()
+        self._post_init_setup()
 
         app.list_of_task_organizers.append(self)
         app.list_of_windows.append(self)
 
-        # buttonBox = QDialogButtonBox(self)
-        # buttonBox.setOrientation(Qt.Orientation.Horizontal)
-        # buttonBox.setStandardButtons(
-        #     QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        # )
+        self.update()
 
-        # buttonBox.button(QDialogButtonBox.StandardButton.Ok).clicked.connect(self.accept)
-        # buttonBox.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.reject)
-        # self.layout.addWidget(self.buttonBox)
-
-        self.field_filter.setText(app.history[0] if app.history else "")
-
+    def _init_defaults(self, task, depends_on, filters, editor):
         self.task = task
+        self.filters = filters
+        self.editor = editor
         self.subtasks: set[Task] = set()
         self.supertasks: set[Task] = set()
 
@@ -87,44 +74,27 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
             self.subtasks = self.task.subtasks
             self.supertasks = self.task.supertasks
 
-        self.filters = filters
-        self.editor = editor
-
         self._drag_info: list[Task] = []
-        self.statusBar = QStatusBar(self)
-        self.statusBar.setSizeGripEnabled(False)
-        self.gui_timer = QTimer()
-        "Timer for polling if things changed and regenerate the GUI."
-        self.gui_timer.start(100)
         self.last_generated = 0
-
         self.tasks: list[Task] = []
-        self.check_do = QCheckBox()
-        self.check_do.setChecked(True)
 
         self.depends_on = depends_on
         "Switch for relationship_button."
 
-        if not self.depends_on:
-            self.relationship_button.setText("ist Voraussetzung für")
-            self.relationship_button.setIcon(ARROW_UP)
-        else:
-            self.relationship_button.setText("hängt ab von")
-            self.relationship_button.setIcon(ARROW_DOWN)
+        self.gui_timer = QTimer()
+        "Timer for polling if things changed and regenerate the GUI."
+        self.gui_timer.start(100)
 
-        @self.relationship_button.clicked.connect
-        def relationship_button_clicked():
-            if self.depends_on:
-                self.relationship_button.setText("ist Voraussetzung für")
-                self.relationship_button.setIcon(ARROW_UP)
-            else:
-                self.relationship_button.setText("hängt ab von")
-                self.relationship_button.setIcon(ARROW_DOWN)
-            self.depends_on ^= True
-            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+    def _init_ui_elements(self):
+        self.field_filter.setText(app.history[0] if app.history else "")
+
+        self.statusBar = QStatusBar(self)
+        self.statusBar.setSizeGripEnabled(False)
+
+        self.check_do = QCheckBox()
+        self.check_do.setChecked(True)
 
         # displayed columns: tuple[Header, displayed, how to get value]
-
         self.columns = (
             ("space", self.check_space, lambda t: str(t.space)),
             ("level", self.check_level, lambda t: str(t.level)),
@@ -161,56 +131,27 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
             ("do", self.check_do, lambda t: t.get_short_do()),
         )
 
-        for _, check, _ in self.columns:
+        if not self.depends_on:
+            self.relationship_button.setText("ist Voraussetzung für")
+            self.relationship_button.setIcon(ARROW_UP)
+        else:
+            self.relationship_button.setText("hängt ab von")
+            self.relationship_button.setIcon(ARROW_DOWN)
+
+        menu = QMenu()
+        menu.addAction("Deadline", lambda: None)
+        menu.addAction("Beschränkung", lambda: None)
+        self.button9.setMenu(menu)
+
+        menu = QMenu()
+        menu.addAction("Mermaid", lambda: print_as_mermaid(app.tasks.values()))
+        self.button8.setMenu(menu)
+
+        for _create_new_editor_window, check, _create_new_editor_window in self.columns:
             check.stateChanged.connect(self.rearrange_list)
-
-        @self.gui_timer.timeout.connect
-        def db_changed_check():
-            if Path(config.db_path).stat().st_mtime > self.last_generated:
-                self.build_task_table()
-                if self.task:
-                    self.task = self.task.reload()
-                    self.arrange_concerned_task_table(self.task)
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
-
-        def toggle_fullscreen():
-            if self.isFullScreen():
-                self.showNormal()
-            else:
-                self.showFullScreen()
-
-        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(toggle_fullscreen)
-        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
-
-        QShortcut(
-            QKeySequence(
-                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
-            ),
-            self,
-        ).activated.connect(lambda: self.field_filter.setFocus())
-
-        def remove_item_from_sub_sup():
-            if not (selected := get_selected_tasks(self.sub_sup_tasks_table)):
-                return
-            for task in selected:
-                if self.depends_on:
-                    self.subtasks.remove(task)
-                else:
-                    self.supertasks.remove(task)
-            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
-
-        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.sub_sup_tasks_table).activated.connect(
-            remove_item_from_sub_sup
-        )
 
         self.build_space_list()
         self.space.setCurrentIndex(x if (x := self.space.findText(config.last_selected_space)) > -1 else 0)
-
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            self.build_task_table()
-            config.last_selected_space = self.space.currentText() or ""
-            config.save()
 
         item = QTableWidgetItem()
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
@@ -226,13 +167,11 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         self.arrange_concerned_task_table(self.task)
         self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
 
+    def _init_drag_and_drop(self):
         def startDrag(action):
-            self._drag_info = []
-            for task in get_selected_tasks(self.tasks_table):
-                self._drag_info.append(task)
+            self._drag_info = get_selected_tasks(self.tasks_table)
             orig_drag(action)
 
-        # better solution?
         orig_drag = self.tasks_table.startDrag
         self.tasks_table.startDrag = startDrag
 
@@ -269,110 +208,101 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         orig_drop = self.sub_sup_tasks_table.dropEvent
         self.sub_sup_tasks_table.dropEvent = dropEvent
 
-        self.update()
-
-        @self.tasks_table.cellDoubleClicked.connect
-        def doubleclicked_tasks_table(row, column):
-            self.organize_selected(self.tasks_table)
-
-        @self.sub_sup_tasks_table.cellDoubleClicked.connect
-        def doubleclicked_sub_sup_table(row, column):
-            self.organize_selected(self.sub_sup_tasks_table)
-
-        @self.concerned_task_table.cellDoubleClicked.connect
-        def doubleclicked_concerned_task(row, column):
-            self.organize_selected(self.concerned_task_table)
-
-        @self.button1.clicked.connect
-        def _():
-            pass
-
-        @self.button2.clicked.connect
-        def _():
-            pass
-
-        @self.button3.clicked.connect
-        def _():
-            selected = get_selected_tasks(self.tasks_table)
-            for task in selected:
-                for win in app.list_of_task_organizers:
-                    if win.task == task:
-                        win.raise_()
-                        break
-                else:
-                    win = Organizer(task)
-                    win.show()
-
-        @self.button4.clicked.connect
-        def _():
-            selected = get_selected_tasks(self.tasks_table)
-            for task in selected:
-                for win in app.list_of_task_editors:
-                    if win.task == task:
-                        win.raise_()
-                        break
-                else:
-                    win = task_editor.Editor(task)
-                    app.list_of_task_editors.append(win)
-                    app.list_of_windows.append(win)
-                    win.show()
-
-        @self.button5.clicked.connect
-        def _():
-            pass
-
-        @self.button6.clicked.connect
-        def _():
-            win = task_editor.Editor()
-            app.list_of_windows.append(win)
-            app.list_of_task_editors.append(win)
-            win.show()
-
-        @self.button7.clicked.connect
-        def _():
-            pass
-
-        menu = QMenu()
-
-        def print_as_mermaid():
-            print("mermaid")
-            print("graph LR")
-            for task in app.tasks.values():
-                for supertask in task.supertasks:
-                    print(
-                        f"{supertask.id}:{supertask.get_short_do(15)} --> {task.id}:{task.get_short_do(15)}"
-                    )
-
-        menu.addAction("Mermaid", print_as_mermaid)
-
-        self.button8.setMenu(menu)
-
-        @self.button8.clicked.connect
-        def _():
-            pass
-
-        menu = QMenu()
-
-        menu.addAction("Deadline", lambda: None)
-        menu.addAction("Beschränkung", lambda: None)
-
-        self.button9.setMenu(menu)
-
-        @self.button9.clicked.connect
-        def _():
-            pass
-
-        @self.ilk.currentIndexChanged.connect
-        def ilk_switched():
+    def db_changed_check(self):
+        if Path(config.db_path).stat().st_mtime > self.last_generated:
             self.build_task_table()
+            if self.task:
+                self.task = self.task.reload()
+                self.arrange_concerned_task_table(self.task)
+            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
 
-        @self.status.currentIndexChanged.connect
-        def status_switched():
+    def relationship_button_clicked(self):
+        if self.depends_on:
+            self.relationship_button.setText("ist Voraussetzung für")
+            self.relationship_button.setIcon(ARROW_UP)
+        else:
+            self.relationship_button.setText("hängt ab von")
+            self.relationship_button.setIcon(ARROW_DOWN)
+        self.depends_on ^= True
+        self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+
+    def _create_new_editor_window(self):
+        selected = get_selected_tasks(self.tasks_table)
+        for task in selected:
+            for win in app.list_of_task_organizers:
+                if win.task == task:
+                    win.raise_()
+                    break
+            else:
+                win = Organizer(task)
+                win.show()
+
+    def _create_new_editor_window(self):
+        selected = get_selected_tasks(self.tasks_table)
+        for task in selected:
+            for win in app.list_of_task_editors:
+                if win.task == task:
+                    win.raise_()
+                    break
+            else:
+                win = task_editor.Editor(task)
+                app.list_of_task_editors.append(win)
+                app.list_of_windows.append(win)
+                win.show()
+
+    def _open_new_editor(self):
+        win = task_editor.Editor()
+        app.list_of_windows.append(win)
+        app.list_of_task_editors.append(win)
+        win.show()
+
+    def _init_signals(self):
+        self.gui_timer.timeout.connect(self.db_changed_check)
+        self.relationship_button.clicked.connect(self.relationship_button_clicked)
+
+        self.button1.clicked.connect(lambda: None)
+        self.button2.clicked.connect(lambda: None)
+        self.button3.clicked.connect(self._create_new_editor_window)
+        self.button4.clicked.connect(self._create_new_editor_window)
+        self.button6.clicked.connect(self._open_new_editor)
+        self.button5.clicked.connect(lambda: None)
+        self.button7.clicked.connect(lambda: None)
+        self.button8.clicked.connect(lambda: None)
+        self.button9.clicked.connect(lambda: None)
+
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.sub_sup_tasks_table).activated.connect(
+            self.remove_item_from_sub_sup
+        )
+
+        @self.space.currentIndexChanged.connect
+        def space_switched():
             self.build_task_table()
+            config.last_selected_space = self.space.currentText() or ""
+            config.save()
 
-        # once we change the filter, we wait for 1 sec before applying the filter,
-        # in order to avoid constant refiltering for something the user doesn't actually want.
-        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
+        self.ilk.currentIndexChanged.connect(self.build_task_table)
+
+        QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
+            lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
+        )
+        QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
+
+        QShortcut(
+            QKeySequence(
+                QKeyCombination(Qt.Modifier.CTRL, Qt.Key.Key_F),
+            ),
+            self,
+        ).activated.connect(lambda: self.field_filter.setFocus())
+
+        self.tasks_table.cellDoubleClicked.connect(lambda: self.organize_selected(self.tasks_table))
+
+        self.sub_sup_tasks_table.cellDoubleClicked.connect(
+            lambda: self.organize_selected(self.sub_sup_tasks_table)
+        )
+
+        self.concerned_task_table.cellDoubleClicked.connect(
+            lambda: self.organize_selected(self.concerned_task_table)
+        )
 
         def filter_changed():
             self.arrange_table(
@@ -384,6 +314,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
                 )
             )
             self.update()
+
+        self.status.currentIndexChanged.connect(self.build_task_table)
+        # once we change the filter, we wait for 1 sec before applying the filter,
+        # in order to avoid constant refiltering for something the user doesn't actually want.
+        self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, filter_changed))
+
+        self._init_drag_and_drop()
 
     def get_selected_tasks(self, widget) -> set[Task]:
         return {
@@ -406,15 +343,19 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         self.arrange_table(list(filter_tasks_by_content(self.tasks, self.field_filter.text().casefold())))
         self.update()
 
+    def remove_item_from_sub_sup(self):
+        if not (selected := get_selected_tasks(self.sub_sup_tasks_table)):
+            return
+        for task in selected:
+            if self.depends_on:
+                self.subtasks.remove(task)
+            else:
+                self.supertasks.remove(task)
+        self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+
     def arrange_table(self, tasks: list[Task]):
         """Arrange the tasks in the list for display."""
-        self.tasks_table.setStyleSheet(
-            """
-alternate-background-color: #bfffbf;
-background-color: #deffde;
-font-size: 12pt;
-        """
-        )
+        self.tasks_table.setStyleSheet(CSS_STYLE)
         self.tasks_table.ensurePolished()
         self.tasks_table.setSortingEnabled(False)
         self.tasks_table.setRowCount(len(tasks))
@@ -483,13 +424,7 @@ font-size: 12pt;
 
     def arrange_sub_sup_task_table(self, tasks: set[Task]):
         """Arrange the tasks in the list for display."""
-        self.sub_sup_tasks_table.setStyleSheet(
-            """
-alternate-background-color: #bfffbf;
-background-color: #deffde;
-font-size: 12pt;
-        """
-        )
+        self.sub_sup_tasks_table.setStyleSheet(CSS_STYLE)
         self.sub_sup_tasks_table.ensurePolished()
         self.sub_sup_tasks_table.setSortingEnabled(False)
         self.sub_sup_tasks_table.setRowCount(len(tasks))
@@ -534,13 +469,7 @@ font-size: 12pt;
 
     def arrange_concerned_task_table(self, task: Task | None):
         """Arrange the concerned task for display."""
-        self.concerned_task_table.setStyleSheet(
-            """
-alternate-background-color: #bfffbf;
-background-color: #deffde;
-font-size: 12pt;
-        """
-        )
+        self.concerned_task_table.setStyleSheet(CSS_STYLE)
         self.concerned_task_table.ensurePolished()
         if not task:
             return
@@ -617,3 +546,11 @@ def save_task(task: Task, subtasks: set[Task], supertasks: set[Task]):
         return
     task.set_subtasks(subtasks)
     task.set_supertasks(supertasks)
+
+
+def print_as_mermaid(tasks):
+    print("mermaid")
+    print("graph LR")
+    for task in tasks:
+        for supertask in task.supertasks:
+            print(f"{supertask.id}:{supertask.get_short_do(15)} --> {task.id}:{task.get_short_do(15)}")
