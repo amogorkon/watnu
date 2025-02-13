@@ -1,5 +1,5 @@
 nltk==3.9.1
 python-Levenshtein==0.26.1
-numpy==1.21.2
+numpy==1.22.0
 pyqtgraph
 attrs
