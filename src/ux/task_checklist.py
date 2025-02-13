@@ -1,17 +1,16 @@
-from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtWidgets import QDialog
 
 import src.ui as ui
 from src import app
 
-_translate = QtCore.QCoreApplication.translate
 
-
-class CheckList(QtWidgets.QDialog, ui.task_checklist.Ui_Dialog):
+class CheckList(QDialog, ui.task_checklist.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         app.list_of_task_checklists.append(self)
         app.list_of_windows.append(self)
+        self.list_of_task_checklists = app.list_of_task_checklists
 
     def reject(self):
         """
