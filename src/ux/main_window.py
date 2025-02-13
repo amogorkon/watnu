@@ -4,7 +4,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QPushButton
 from yaml import dump, load
 
@@ -20,8 +19,6 @@ from src.ux import (
     task_list,
     task_organizer,
 )
-
-_translate = QCoreApplication.translate
 
 
 def set_icon(button, icon_path):
@@ -51,82 +48,64 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
     ):
         super().__init__()
         self.setupUi(self)
-        self.gui_timer = QtCore.QTimer()
-        self.statusBar.setSizeGripEnabled(False)
-        self.num_buttons = [
-            self.button1,
-            self.button2,
-            self.button3,
-            self.button4,
-            self.button5,
-            self.button6,
-            self.button7,
-            self.button8,
-            self.button9,
-        ]
 
-        self.set_statistics_icon()
-        # self.set_icon(self.button1, "statistics.svg")
-        set_icon(self.button3, "extra/organisation.svg")
+        self._init_defaults()
+        self._init_ui_elements()
+        self._init_signals()
+        self._post_init_setup()
+
+        self.gui_timer = QtCore.QTimer()
+
+        self.gui_timer.start(100)
+
+    def _init_defaults(self):
+        self.killed = False
+
+    def _init_ui_elements(self):
+        self.set_statistics_icon()  # self.set_icon(self.button1, "statistics.svg")
         set_icon(self.button2, "extra/feathericons/inventory.svg")
+        set_icon(self.button3, "extra/organisation.svg")
         set_icon(self.button4, "extra/feathericons/list.svg")
         set_icon(self.button5, "extra/feathericons/play-circle.svg")
         set_icon(self.button6, "extra/feathericons/file-plus.svg")
-        self.movie = QtGui.QMovie(str(config.base_path / "extra/600-cell-unscreen.gif"))
-        # self.movie.frameChanged.connect(self.set_icon)
-        self.movie.start()
         # set_icon(self.button7, "extra/600-cell.gif")
+        self.movie = QtGui.QMovie(str(config.base_path / "extra/600-cell-unscreen.gif"))
+        self.movie.start()
         self.button7.setIconSize(QtCore.QSize(30, 30))
         set_icon(self.button8, "extra/checklist.svg")
         set_icon(self.button9, "extra/superhero - attribute to Freepik.svg")
 
-        self.killed = False
+        self.statusBar.setSizeGripEnabled(False)
 
+    def _init_signals(self):
         # catch ctrl+c and register it as a quit
         signal.signal(signal.SIGINT, self.quit)
 
-        self.gui_timer.start(100)
+        self.gui_timer.timeout.connect(lambda: self.button7.setIcon(QtGui.QIcon(self.movie.currentPixmap())))
 
-        @self.gui_timer.timeout.connect
-        def _():
-            self.button7.setIcon(QtGui.QIcon(self.movie.currentPixmap()))
+        self.about.triggered.connect(lambda: about.About().exec())
+        self.actionReadme.triggered.connect(
+            lambda: webbrowser.open("https://github.com/amogorkon/watnu/blob/main/README.md")
+        )
 
-        @self.about.triggered.connect
-        def _():
-            about.About().exec()
+        self.attributions.triggered.connect(lambda: attributions.Attributions().exec())
 
-        @self.actionReadme.triggered.connect
-        def _():
-            webbrowser.open("https://github.com/amogorkon/watnu/blob/main/README.md")
+        self.button7.clicked.connect(lambda: webbrowser.open("https://chat.deepseek.com/"))
 
-        @self.attributions.triggered.connect
-        def _():
-            attributions.Attributions().exec()
+        self.button8.clicked.connect(
+            lambda: [win.show for win in task_checklist.CheckList().list_of_task_checklists]
+        )
 
-        @self.button7.clicked.connect
-        def tetraplex():
-            webbrowser.open("https://chat.deepseek.com/")
-
-        @self.button8.clicked.connect
-        def checklist():
-            win = task_checklist.CheckList()
-            for win in app.list_of_task_checklists:
-                win.show()
-
-        @self.button9.clicked.connect
-        def character():
-            app.win_character.show()
+        self.button9.clicked.connect(app.win_character.show)
 
         @self.button4.clicked.connect
         def list_tasks():
-            """Task List."""
             win = task_list.TaskList()
             for win in app.list_of_task_lists:
                 win.show()
 
         @self.button5.clicked.connect
         def whatnow():
-            """Watnu?!"""
             self.statusBar.clearMessage()
             self.repaint()
             app.win_what.lets_check_whats_next()
@@ -135,7 +114,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         @self.button6.clicked.connect
         def add_new_task():
-            """Add new Task."""
             win = task_editor.Editor()
             for win in app.list_of_task_editors:
                 win.show()
@@ -150,80 +128,75 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             for win in app.list_of_task_organizers:
                 win.show()
 
-        @self.button2.clicked.connect
-        def inventory():
-            app.win_inventory.show()
+        self.button2.clicked.connect(app.win_inventory.show)
 
-        @self.actionSupportMe.triggered.connect
-        def actionSupportMe_triggered():
-            webbrowser.open("paypal.me/amogorkon")
+        self.actionSupportMe.triggered.connect(lambda: webbrowser.open("paypal.me/amogorkon"))
 
-        @self.actionIssue_Tracker.triggered.connect
-        def actionIssueTracker():
-            webbrowser.open("https://github.com/amogorkon/watnu/issues")
+        self.actionIssue_Tracker.triggered.connect(
+            lambda: webbrowser.open("https://github.com/amogorkon/watnu/issues")
+        )
 
-        @self.actionContact.triggered.connect
-        def actionContact():
-            webbrowser.open("https://calendly.com/d/2fm-27w-njm/office-hours")
+        self.actionContact.triggered.connect(
+            lambda: webbrowser.open("https://calendly.com/tetraplex/pomodoro")
+        )
 
-        @self.actionSettings.triggered.connect
-        def actionSettings():
-            app.win_settings.show()
+        self.actionSettings.triggered.connect(app.win_settings.show)
+        self.actionExport.triggered.connect(self._action_export)
 
-        @self.actionExport.triggered.connect
-        def actionExport():
-            win = QtWidgets.QDialog()
-            options = QtWidgets.QFileDialog().options()
-            filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-                win,
-                "Bitte wähle eine .todo Datei zum Exportieren",
-                "",
-                "Todo Files (*.todo);;All Files (*)",
-                options=options,
-            )
-            if filename:
-                path = Path(filename)
-                with open(path, "w") as f:
-                    f.writelines(dump(dict(task) for task in app.tasks.values()))
+    def _action_export(self):
+        win = QtWidgets.QDialog()
+        options = QtWidgets.QFileDialog().options()
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            win,
+            "Bitte wähle eine .todo Datei zum Exportieren",
+            "",
+            "Todo Files (*.todo);;All Files (*)",
+            options=options,
+        )
+        if filename:
+            path = Path(filename)
+            with open(path, "w") as f:
+                f.writelines(dump(dict(task) for task in app.tasks.values()))
 
-        @self.actionImport.triggered.connect
-        def actionImport():
-            win = QtWidgets.QDialog()
-            options = QtWidgets.QFileDialog().options()
-            filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-                win,
-                "Bitte wähle eine .todo Datei zum Importieren",
-                "",
-                "Todo Files (*.todo);;All Files (*)",
-                options=options,
-            )
-            if filename:
-                path = Path(filename)
-                with open(path) as f:
-                    for d in load(f):
-                        d = defaultdict(lambda: None, **d)
-                        d["space"] = path.stem
-                        if not d["do"]:
-                            q(f"Tried to load a task with nothing to 'do': {d.items()}.")
-                            continue
+        self.actionImport.triggered.connect(self._action_import)
 
-                        db.execute(
-                            f"""
+    def _action_import(self):
+        win = QtWidgets.QDialog()
+        options = QtWidgets.QFileDialog().options()
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            win,
+            "Bitte wähle eine .todo Datei zum Importieren",
+            "",
+            "Todo Files (*.todo);;All Files (*)",
+            options=options,
+        )
+        if filename:
+            path = Path(filename)
+            with open(path) as f:
+                for d in load(f):
+                    d = defaultdict(lambda: None, **d)
+                    d["space"] = path.stem
+                    if not d["do"]:
+                        q(f"Tried to load a task with nothing to 'do': {d.items()}.")
+                        continue
+
+                    db.execute(
+                        f"""
 INSERT OR IGNORE INTO spaces (name)
 VALUES ('{d["space"]}')
 """
-                        )
+                    )
 
-                        db.execute(
-                            f"""
+                    db.execute(
+                        f"""
 INSERT INTO tasks (do, space_id, done)
 VALUES ('{d["do"]}',
 (SELECT space_id from spaces WHERE name='{d["space"]}'),
 {int(bool(d["done"]))}
 )
 """
-                        )
-                        db.commit()
+                    )
+                    db.commit()
 
     def closeEvent(self, event):
         if self.killed:
@@ -272,6 +245,15 @@ VALUES ('{d["do"]}',
                 set_icon(self.button1, "extra/trending-up-more.svg")
 
     def unlock(self):
-        for button in self.num_buttons:
-            button.setEnabled(True)
+        for button in [
+            self.button1,
+            self.button2,
+            self.button3,
+            self.button4,
+            self.button5,
+            self.button6,
+            self.button7,
+            self.button8,
+            self.button9,
+        ]:
             button.setEnabled(True)
