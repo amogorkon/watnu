@@ -1,6 +1,9 @@
+import json
 from datetime import datetime
+from typing import Iterable
 
 from PyQt6.QtCore import QSize, QVariant
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QComboBox
 
 from src import db
@@ -114,3 +117,12 @@ def filter_tasks(widget, tasks: list[Task]) -> list[Task]:
         >> filter_tasks_by_ilk(widget.ilk.currentIndex())
         >> list
     )
+
+
+def to_clipboard(text: str) -> None:
+    clipboard = QGuiApplication.clipboard()
+    clipboard.setText(text)
+
+
+def tasks_to_json(tasks: Iterable[Task]) -> str:
+    return json.dumps([task.to_dict() for task in tasks if task is not None], indent=2)
