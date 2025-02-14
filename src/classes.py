@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unicodedata
 from collections import namedtuple
 from datetime import datetime
@@ -7,6 +8,7 @@ from enum import Enum
 from typing import Any, Generator, NamedTuple
 
 import numpy as np
+from beartype import beartype
 
 from src import app, config, db
 from src.helpers import (
@@ -76,6 +78,7 @@ class Space:
         "secondary_activity_id",
     )
 
+    @beartype
     def __init__(self, **kwargs) -> None:
         self.space_id = None
         self.name = None
@@ -87,8 +90,14 @@ class Space:
             object.__setattr__(self, k, v)
 
     @classmethod
+    @beartype
     def from_id(cls, ID: int) -> Space | None:
         return retrieve_space_by_id(ID)
+
+    @classmethod
+    @beartype
+    def from_json(cls, json_str: str) -> Space:
+        return cls(**json.loads(json_str))
 
     @cached_property
     def primary_activity(self) -> ACTIVITY:
@@ -112,6 +121,7 @@ class Space:
 
 
 @cached_getter
+@beartype
 def retrieve_space_by_id(ID: int | None, db=db) -> Space | None:
     """Retrieve a space from the database by its ID.
 
@@ -171,12 +181,14 @@ class Task:
             )
         db.commit()
 
+    @beartype
     def __init__(self, **kwargs):
         Task.clean_orphaned_tasks()
         for name, value in kwargs.items():
             self.set_(name, value, to_db=False)
 
     @cached_property
+    @beartype
     def repeats(self) -> Every[EVERY, int] | None:
         """
         Return the repeats for this task.
@@ -213,6 +225,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @cached_property
+    @beartype
     def constraints(self) -> np.ndarray | None:
         return (
             np.fromiter((int(x) for x in typed_row(query, 0, str)), int).reshape(7, 288)
@@ -228,31 +241,37 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @cached_property
+    @beartype
     def space_priority(self) -> float:
         return self.space.priority if self.space else 0
 
     @cached_property
+    @beartype
     def space(self) -> Space | None:
         return retrieve_space_by_id(self.space_id)
 
     @cached_property
+    @beartype
     def time_spent(self) -> int:
         """Return the time spent on this task in seconds from all sessions."""
         query = db.execute(f"""SELECT start, stop, pause_time FROM sessions WHERE task_id={self.id}""")
         return sum((stop - start) - pause_time for start, stop, pause_time in query.fetchall())
 
     @cached_property
+    @beartype
     def printable_percentage(self) -> str:
         """Return the percentage of the task that is done as a printable str."""
         return f"{(self.time_spent / self.workload) * 100:.2}%" if self.workload else ""
 
     @cached_property
+    @beartype
     def deadline(self) -> float:
         return min([task.deadline for task in self.doable_supertasks] + [self.own_deadline]) - (
             self.workload or 0
         )
 
     @cached_getter
+    @beartype
     def is_overdue(self, /, *, now: datetime) -> bool:
         return (
             self.own_deadline != float("inf")
@@ -263,7 +282,13 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
             and not self.inactive
         )
 
+    @cached_getter
+    @beartype
+    def is_open(self) -> bool:
+        return not self.done and not self.deleted and not self.draft and not self.inactive
+
     @cached_property
+    @beartype
     def printable_deadline(self) -> str:
         return (
             f"{datetime.fromtimestamp(self.deadline).strftime('%d/%m/%Y')}"
@@ -272,6 +297,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         )
 
     @cached_property
+    @beartype
     def own_deadline(self) -> float:
         query = db.execute(
             f"""
@@ -281,6 +307,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         return typed_row(query.fetchone(), 0, float, default=float("inf"))
 
     @cached_property
+    @beartype
     def time_buffer(self) -> float:
         """Calculate how much time is left for a task to complete.
         Considering deadline and workload and constraints."""
@@ -302,11 +329,13 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         return np.sum(timeslots_until_deadline[:days_until_deadline]) * 5 - self.workload
 
     @cached_property
+    @beartype
     def workload(self) -> int:
         """Workload in minutes."""
         query = db.execute("SELECT workload FROM tasks WHERE id=?", (self.id,))
         return typed_row(query.fetchone(), 0, int, default=0)
 
+    @beartype
     def set_deadline(self, deadline: float) -> None:
         """Sets the deadline for a task.
 
@@ -353,6 +382,7 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
         db.commit()
 
     @cached_property
+    @beartype
     def supertasks(self) -> set[Task]:
         query = db.execute(
             f"""
@@ -362,6 +392,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall()}
 
     @cached_property
+    @beartype
     def skill_ids(self) -> list[int]:
         query = db.execute(
             f"""
@@ -370,20 +401,24 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         )
         return [Skill(typed_row(skill_id, 0, int)) for skill_id in query.fetchall()]
 
+    @beartype
     def set_adjust_time_spent(self, value: int) -> None:
         self.set_("adjust_time_spent", value)
 
     @cached_property
+    @beartype
     def doable_supertasks(self) -> set[Task]:
         return {
             task for task in self.supertasks if not (task.done or task.deleted or task.inactive or task.draft)
         }
 
     @cached_property
+    @beartype
     def total_time_spent(self) -> int:
         """Return the time spent on this task in seconds, including adjustment."""
         return self.adjust_time_spent + self.time_spent
 
+    @beartype
     def get_total_priority(self, priority: float = None, space_priority: float = None) -> float:
         """
         Calculates the total priority of the task, taking into account its own priority, space priority,
@@ -420,11 +455,13 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
     @cached_property
+    @beartype
     def is_doable(self) -> bool:
         self_doable = not self.deleted and not self.draft and not self.inactive and not self.done
         # what about supertasks?
         return self_doable and not any(s.is_doable for s in self.subtasks)
 
+    @beartype
     def get_short_do(self, max_len: int = None) -> str:
         """
         Get the first line of the do, or the first line truncated to max_len.
@@ -445,20 +482,15 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         lines = self.do.split("\n")
         if not max_len:
             return lines[0] + ("" if len(lines) == 1 else " […]")
-        # first_line_parts = lines[0].split()
-        # line = (
-        #     f"{first_line_parts[0]} "
-        #     + disemvowel(" ".join(first_line_parts[1:-1]))
-        #     + " "
-        #     + first_line_parts[-1]
-        # )
         line = lines[0][:max_len]
 
         return line + ("" if len(lines) == 1 else " […]")
 
+    @beartype
     def delete(self) -> None:
         self.set_("deleted", True)
 
+    @beartype
     def really_delete(self) -> None:
         db.execute(
             f"""
@@ -469,6 +501,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         del app.tasks[self.id]
 
     @cached_property
+    @beartype
     def resources(self) -> list[str]:
         return [
             (typed(url, str), typed(resource_id, int))
@@ -486,11 +519,13 @@ WHERE tasks.id = {self.id}
         ]
 
     @cached_property
+    @beartype
     def level(self) -> str:
         actual_level = max(t.level_id for t in self.doable_supertasks | {self})
         return get_level_name(actual_level)
 
     @cached_property
+    @beartype
     def last_finished(self) -> int:
         query = db.execute(
             f"""
@@ -505,6 +540,7 @@ WHERE tasks.id = {self.id}
         return typed(query.fetchone(), 0, int, default=0)
 
     @cached_property
+    @beartype
     def primary_activity(self) -> ACTIVITY:
         """
         Get the primary activity for the task and default to the activity of the space if not set.
@@ -528,6 +564,7 @@ WHERE tasks.id = {self.id}
         return space_activity if self.space else own_activity
 
     @cached_property
+    @beartype
     def secondary_activity(self) -> ACTIVITY:
         """Get the secondary activity for the task and default to the activity of the space if not set."""
         if own_activity := db.execute(
@@ -539,6 +576,7 @@ WHERE tasks.id = {self.id}
             return self.space.secondary_activity if self.space else ACTIVITY.unspecified
 
     @cached_property
+    @beartype
     def primary_color(self) -> str:
         match self.primary_activity:
             case ACTIVITY.MIND:
@@ -551,6 +589,7 @@ WHERE tasks.id = {self.id}
                 return "black"
 
     @cached_property
+    @beartype
     def secondary_color(self) -> str:
         match self.secondary_activity:
             case ACTIVITY.MIND:
@@ -563,6 +602,7 @@ WHERE tasks.id = {self.id}
                 return "black"
 
     @cached_property
+    @beartype
     def subtasks(self) -> set[Task]:
         """Returns a set of subtasks that are required to complete this task."""
         query = db.execute(
@@ -573,6 +613,7 @@ WHERE tasks.id = {self.id}
         ids = [typed_row(row, 0, int) for row in query.fetchall() if row is not None]
         return {app.tasks[id_] for id_ in ids}
 
+    @beartype
     def set_subtasks(self, tasks: set[Task]) -> None:
         db.executemany(
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
@@ -580,6 +621,7 @@ WHERE tasks.id = {self.id}
         )
         db.commit()
 
+    @beartype
     def set_supertasks(self, tasks: set[Task]) -> None:
         db.executemany(
             "INSERT INTO task_requires_task (task_of_concern, required_task) VALUES (?, ?)",
@@ -587,13 +629,15 @@ WHERE tasks.id = {self.id}
         )
         db.commit()
 
+    @beartype
     def set_primary_activity(self, activity: ACTIVITY) -> None:
         self.set_("primary_activity_id", activity.value)
 
+    @beartype
     def set_last_checked(self, time_: float) -> None:
         self.set_("last_checked", time_)
 
-    def set_(self, name: str, value: Any, to_db: bool = True) -> Any:
+    def set_[T: Any](self, name: str, value: T, to_db: bool = True) -> T:
         if to_db:
             db.execute(
                 f"UPDATE tasks SET {name}=? WHERE id={self.id}",
@@ -605,16 +649,31 @@ WHERE tasks.id = {self.id}
         return value
 
     def __str__(self) -> str:
-        return f"Task({self.id}, ...)"
+        return f"""
+# {self.space}
+## Task({self.id})
+- {self.do}
+- {self.get_status_text()}
+- {self.level}
+- {self.priority}
+- {self.primary_activity}
+- {self.secondary_activity}
+"""
 
     def __repr__(self) -> str:
         return f"Task(**{ {k: getattr(self, k) for k in Task.__slots__} })"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {k: getattr(self, k) for k in Task.__slots__} | {"space": self.space.name}
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
 
     def __setattr__(self, name: str, value: Any) -> None:
         print(f"attempted assignment to read-only attribute {name}={value}")
 
     def __eq__(self, other: Any) -> bool:
-        return False if other is None else self.id == other.id
+        return isinstance(other, Task) and all(getattr(self, k) == getattr(other, k) for k in Task.__slots__)
 
     def __hash__(self) -> int:
         return self.id
@@ -624,9 +683,11 @@ WHERE tasks.id = {self.id}
             yield k, getattr(self, k)
 
     @classmethod
+    @beartype
     def from_id(cls, ID: int) -> Task:
         return app.tasks[ID] if ID in app.tasks else _retrieve_task_by_id(ID)
 
+    @beartype
     def reload(self) -> Task:
         """Reload the task from the database.
 
@@ -651,6 +712,7 @@ WHERE tasks.id = {self.id}
             win.build_task_table()
         return self
 
+    @beartype
     def get_status(self) -> tuple[bool, bool, bool, bool]:
         return (
             not self.done,
@@ -659,6 +721,7 @@ WHERE tasks.id = {self.id}
             not self.deleted,
         )
 
+    @beartype
     def get_status_text(self) -> str:
         return f"""{"done" if self.done else "not done"}
 {"draft" if self.draft else "not draft"}
@@ -676,6 +739,7 @@ def _retrieve_task_by_id(ID: int) -> Task:
 
 
 @cached_func_static
+@beartype
 def retrieve_tasks() -> list[Task]:
     """Load all tasks from the database."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks;")
@@ -683,6 +747,7 @@ def retrieve_tasks() -> list[Task]:
 
 
 @cached_func_static
+@beartype
 def retrieve_spaces() -> list[Space]:
     """Load all spaces from the database."""
     query = db.execute(f"SELECT {', '.join(Space.__slots__)} FROM spaces;")
@@ -690,7 +755,8 @@ def retrieve_spaces() -> list[Space]:
 
 
 @cached_getter
-def get_level_name(level_id) -> str:
+@beartype
+def get_level_name(level_id: int) -> str:
     query = db.execute(
         f"""
 SELECT name FROM levels WHERE level_id={level_id};
@@ -699,6 +765,7 @@ SELECT name FROM levels WHERE level_id={level_id};
     return typed_row(query.fetchone(), 0, str)
 
 
+@beartype
 def disemvowel(text: str) -> Generator[str, None, None]:
     for word in text.split():
         yield disemvowel(word)
