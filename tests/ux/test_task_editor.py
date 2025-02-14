@@ -1,28 +1,26 @@
-# add src in sys.path
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).absolute().parents[1]))
-
 import pytest
-from PyQt6.QtWidgets import QApplication
-
+from beartype import beartype
+from PyQt6.QtGui import QShortcut
+from PyQt6.QtWidgets import QApplication, QWizard
 
 from src.classes import Task
 from src.ux.task_editor import Editor
 
 
 @pytest.fixture
+@beartype
 def app():
     return QApplication([])
 
 
 @pytest.fixture
+@beartype
 def task():
     return Task(id=1, do="Test Task", notes="Test Notes")
 
 
-def test_initialize_attributes(app, task):
+@beartype
+def test_initialize_attributes(task):
     editor = Editor(task=task)
     assert editor.task == task
     assert editor.cloning is False
@@ -38,6 +36,7 @@ def test_initialize_attributes(app, task):
     assert editor.skill_ids == []
 
 
+@beartype
 def test_setup_ui_elements(app, task):
     editor = Editor(task=task)
     assert editor.statusBar is not None
@@ -47,12 +46,14 @@ def test_setup_ui_elements(app, task):
     assert editor.button(QWizard.WizardButton.CustomButton2).text() == "löschen"
 
 
+@beartype
 def test_setup_shortcuts(app, task):
     editor = Editor(task=task)
     assert editor.findChild(QShortcut, "F11") is not None
     assert editor.findChild(QShortcut, "Ctrl+Return") is not None
 
 
+@beartype
 def test_setup_signals(app, task):
     editor = Editor(task=task)
     assert editor.priority.valueChanged is not None
@@ -72,6 +73,7 @@ def test_setup_signals(app, task):
     assert editor.space.currentIndexChanged is not None
 
 
+@beartype
 def test_initialize_task(app, task):
     editor = Editor(task=task)
     assert editor.task == task
@@ -79,12 +81,14 @@ def test_initialize_task(app, task):
     assert editor.notes.toPlainText() == task.notes
 
 
+@beartype
 def test_setup_gui_timer(app, task):
     editor = Editor(task=task)
     assert editor.gui_timer is not None
     assert editor.gui_timer.interval() == 100
 
 
+@beartype
 def test_setup_menus(app, task):
     editor = Editor(task=task)
     assert editor.button9a.menu() is not None

@@ -5,4 +5,8 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.analysis.typeCheckingMode": "off",
+    "python.analysis.inlayHints.pytestParameters": true,
+    "python.analysis.typeEvaluation.strictSetInference": true,
+    "python.analysis.typeEvaluation.strictListInference": true,
+    "python.analysis.typeEvaluation.strictDictionaryInference": true,
 }
