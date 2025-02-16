@@ -6,6 +6,9 @@ from src import app
 from src.classes import Task
 from src.ux import task_editor
 
+PROMPT = "Jetzt bearbeiten?"
+annoying_tasks = set()
+
 
 def _clean_up_empty_tasks(tasks: list[Task]) -> None:
     # first, let's clean up empty ones (no do and no notes) - shouldn't exist but just in case
@@ -15,23 +18,26 @@ def _clean_up_empty_tasks(tasks: list[Task]) -> None:
 
 
 def _check_for_drafts(tasks: list[Task]) -> None:
+    global annoying_tasks
     # let's check for drafts
-    if drafts := [t for t in tasks if t.draft]:
+    drafts = {t for t in tasks if t.draft} - annoying_tasks
+    if drafts:
         match QMessageBox.question(
             app.win_main,
-            "Jetzt bearbeiten?",
+            PROMPT,
             f"Es gibt {f'{len(drafts)} Entwürfe' if len(drafts) > 1 else 'einen Entwurf'} - jetzt bearbeiten?",  # noqa: E501
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in drafts:
                     win = task_editor.Editor(task)
                     win.show()
+    annoying_tasks |= drafts
 
 
 def _check_for_cycles(tasks: list[Task]) -> None:
     while cycle := _cycle_in_task_dependencies(tasks):
         msgBox = QMessageBox()
-        msgBox.setWindowTitle("Jetzt bearbeiten?")
+        msgBox.setWindowTitle(PROMPT)
         msgBox.setText(
             "Zyklus in Sub/Super-Tasks gefunden! Aufgaben wurden als Entwurf markiert! Jetzt bearbeiten?"
         )
@@ -62,7 +68,7 @@ def _check_for_duplicates(tasks: list[Task]) -> None:
         if duplicates:
             match QMessageBox.question(
                 app.win_main,
-                "Jetzt bearbeiten?",
+                PROMPT,
                 "Es gibt Duplikate - jetzt bearbeiten/löschen?",
             ):
                 case QMessageBox.StandardButton.Yes:
@@ -74,8 +80,9 @@ def _check_for_duplicates(tasks: list[Task]) -> None:
 
 
 def _check_for_deadline_without_workload(tasks: list[Task]) -> None:
+    global annoying_tasks
     # let's check if tasks have a deadline without workload
-    if bads := [
+    bads = {
         task
         for task in tasks
         if task.own_deadline != float("inf")
@@ -84,52 +91,64 @@ def _check_for_deadline_without_workload(tasks: list[Task]) -> None:
         and not task.deleted
         and not task.draft
         and not task.inactive
-    ]:
+    } - annoying_tasks
+    if bads:
         match QMessageBox.question(
             app.win_main,
-            "Jetzt bearbeiten?",
-            f"""Es gibt {f'{len(bads)} Aufgaben ohne Arbeitsaufwand' if len(bads) > 1 else
-            'eine Aufgabe ohne Arbeitsaufwand'} aber mit Deadline - jetzt bearbeiten?""",
+            PROMPT,
+            f"""Es gibt {
+                f"{len(bads)} Aufgaben ohne Arbeitsaufwand"
+                if len(bads) > 1
+                else "eine Aufgabe ohne Arbeitsaufwand"
+            } aber mit Deadline - jetzt bearbeiten?""",
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in bads:
                     win = task_editor.Editor(task)
                     win.show()
+    annoying_tasks |= bads
 
 
 def _check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for overdue tasks
-    if overdue := [task for task in tasks if task.is_overdue(now=now)]:
+    global annoying_tasks
+    overdue = {task for task in tasks if task.is_overdue(now=now)} - annoying_tasks
+    if overdue:
         match QMessageBox.question(
             app.win_main,
-            "Jetzt bearbeiten?",
-            f"""Es gibt {f'{len(overdue)} überfällige Aufgaben' if len(overdue) > 1
-            else 'eine überfällige Aufgabe'} - jetzt bearbeiten?""",
+            PROMPT,
+            f"""Es gibt {
+                f"{len(overdue)} überfällige Aufgaben" if len(overdue) > 1 else "eine überfällige Aufgabe"
+            } - jetzt bearbeiten?""",
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in overdue:
                     win = task_editor.Editor(task)
                     win.show()
+    annoying_tasks |= overdue
 
 
 def _check_for_incompletable_tasks(tasks: list[Task], now: datetime) -> None:
     # let's check for tasks that are not yet overdue but incompleatable according to workload
-    if incompleteable := [
+    global annoying_tasks
+    incompleteable = {
         task for task in tasks if task.time_buffer <= 0 and not task.is_overdue(now=now) and task.is_doable
-    ]:
+    } - annoying_tasks
+    if incompleteable:
         match QMessageBox.question(
             app.win_main,
-            "Jetzt bearbeiten?",
+            PROMPT,
             f"""Es gibt {
-            f'{len(incompleteable)} Aufgaben, die nicht in der gegebenen Zeit abgeschlossen werden können'
-            if len(incompleteable) > 1 else
-            'eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist'
+                f"{len(incompleteable)} Aufgaben, die nicht in der gegebenen Zeit abgeschlossen werden können"
+                if len(incompleteable) > 1
+                else "eine Aufgabe, die nach derzeitigem Stand nicht abschließbar ist"
             } - jetzt bearbeiten?""",
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in incompleteable:
                     win = task_editor.Editor(task)
                     win.show()
+    annoying_tasks |= incompleteable
 
 
 def _cycle_in_task_dependencies(tasks: list[Task]) -> list[Task]:
