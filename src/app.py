@@ -44,25 +44,7 @@ class Application(QtWidgets.QApplication):
         self.db_last_modified = 0
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
-        from src.classes import Skill, Space, Task
-
-        class TaskDict(dict):
-            def __missing__(self, key):
-                value = Task.from_id(key)
-                self[key] = value
-                return value
-
-        class SpaceDict(dict):
-            def __missing__(self, key):
-                value = Space.from_id(key)
-                self[key] = value
-                return value
-
-        class SkillDict(dict):
-            def __missing__(self, key):
-                value = Skill.from_id(key)
-                self[key] = value
-                return value
+        from src.classes import Skill, SkillDict, Space, SpaceDict, Task, TaskDict
 
         path = config.config_path.parent / "filter_history.txt"
         path.touch()
@@ -98,9 +80,9 @@ class Application(QtWidgets.QApplication):
         self.win_main.setWindowIcon(self.icon)
         self.win_main.statusBar.show()
 
-        self.tasks: dict[int, Task] = TaskDict()
-        self.spaces: dict[int, Space] = SpaceDict()
-        self.skills: dict[int, Skill] = SkillDict()
+        self.tasks: TaskDict[int, Task] = TaskDict()
+        self.spaces: SpaceDict[int, Space] = SpaceDict()
+        self.skills: SkillDict[int, Skill] = SkillDict()
 
         self.app_timer = QTimer()
         # start the timer on the clock of the next minute in msec
@@ -110,9 +92,7 @@ class Application(QtWidgets.QApplication):
         )
         self.app_timer.start(60_000)
 
-        @self.app_timer.timeout.connect
-        def task_timer_timeout():
-            self.win_main.set_statistics_icon()
+        self.app_timer.timeout.connect(self.win_main.set_statistics_icon)
 
         greet_time = [
             "N'Abend",
@@ -181,15 +161,6 @@ class Application(QtWidgets.QApplication):
             i + 1 if i is not None else "Nothing found, so no",
             "unused resources deleted.",
         )
-
-    def editor_opened(self, editor):
-        self.list_of_task_editors.append(editor)
-        self.list_of_windows.append(editor)
-
-    def editor_closed(self, editor):
-        self.list_of_task_editors.remove(editor)
-        self.list_of_windows.remove(editor)
-        return bool(self.list_of_task_editors)
 
     def shutdown(self):
         with contextlib.suppress(RuntimeError):  # ignore annoying last-minute exceptions

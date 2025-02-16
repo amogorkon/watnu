@@ -729,6 +729,27 @@ WHERE tasks.id = {self.id}
 {"deleted" if self.deleted else "not deleted"}"""
 
 
+class TaskDict(dict):
+    def __missing__(self, key):
+        value = Task.from_id(key)
+        self[key] = value
+        return value
+
+
+class SpaceDict(dict):
+    def __missing__(self, key):
+        value = Space.from_id(key)
+        self[key] = value
+        return value
+
+
+class SkillDict(dict):
+    def __missing__(self, key):
+        value = Skill.from_id(key)
+        self[key] = value
+        return value
+
+
 def _retrieve_task_by_id(ID: int) -> Task:
     """Load a task directly from the database by its ID."""
     query = db.execute(f"SELECT {', '.join(Task.__slots__)} FROM tasks WHERE id == {ID};")
