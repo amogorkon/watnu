@@ -22,13 +22,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-import src.ui as ui
-from src import app, config, db
+from src import app, config, ui
 from src.classes import Task
 from src.logic import filter_tasks_by_content
-from src.ux import (
+
+from . import (
     choose_skills,
-    choose_space,
     skill_editor,
     space_editor,
     task_editor,
@@ -36,19 +35,25 @@ from src.ux import (
     task_organizer,
     task_running,
 )
-from src.ux.icons import NOK, OK, status_icons
-from src.ux_helpers import (
+from .helpers import (
+    SkillMixin,
     SpaceMixin,
     deadline_as_str,
     filter_tasks,
     get_space_id,
+    tasks_to_json,
+    to_clipboard,
+    turn_tasks_into_text,
 )
+from .icons import NOK, OK, status_icons
 
 _translate = QtCore.QCoreApplication.translate
 
 
 class Checklist(QWidget):
-    """Must be a separate class because you can only setWindowFlags on top-level widgets."""
+    """Must be a separate class because you can only setWindowFlags on top-level widgets.
+    This is NOT related to src.ux.task_checklist.CheckList. This is a helper class for TaskList.
+    """
 
     def __init__(self, tasklist, column_names: list[QtWidgets.QCheckBox]):
         super().__init__()
@@ -85,7 +90,7 @@ class Checklist(QWidget):
         layout.setSpacing(0)
 
 
-class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
+class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin, SkillMixin):
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
         self.setupUi(self)
@@ -150,29 +155,26 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
 
         # space menu
         menu = QtWidgets.QMenu()
-        menu.addAction("für ausgewählte Aufgaben setzen", self._space_set)
-        menu.addAction("hinzufügen", self._space_add)
-        menu.addAction("löschen", self._space_delete)
+        menu.addAction("Space zuweisen", self._space_set)
+        menu.addAction("Space hinzufügen", self._space_add)
+        menu.addAction("Space löschen", self._space_delete)
         menu.addAction(
             "bearbeiten",
             lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
             if self.space.currentData() is None
             else space_editor.SpaceEditor(self.space.currentText()).exec(),
         )
-        self.button9a.setMenu(menu)
 
-        # skill menu
-        menu = QtWidgets.QMenu()
-        menu.addAction("für ausgewählte Aufgaben setzen", self._space_set)
-        menu.addAction("hinzufügen", self._space_add)
-        menu.addAction("löschen", self._skill_delete)
+        menu.addAction("Skill zuweisen", self._skill_set)
+        menu.addAction("Skill hinzufügen", self._skill_add)
+        menu.addAction("Skill löschen", self._skill_delete)
         menu.addAction(
             "bearbeiten",
             lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
             if self.space.currentData() is None
-            else space_editor.SpaceEditor(self.space.currentText()).exec(),
+            else skill_editor.SkillEditor(self.space.currentText()).exec(),
         )
-        self.button9b.setMenu(menu)
+        self.button9.setMenu(menu)
 
         item = QtWidgets.QTableWidgetItem()
         item.setFlags(Qt.ItemFlag.ItemIsUserCheckable)
@@ -189,17 +191,12 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
         self.column_selection.checkboxes.itemChanged.connect(self.rearrange_list)
         self.task_table.horizontalHeader().customContextMenuRequested.connect(self._show_column_selection)
 
-        @self.gui_timer.timeout.connect
-        def db_changed_check():
-            if Path(config.db_path).stat().st_mtime > self.last_generated:
-                self.build_task_table()
-
-        @self.space.currentIndexChanged.connect
-        def space_switched():
-            self.build_task_table()
-            config.last_selected_space = self.space.currentText() or ""
-            config.save()
-
+        self.gui_timer.timeout.connect(
+            lambda: self.build_task_table()
+            if Path(config.db_path).stat().st_mtime > self.last_generated
+            else None
+        )
+        self.space.currentIndexChanged.connect(self.build_task_table)
         self.task_table.cellDoubleClicked.connect(lambda x, y: self.edit_selected(self.task_table))
 
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(self._delete_item)
@@ -228,7 +225,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
         self.button4.clicked.connect(lambda: self.edit_selected(self.task_table))
 
         self.ilk.currentIndexChanged.connect(self.build_task_table)
-
         self.status.currentIndexChanged.connect(self._status_switched)
 
         # once we change the filter, we wait for 1 sec before applying the filter,
@@ -236,8 +232,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, self._filter_changed))
 
     def _post_init_setup(self):
-        self.build_space_list()
-        self._first_space_switch = True
+        self.build_space_list(first_time=True)
         if self.selected_tasks:
             self.space.setCurrentIndex(0)
         else:
@@ -331,133 +326,12 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin):
         self._build_button1_menu()
         self.build_task_table()
 
-    def _space_delete(self):
-        space_name = self.space.currentText()
-        if [task for task in app.tasks.values() if task.space.name == space_name]:
-            QtWidgets.QMessageBox.information(
-                self,
-                "Sorry..",
-                f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
-            )
-        else:
-            match QtWidgets.QMessageBox.question(
-                self,
-                "Wirklich den ausgewählten Raum löschen?",
-                f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
-            ):
-                case QtWidgets.QMessageBox.StandardButton.Yes:
-                    db.execute(
-                        f"""
-DELETE FROM spaces where name=='{space_name}'
-"""
-                    )
-                    db.commit()
-                    self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
-                    for win in (
-                        app.list_of_task_lists + app.list_of_task_editors + app.list_of_task_organizers
-                    ):
-                        win.build_space_list()
-                        if win.space.currentText() == space_name:
-                            win.space.setCurrentIndex(0)
-
-    def _space_set(self):
-        match (win := choose_space.SpaceSelection()).exec():
-            case QtWidgets.QDialog.DialogCode.Accepted:
-                space = get_space_id(
-                    win.space.currentText(),
-                    win.space.currentIndex(),
-                )
-            case _:  # Cancelled
-                return
-        for task in (selected := self.get_selected_tasks()):
-            task.set_("space_id", space)
-        self.build_task_table()
-        self.statusBar.showMessage(
-            f"Raum für {len(selected)} Aufgabe{'' if len(selected) == 1 else 'n'} gesetzt.",
-            5000,
-        )
-
-    def _space_add(self):
-        text, okPressed = QtWidgets.QInputDialog.getText(
-            self,
-            "Neuer Space",
-            "Name des neuen Space",
-            QtWidgets.QLineEdit.EchoMode.Normal,
-            "",
-        )
-        if okPressed and text != "":
-            db.execute(
-                f"""
-INSERT OR IGNORE INTO spaces (name)
-VALUES ('{text}')
-"""
-            )
-            db.commit()
-            space_editor.SpaceEditor(text).exec()
-            self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
-            for win in app.list_of_task_editors:
-                win.build_space_list()
-            for win in app.list_of_task_lists:
-                win.build_space_list()
-
-    def _skill_add(self):
-        text, okPressed = QtWidgets.QInputDialog.getText(
-            self,
-            "Neuer Skill",
-            "Name des neuen Skills",
-            QtWidgets.QLineEdit.EchoMode.Normal,
-            "",
-        )
-        if okPressed and text != "":
-            db.execute(
-                f"""
-INSERT OR IGNORE INTO skills (name)
-VALUES ('{text}')
-"""
-            )
-            db.commit()
-            skill_editor.SpaceEditor(text).exec()
-            self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
-            for win in app.list_of_task_editors:
-                win.build_space_list()
-            for win in app.list_of_task_lists:
-                win.build_space_list()
-
     def copy_to_clipboard(self):
         if not (selected := self.get_selected_tasks()):
             return
         text = turn_tasks_into_text(selected)
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(text)
-
-    def _skill_delete(self):
-        skill_name = self.space.currentText()
-        if [task for task in app.tasks.values() if task.skills.name == skill_name]:
-            QtWidgets.QMessageBox.information(
-                self,
-                "Sorry..",
-                f"Der Raum '{skill_name}' ist nicht leer und kann daher nicht gelöscht werden.",
-            )
-        else:
-            match QtWidgets.QMessageBox.question(
-                self,
-                "Wirklich den ausgewählten Skill löschen?",
-                f"Soll der Skill '{skill_name}' wirklich gelöscht werden?",
-            ):
-                case QtWidgets.QMessageBox.StandardButton.Yes:
-                    db.execute(
-                        f"""
-DELETE FROM skills where name=='{skill_name}'
-"""
-                    )
-                    db.commit()
-                    self.statusBar.showMessage(f"Skill '{skill_name}' gelöscht.", 5000)
-                    for win in (
-                        app.list_of_task_lists + app.list_of_task_editors + app.list_of_task_organizers
-                    ):
-                        win.build_space_list()
-                        if win.skill.currentText() == skill_name:
-                            win.skill.setCurrentIndex(0)
 
     def _delete_item(self):
         if not (selected := self.get_selected_tasks()):
@@ -497,7 +371,7 @@ DELETE FROM skills where name=='{skill_name}'
             )
 
     def _set_as_open(self):
-        selected = [task for task in self.get_selected_tasks() if task.is_open]
+        selected = self.get_selected_tasks()
         if not selected:
             return
 
