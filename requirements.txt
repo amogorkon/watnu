@@ -3,3 +3,4 @@ python-Levenshtein==0.26.1
 numpy==1.22.0
 pyqtgraph
 attrs
+beartype==0.20.0rc2
