@@ -12,14 +12,14 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
 )
 
-import src.ui as ui
-from src import app, config, ux_helpers
+from src import app, config, ui
 from src.classes import Task
 from src.logic import (
     filter_tasks_by_content,
 )
-from src.ux import task_editor, task_list
-from src.ux.icons import ARROW_DOWN, ARROW_UP, NOK, OK
+
+from . import task_editor, task_list
+from .icons import ARROW_DOWN, ARROW_UP, NOK, OK
 
 _translate = QtCore.QCoreApplication.translate
 
@@ -56,7 +56,6 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         self._init_defaults(task, depends_on, filters, editor)
         self._init_ui_elements()
         self._init_signals()
-        self._post_init_setup()
 
         app.list_of_task_organizers.append(self)
         app.list_of_windows.append(self)
@@ -98,36 +97,12 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         self.columns = (
             ("space", self.check_space, lambda t: str(t.space)),
             ("level", self.check_level, lambda t: str(t.level)),
-            (
-                "priority",
-                self.check_priority,
-                lambda t: str(t.priority),
-            ),
-            (
-                "deadline",
-                self.check_deadline,
-                lambda t: task_list.deadline_as_str(t.deadline),
-            ),
-            (
-                "done",
-                self.check_done,
-                lambda t: OK if t.done else NOK,
-            ),
-            (
-                "draft",
-                self.check_draft,
-                lambda t: OK if t.draft else NOK,
-            ),
-            (
-                "inactive",
-                self.check_inactive,
-                lambda t: OK if t.inactive else NOK,
-            ),
-            (
-                "deleted",
-                self.check_deleted,
-                lambda t: OK if t.deleted else NOK,
-            ),
+            ("priority", self.check_priority, lambda t: str(t.priority)),
+            ("deadline", self.check_deadline, lambda t: task_list.deadline_as_str(t.deadline)),
+            ("done", self.check_done, lambda t: OK if t.done else NOK),
+            ("draft", self.check_draft, lambda t: OK if t.draft else NOK),
+            ("inactive", self.check_inactive, lambda t: OK if t.inactive else NOK),
+            ("deleted", self.check_deleted, lambda t: OK if t.deleted else NOK),
             ("do", self.check_do, lambda t: t.get_short_do()),
         )
 
