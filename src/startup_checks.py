@@ -29,7 +29,7 @@ def _check_for_drafts(tasks: list[Task]) -> None:
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in drafts:
-                    win = task_editor.Editor(task)
+                    win = task_editor.TaskEditor(task)
                     win.show()
     annoying_tasks |= drafts
 
@@ -49,7 +49,7 @@ def _check_for_cycles(tasks: list[Task]) -> None:
         match msgBox.exec():
             case QMessageBox.ButtonRole.AcceptRole.value:
                 for task in cycle:
-                    win = task_editor.Editor(task)
+                    win = task_editor.TaskEditor(task)
                     win.show()
 
 
@@ -73,7 +73,7 @@ def _check_for_duplicates(tasks: list[Task]) -> None:
             ):
                 case QMessageBox.StandardButton.Yes:
                     for task in duplicates:
-                        win = task_editor.Editor(task)
+                        win = task_editor.TaskEditor(task)
                         win.show()
                         app.list_of_task_editors.append(win)
                         app.list_of_windows.append(win)
@@ -104,7 +104,7 @@ def _check_for_deadline_without_workload(tasks: list[Task]) -> None:
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in bads:
-                    win = task_editor.Editor(task)
+                    win = task_editor.TaskEditor(task)
                     win.show()
     annoying_tasks |= bads
 
@@ -123,7 +123,7 @@ def _check_for_overdue_tasks(tasks: list[Task], now: datetime) -> None:
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in overdue:
-                    win = task_editor.Editor(task)
+                    win = task_editor.TaskEditor(task)
                     win.show()
     annoying_tasks |= overdue
 
@@ -146,7 +146,7 @@ def _check_for_incompletable_tasks(tasks: list[Task], now: datetime) -> None:
         ):
             case QMessageBox.StandardButton.Yes:
                 for task in incompleteable:
-                    win = task_editor.Editor(task)
+                    win = task_editor.TaskEditor(task)
                     win.show()
     annoying_tasks |= incompleteable
 

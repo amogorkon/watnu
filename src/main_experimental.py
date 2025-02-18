@@ -269,7 +269,7 @@ if drafts := [t for t in app.tasks.values() if t.draft]:
     ):
         case QMessageBox.StandardButton.Yes:
             for task in drafts:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
 
@@ -289,7 +289,7 @@ while cycle := cycle_in_task_dependencies(app.tasks):
     match msgBox.exec():
         case QMessageBox.ButtonRole.AcceptRole.value:
             for task in cycle:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
 # let's check if tasks have a deadline without workloud
@@ -314,7 +314,7 @@ if tasks := [
     ):
         case QMessageBox.StandardButton.Yes:
             for task in tasks:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
 # let's check for overdue tasks
@@ -337,7 +337,7 @@ if overdue := [
     ):
         case QMessageBox.StandardButton.Yes:
             for task in overdue:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
 # let's check for tasks that are incompleteable
@@ -357,7 +357,7 @@ if incompleteable := [
     ):
         case QMessageBox.StandardButton.Yes:
             for task in incompleteable:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
 

@@ -4,7 +4,7 @@ from PyQt6.QtGui import QShortcut
 from PyQt6.QtWidgets import QApplication, QWizard
 
 from src.classes import Task
-from src.ux.task_editor import Editor
+from src.ux.task_editor import TaskEditor
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def task():
 
 @beartype
 def test_initialize_attributes(task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.task == task
     assert editor.cloning is False
     assert editor.templating is False
@@ -38,7 +38,7 @@ def test_initialize_attributes(task):
 
 @beartype
 def test_setup_ui_elements(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.statusBar is not None
     assert editor.do.font() == app.fira_font
     assert editor.notes.font() == app.fira_font
@@ -48,14 +48,14 @@ def test_setup_ui_elements(app, task):
 
 @beartype
 def test_setup_shortcuts(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.findChild(QShortcut, "F11") is not None
     assert editor.findChild(QShortcut, "Ctrl+Return") is not None
 
 
 @beartype
 def test_setup_signals(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.priority.valueChanged is not None
     assert editor.button(QWizard.WizardButton.CustomButton1).clicked is not None
     assert editor.button1.clicked is not None
@@ -75,7 +75,7 @@ def test_setup_signals(app, task):
 
 @beartype
 def test_initialize_task(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.task == task
     assert editor.do.toPlainText() == task.do
     assert editor.notes.toPlainText() == task.notes
@@ -83,13 +83,13 @@ def test_initialize_task(app, task):
 
 @beartype
 def test_setup_gui_timer(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.gui_timer is not None
     assert editor.gui_timer.interval() == 100
 
 
 @beartype
 def test_setup_menus(app, task):
-    editor = Editor(task=task)
+    editor = TaskEditor(task=task)
     assert editor.button9a.menu() is not None
     assert editor.button1.menu() is not None

@@ -220,13 +220,13 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
                     win.raise_()
                     break
             else:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
                 win.show()
 
     def _open_new_editor(self):
-        win = task_editor.Editor()
+        win = task_editor.TaskEditor()
         app.list_of_windows.append(win)
         app.list_of_task_editors.append(win)
         win.show()
@@ -381,7 +381,7 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
                     win.raise_()
                     break
             else:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 app.list_of_task_editors.append(win)
                 app.list_of_windows.append(win)
                 win.show()
@@ -529,3 +529,13 @@ def print_as_mermaid(tasks):
     for task in tasks:
         for supertask in task.supertasks:
             print(f"{supertask.id}:{supertask.get_short_do(15)} --> {task.id}:{task.get_short_do(15)}")
+
+
+def make_new_and_show_all():
+    """
+    Creates a new task checklist and shows all.
+    """
+    win = Organizer()()
+    for win in app.list_of_task_organizers:
+        win.show()
+    return win

@@ -171,7 +171,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         @self.button6.clicked.connect
         def _():
             self.paused = True
-            win = ux.task_editor.Editor(draft=True)
+            win = ux.task_editor.TaskEditor(draft=True)
             win.exec()
             self.paused = False
 

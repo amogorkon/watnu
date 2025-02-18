@@ -170,7 +170,6 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.skip_priority()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        print(event)
         match event.key():
             case Qt.Key.Key_7 if self.priority_task:
                 self.priority.mousePressEvent(None)
@@ -322,7 +321,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             win.gui_timer.start(100)
             win.show()
 
-    def _task_done(self) -> None:
+    def _task_done(self, event=None) -> None:
         if not self.selected:
             return
         match self.selected:
@@ -340,11 +339,11 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             return
         match self.selected:
             case SELECT.PRIORITY:
-                win = task_editor.Editor(self.priority_task)
+                win = task_editor.TaskEditor(self.priority_task)
             case SELECT.TIMING:
-                win = task_editor.Editor(self.timing_task)
+                win = task_editor.TaskEditor(self.timing_task)
             case SELECT.BALANCE:
-                win = task_editor.Editor(self.balance_task)
+                win = task_editor.TaskEditor(self.balance_task)
 
         if win.exec():
             self.lets_check_whats_next()
@@ -362,7 +361,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
                 app.win_running = task_running.Running(self.balance_task)
 
     def _new_task(self):
-        win = task_editor.Editor()
+        win = task_editor.TaskEditor()
         if win.exec():
             self.lets_check_whats_next()
 
@@ -392,7 +391,6 @@ Auf gehts!""",
         self.task_desc_timing.setText(self.timing_task.do)
         self.task_space_timing.setText(self.timing_task.space.name)
 
-    @beartype
     def skip_balance(self) -> None:
         self.balance_task.set_last_checked(time())
         self.balance_tasks.rotate(-1)

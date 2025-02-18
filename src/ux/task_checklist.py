@@ -10,7 +10,6 @@ class CheckList(QDialog, ui.task_checklist.Ui_Dialog):
         self.setupUi(self)
         app.list_of_task_checklists.append(self)
         app.list_of_windows.append(self)
-        self.list_of_task_checklists = app.list_of_task_checklists
 
     def reject(self):
         """
@@ -25,3 +24,13 @@ class CheckList(QDialog, ui.task_checklist.Ui_Dialog):
             app.win_what.raise_()
         else:
             app.list_of_windows[-1].raise_()
+
+
+def make_new_and_show_all():
+    """
+    Creates a new task checklist and shows all.
+    """
+    win = CheckList()
+    for win in app.list_of_task_checklists:
+        win.show()
+    return win

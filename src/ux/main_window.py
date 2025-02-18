@@ -52,14 +52,12 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         self._init_defaults()
         self._init_ui_elements()
         self._init_signals()
-        self._post_init_setup()
-
-        self.gui_timer = QtCore.QTimer()
-
-        self.gui_timer.start(100)
 
     def _init_defaults(self):
         self.killed = False
+
+        self.gui_timer = QtCore.QTimer()
+        self.gui_timer.start(100)
 
     def _init_ui_elements(self):
         self.set_statistics_icon()  # self.set_icon(self.button1, "statistics.svg")
@@ -90,19 +88,14 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
 
         self.attributions.triggered.connect(lambda: attributions.Attributions().exec())
 
+        self.button1.clicked.connect(lambda: app.win_statistics.show())
+        self.button2.clicked.connect(lambda: app.win_inventory.show())
+        self.button3.clicked.connect(lambda: task_organizer.make_new_and_show_all())
+        self.button4.clicked.connect(lambda: task_list.make_new_and_show_all())
+        self.button6.clicked.connect(lambda: task_editor.make_new_and_show_all())
         self.button7.clicked.connect(lambda: webbrowser.open("https://chat.deepseek.com/"))
-
-        self.button8.clicked.connect(
-            lambda: [win.show for win in task_checklist.CheckList().list_of_task_checklists]
-        )
-
-        self.button9.clicked.connect(app.win_character.show)
-
-        @self.button4.clicked.connect
-        def list_tasks():
-            win = task_list.TaskList()
-            for win in app.list_of_task_lists:
-                win.show()
+        self.button8.clicked.connect(lambda: task_checklist.make_new_and_show_all())
+        self.button9.clicked.connect(lambda: app.win_character.show())
 
         @self.button5.clicked.connect
         def whatnow():
@@ -111,24 +104,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             app.win_what.lets_check_whats_next()
             app.win_what.show()
             self.hide()
-
-        @self.button6.clicked.connect
-        def add_new_task():
-            win = task_editor.Editor()
-            for win in app.list_of_task_editors:
-                win.show()
-
-        @self.button1.clicked.connect
-        def statistics():
-            app.win_statistics.show()
-
-        @self.button3.clicked.connect
-        def organize():
-            win = task_organizer.Organizer()
-            for win in app.list_of_task_organizers:
-                win.show()
-
-        self.button2.clicked.connect(app.win_inventory.show)
 
         self.actionSupportMe.triggered.connect(lambda: webbrowser.open("paypal.me/amogorkon"))
 
@@ -140,8 +115,9 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             lambda: webbrowser.open("https://calendly.com/tetraplex/pomodoro")
         )
 
-        self.actionSettings.triggered.connect(app.win_settings.show)
-        self.actionExport.triggered.connect(self._action_export)
+        self.actionSettings.triggered.connect(lambda: app.win_settings.show())
+        self.actionExport.triggered.connect(lambda: self._action_export())
+        self.actionImport.triggered.connect(lambda: self._action_import())
 
     def _action_export(self):
         win = QtWidgets.QDialog()
@@ -157,8 +133,6 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
             path = Path(filename)
             with open(path, "w") as f:
                 f.writelines(dump(dict(task) for task in app.tasks.values()))
-
-        self.actionImport.triggered.connect(self._action_import)
 
     def _action_import(self):
         win = QtWidgets.QDialog()

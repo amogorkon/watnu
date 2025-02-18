@@ -576,7 +576,7 @@ font-size: 12pt;
                     win.raise_()
                     break
             else:
-                win = task_editor.Editor(task)
+                win = task_editor.TaskEditor(task)
                 win.show()
 
     def organize_selected(self, widget):
@@ -594,7 +594,7 @@ font-size: 12pt;
                 win.show()
 
     def open_editor(self, task, cloning=False, as_sup=0):
-        win = task_editor.Editor(task, cloning=cloning, as_sup=as_sup)
+        win = task_editor.TaskEditor(task, cloning=cloning, as_sup=as_sup)
         app.list_of_task_editors.append(win)
         app.list_of_windows.append(win)
         win.show()
@@ -693,14 +693,12 @@ font-size: 12pt;
             text = urllib.parse.quote(text)
             webbrowser.open(f"https://t.me/share/url?url= &text={text}")
 
-        menu = QtWidgets.QMenu()
-        icon = QtGui.QIcon(str(config.base_path / "extra/feathericons/send.svg"))
-        menu.addAction(icon, "Senden", _send_task)
-        menu.exec(self.mapToGlobal(pos))
 
-
-def turn_tasks_into_text(tasks: list[Task]):
-    return "\n\n".join(
-        f"=== Task {task.id} {task.printable_deadline} {task.printable_percentage} ===\n{task.do}"
-        for task in tasks
-    )
+def make_new_and_show_all():
+    """
+    Creates a new task checklist and shows all.
+    """
+    win = TaskList()
+    for win in app.list_of_task_lists:
+        win.show()
+    return win

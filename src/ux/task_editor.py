@@ -21,7 +21,7 @@ _translate = QCoreApplication.translate
 
 
 @beartype
-class Editor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, SpaceMixin):
+class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
     """Editor for new or existing tasks."""
 
     def __init__(
@@ -353,7 +353,7 @@ DELETE FROM spaces where name==?
             self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
 
         def create_task():
-            win = Editor(current_space=self.space.currentText())
+            win = TaskEditor(current_space=self.space.currentText())
             app.list_of_task_editors.append(win)
             app.list_of_windows.append(win)
             win.show()
@@ -519,7 +519,6 @@ DELETE FROM spaces where name==?
             "embarrassment": self.embarrassment.value(),
             "workload": self.workload(),
         }
-        breakpoint()
 
         # TODO: space_id == 0 is NOT NULL!!!
         db.execute(
@@ -581,7 +580,7 @@ DELETE FROM spaces where name==?
         self.deleteLater()
 
     def _clone(self) -> None:
-        win = Editor()
+        win = TaskEditor()
         win.supertasks = self.supertasks
         win.subtasks = self.subtasks
         win.do.document().setPlainText(self.do.document().toRawText())
@@ -714,7 +713,6 @@ from src.ux import (  # noqa: E402
     task_running,
 )
 
-
 # some orphaned code, check if it's needed
 
 #     lambda: self.total_priority.setValue(
@@ -727,3 +725,13 @@ from src.ux import (  # noqa: E402
 #     )
 #         )
 # )
+
+
+def make_new_and_show_all():
+    """
+    Creates a new task checklist and shows all.
+    """
+    win = TaskEditor()
+    for win in app.list_of_task_editors:
+        win.show()
+    return win

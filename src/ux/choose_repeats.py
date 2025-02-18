@@ -12,7 +12,7 @@ from src.classes import EVERY, Every, Task
 
 
 class RepeatChooser(QtWidgets.QDialog, ui.choose_repeats.Ui_Dialog):
-    def __init__(self, editor: "ux.task_editor.Editor", task: Task = None):
+    def __init__(self, editor: "ux.task_editor.TaskEditor", task: Task = None):
         super().__init__()
         self.setupUi(self)
         self.editor = editor

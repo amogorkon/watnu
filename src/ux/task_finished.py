@@ -133,7 +133,7 @@ Die beendete Aufgabe ist eine Tradition - soll ein neuer Eintrag für den nächs
             ):
                 case QMessageBox.StandardButton.Yes:
                     # TODO check on edit if deadline and repeat is set for tradition
-                    win = task_editor.Editor(self.task, draft=True)
+                    win = task_editor.TaskEditor(self.task, draft=True)
                     app.list_of_task_editors.append(win)
                     app.list_of_windows.append(win)
                     win.exec()
