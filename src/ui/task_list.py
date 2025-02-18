@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(649, 502)
+        Dialog.resize(649, 503)
         Dialog.setSizeGripEnabled(True)
         self.layout = QtWidgets.QVBoxLayout(Dialog)
         self.layout.setObjectName("layout")
@@ -260,5 +260,5 @@ class Ui_Dialog(object):
         self.button8.setShortcut(_translate("Dialog", "8"))
         self.button1.setText(_translate("Dialog", "setze Aufgabe(n) als..."))
         self.button1.setShortcut(_translate("Dialog", "1"))
-        self.button9.setText(_translate("Dialog", "Raum/Fähigkeiten"))
+        self.button9.setText(_translate("Dialog", "Raum/Fähigkeiten..."))
         self.button9.setShortcut(_translate("Dialog", "9"))

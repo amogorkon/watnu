@@ -10,10 +10,9 @@ from time import time, time_ns
 from typing import Deque
 
 from beartype import beartype
-from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QAction, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QButtonGroup, QMenu, QMessageBox
+from PyQt6.QtGui import QAction, QColor, QKeyEvent, QKeySequence, QPainter, QPixmap, QShortcut, QShowEvent
+from PyQt6.QtWidgets import QButtonGroup, QDialog, QMenu, QMessageBox
 
 from src import app, config, db, ui
 from src.classes import ACTIVITY, Task
@@ -56,7 +55,7 @@ class CustomMenu(QMenu):
 
 
 @beartype
-class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
+class WhatNow(QDialog, ui.what_now.Ui_Dialog):
     def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
@@ -208,7 +207,7 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.skip_priority()
         self.setFocus()
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         match event.key():
             case Qt.Key.Key_7 if self.priority_task:
                 self.priority.mousePressEvent(None)
@@ -225,9 +224,9 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 super().keyPressEvent(event)
 
     def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
+        painter = QPainter(self)
         if self.hasFocus():
-            painter.setPen(QtGui.QColor("red"))
+            painter.setPen(QColor("red"))
             painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
 
     @cached_getter
@@ -245,7 +244,7 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.tasks = get_doable_tasks(app.tasks.values(), db=db)
 
         if not self.tasks:
-            QtWidgets.QMessageBox.information(
+            QMessageBox.information(
                 self,
                 "Hmm..",
                 "Es sind noch keine Aufgaben gestellt aus denen ausgewählt werden könnte.",
@@ -415,7 +414,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         self.task_space_priority.setText(self.priority_task.space.name)
 
         if old_task == self.priority_task:
-            QtWidgets.QMessageBox.information(
+            QMessageBox.information(
                 self,
                 "Hmm..",
                 """Es scheint, es gibt keine andere, ähnlich wichtige Aufgabe im Moment.
@@ -494,7 +493,7 @@ Auf gehts!""",
         self.task_desc_balanced.adjustSize()
         self.task_space_balanced.setText(self.balance_task.space.name)
 
-    def showEvent(self, event: QtGui.QShowEvent) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         for win in app.list_of_task_lists:
             win.gui_timer.stop()
             win.hide()
@@ -545,12 +544,12 @@ def throw_coins() -> None:
     config.count += 1
 
     x = choice(["Kopf", "Zahl"])
-    mb = QtWidgets.QMessageBox()
+    mb = QMessageBox()
     mb.setWindowTitle("Hmm..")
     if x == "Kopf":
         mb.setText("Du hast Kopf geworfen!")
-        mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
+        mb.setIconPixmap(QPixmap(str(config.base_path / "extra/feathericons/coin-heads.svg")))
     else:
         mb.setText("Du hast Zahl geworfen!")
-        mb.setIconPixmap(QtGui.QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
+        mb.setIconPixmap(QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
     mb.exec()

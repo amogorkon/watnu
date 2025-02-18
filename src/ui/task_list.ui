@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>649</width>
-    <height>502</height>
+    <height>503</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -483,7 +483,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Raum/Fähigkeiten</string>
+          <string>Raum/Fähigkeiten...</string>
          </property>
          <property name="shortcut">
           <string>9</string>
