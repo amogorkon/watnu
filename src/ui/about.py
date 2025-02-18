@@ -15,9 +15,6 @@ class Ui_Dialog(object):
         Dialog.resize(322, 313)
         self.horizontalLayout = QtWidgets.QHBoxLayout(Dialog)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.label = QtWidgets.QLabel(parent=Dialog)
-        self.label.setObjectName("label")
-        self.horizontalLayout.addWidget(self.label)
         self.version = QtWidgets.QLabel(parent=Dialog)
         self.version.setObjectName("version")
         self.horizontalLayout.addWidget(self.version)
@@ -28,5 +25,4 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Über Watnu"))
-        self.label.setText(_translate("Dialog", "Watnu Version"))
         self.version.setText(_translate("Dialog", "TextLabel"))

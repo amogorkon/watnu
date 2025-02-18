@@ -15,13 +15,6 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Watnu Version</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QLabel" name="version">
      <property name="text">
       <string>TextLabel</string>
