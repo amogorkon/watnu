@@ -508,7 +508,7 @@ WHERE tasks.id = {self.id}
         ;
         """
         )
-        return typed(query.fetchone(), 0, int, default=0)
+        return typed(query.fetchone(), int, default=0)
 
     @cached_property
     def primary_activity(self) -> ACTIVITY:
