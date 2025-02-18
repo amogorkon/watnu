@@ -11,11 +11,11 @@ from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
 from PyQt6.QtGui import QCloseEvent, QHideEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QPushButton, QWizard
 
-import src.ui as ui
-from src import app, config, db
+from src import app, config, db, ui
 from src.classes import ACTIVITY, ILK, LEVEL, Task
-from src.ux import space_editor, task_finished
-from src.ux_helpers import SpaceMixin, get_space_priority
+
+from . import mixin, space_editor, task_finished
+from .helpers import get_space_priority
 
 _translate = QCoreApplication.translate
 
@@ -61,6 +61,33 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         self.supertasks: list[int] = []
         self.skill_ids: list[int] = []
 
+    def _show_state_depending(self):
+        statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
+        title_status = " - " + ", ".join(statuses) if statuses else ""
+        self.setWindowTitle(f"{self.original_window_title}{title_status}")
+
+        self.button(QWizard.WizardButton.FinishButton).setEnabled(len(self.do.toPlainText()))
+
+        # disable buttons if task.do is empty
+        has_content = bool(self.do.toPlainText())
+        self.button(QWizard.WizardButton.CustomButton1).setEnabled(has_content)
+        self.button(QWizard.WizardButton.CustomButton2).setEnabled(has_content)
+        for i in range(self.num_buttons.count()):
+            item = self.num_buttons.itemAt(i).widget()
+            if isinstance(item, QPushButton):
+                item.setEnabled(has_content)
+
+        match self.task.ilk:
+            case ILK.habit.value:
+                self.is_habit.setChecked(True)
+                self.button8.setText("")
+            case ILK.tradition.value:
+                self.is_tradition.setChecked(True)
+                self.button8.setEnabled(True)
+            case ILK.routine.value:
+                self.is_routine.setChecked(True)
+                self.button8.setEnabled(True)
+
     def _init_ui_elements(self):
         app.list_of_task_editors.append(self)
         app.list_of_windows.append(self)
@@ -78,35 +105,8 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             "als Entwurf speichern",
         )
 
-        def _show_state_depending():
-            statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
-            title_status = " - " + ", ".join(statuses) if statuses else ""
-            self.setWindowTitle(f"{self.original_window_title}{title_status}")
-
-            self.button(QWizard.WizardButton.FinishButton).setEnabled(len(self.do.toPlainText()))
-
-            # disable buttons if task.do is empty
-            has_content = bool(self.do.toPlainText())
-            self.button(QWizard.WizardButton.CustomButton1).setEnabled(has_content)
-            self.button(QWizard.WizardButton.CustomButton2).setEnabled(has_content)
-            for i in range(self.num_buttons.count()):
-                item = self.num_buttons.itemAt(i).widget()
-                if isinstance(item, QPushButton):
-                    item.setEnabled(has_content)
-
-            match self.task.ilk:
-                case ILK.habit.value:
-                    self.is_habit.setChecked(True)
-                    self.button8.setText("")
-                case ILK.tradition.value:
-                    self.is_tradition.setChecked(True)
-                    self.button8.setEnabled(True)
-                case ILK.routine.value:
-                    self.is_routine.setChecked(True)
-                    self.button8.setEnabled(True)
-
-        _show_state_depending()  # first time
-        self.gui_timer.timeout.connect(_show_state_depending)
+        self._show_state_depending()  # first time
+        self.gui_timer.timeout.connect(self._show_state_depending)
 
         self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
         self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
@@ -144,79 +144,10 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         if app.win_running:
             self.button5.setEnabled(False)
 
-        def _space_add():
-            text, okPressed = QtWidgets.QInputDialog.getText(
-                self,
-                "Neuer Space",
-                "Name des neuen Space",
-                QtWidgets.QLineEdit.EchoMode.Normal,
-                "",
-            )
-            if okPressed and text != "":
-                db.execute(
-                    """
-INSERT OR IGNORE INTO spaces (name)
-VALUES (?)
-""",
-                    (text,),
-                )
-                db.commit()
-                space_editor.SpaceEditor(text).exec()
-                self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
-                for win in app.list_of_task_editors:
-                    win.build_space_list()
-                for win in app.list_of_task_lists:
-                    win.build_space_list()
-
         menu = QtWidgets.QMenu()
-        menu.addAction("hinzufügen", _space_add)
-
-        def _space_delete():
-            space_name = self.space.currentText()
-            if [task for task in app.tasks.values() if task.space.name == space_name]:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Sorry..",
-                    f"Der Raum '{space_name}' ist nicht leer und kann daher nicht gelöscht werden.",
-                )
-            else:
-                match QtWidgets.QMessageBox.question(
-                    self,
-                    "Wirklich den ausgewählten Raum löschen?",
-                    f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
-                ):
-                    case QtWidgets.QMessageBox.StandardButton.Yes:
-                        db.execute(
-                            """
-DELETE FROM spaces where name==?
-""",
-                            (space_name,),
-                        )
-                        db.commit()
-                        self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
-                        for win in app.list_of_task_lists:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_editors:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-                        for win in app.list_of_task_organizers:
-                            win.build_space_list()
-                            if win.space.currentText() == space_name:
-                                win.space.setCurrentIndex(0)
-
-        menu.addAction("löschen", _space_delete)
-
-        def space_edit():
-            if self.space.currentData() is None:
-                self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
-                return
-            space_editor.SpaceEditor(self.space.currentText()).exec()
-
-        menu.addAction("bearbeiten", space_edit)
-
+        menu.addAction("hinzufügen", self._space_add)
+        menu.addAction("löschen", self._space_delete)
+        menu.addAction("bearbeiten", self.space_edit)
         self.button9a.setMenu(menu)
 
         self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
@@ -235,7 +166,7 @@ DELETE FROM spaces where name==?
 
         url = "https://www.youtube.com/watch?v=kvZEzEOPRfw"
         self.button(QWizard.WizardButton.HelpButton).clicked.connect(lambda: webbrowser.open(url))
-        self.button(QWizard.WizardButton.CustomButton2).clicked.connect(self.delete_task)
+        self.button(QWizard.WizardButton.CustomButton2).clicked.connect(lambda: self.delete_task())
 
         # shortcut for num9 to click button9 (Spaces)
         self.button9a.setShortcut("9")
