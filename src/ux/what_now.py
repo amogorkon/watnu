@@ -12,15 +12,16 @@ from typing import Deque
 from beartype import beartype
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtGui import QAction, QKeySequence, QShortcut
+from PyQt6.QtWidgets import QButtonGroup, QMenu, QMessageBox
 
-import src.ui as ui
-from src import app, config
+from src import app, config, db, ui
 from src.classes import ACTIVITY, Task
 from src.helpers import cached_getter
 from src.logic import balance, get_doable_tasks, prioritize, schedule
-from src.ux import task_editor, task_finished, task_running
-from src.ux.helpers import tasks_to_json, to_clipboard
+
+from . import task_editor, task_finished, task_running
+from .helpers import tasks_to_json, to_clipboard
 
 SELECT = Enum("SELECT", "BALANCE PRIORITY TIMING")
 
@@ -38,8 +39,24 @@ GREY = "color: grey;"
 NO_TASK = "Keine Aufgabe"
 
 
+class CustomMenu(QMenu):
+    def keyPressEvent(self, event):
+        text = event.text()
+        if text == "1":
+            self.actions()[0].trigger()
+            self.close()
+        elif text == "2":
+            self.actions()[1].trigger()
+            self.close()
+        elif text == "3":
+            self.actions()[2].trigger()
+            self.close()
+        else:
+            super().keyPressEvent(event)
+
+
+@beartype
 class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
-    @beartype
     def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
@@ -70,13 +87,22 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         self.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.CustomizeWindowHint
         )
-        menu = QtWidgets.QMenu()
-        menu.addAction("DeepSeek", lambda: self._open_ai("deepseek"))
-        menu.addAction("Gemini", lambda: self._open_ai("gemini"))
-        menu.addAction("Copilot", lambda: self._open_ai("copilot"))
-        self.button3.setMenu(menu)
+        self.menu3 = CustomMenu(self)
+        self.action1 = QAction("DeepSeek", self)
+        self.action2 = QAction("Gemini", self)
+        self.action3 = QAction("Copilot", self)
+        self.action1.triggered.connect(lambda: self._open_ai("deepseek"))
+        self.action2.triggered.connect(lambda: self._open_ai("gemini"))
+        self.action3.triggered.connect(lambda: self._open_ai("copilot"))
+        self.action1.setShortcut(QKeySequence("1"))
+        self.action2.setShortcut(QKeySequence("2"))
+        self.action3.setShortcut(QKeySequence("3"))
 
-        self.task_selection_button_group = QtWidgets.QButtonGroup(self)
+        self.menu3.addAction(self.action1)
+        self.menu3.addAction(self.action2)
+        self.menu3.addAction(self.action3)
+
+        self.task_selection_button_group = QButtonGroup(self)
         self.task_selection_button_group.addButton(self.button7)
         self.task_selection_button_group.addButton(self.button8)
         self.task_selection_button_group.addButton(self.button9)
@@ -88,7 +114,13 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         self.setFocus()  # Q.Key.Space doesn't work without this!
 
+    def _menu3_open(self):
+        self.menu3.exec(self.button3.mapToGlobal(self.button3.rect().bottomLeft()))
+
     def _init_signals(self) -> None:
+        shortcut_open_menu = QShortcut(QKeySequence("3"), self)
+        shortcut_open_menu.activated.connect(self._menu3_open)
+
         def _select_priority(event):
             if self.priority_task:
                 _unselect_all()
@@ -131,10 +163,13 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         self.button1.clicked.connect(lambda: throw_coins())
         self.button2.clicked.connect(self._task_done)
-        # self.button3.clicked.connect(lambda: self._open_ai("deepseek"))
+        self.button3.clicked.connect(self._menu3_open)
         self.button4.clicked.connect(self._edit_task)
         self.button5.clicked.connect(self._run_task)
         self.button6.clicked.connect(self._new_task)
+        self.button7.installEventFilter(self)
+        self.button8.installEventFilter(self)
+        self.button9.installEventFilter(self)
 
     def _open_ai(self, kind: str):
         text = "Welche Aufgabe soll ich als nächstes machen?\n\n" + tasks_to_json([
@@ -144,9 +179,12 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
         ])
         to_clipboard(text)
 
-        QMessageBox.information(
-            self, "Information", "Aufgaben wurden als Text kopiert. Bitte in das Chat-Feld der KI einfügen."
-        )
+        if config.show_whatnow_ai_clipboard_info:
+            QMessageBox.information(
+                self,
+                "Information",
+                "Aufgaben wurden als Text kopiert. Bitte in das Chat-Feld der KI einfügen.",
+            )
 
         match kind:
             case "deepseek":
@@ -168,6 +206,7 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
                 self.skip_timing()
                 self.skip_balance()
                 self.skip_priority()
+        self.setFocus()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         match event.key():
@@ -178,6 +217,7 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
             case Qt.Key.Key_9 if self.balance_task:
                 self.balance.mousePressEvent(None)
             case Qt.Key.Key_Space:
+                print("Space pressed", time())
                 self._skip_task()
             case Qt.Key.Key_Enter | Qt.Key.Key_Return:
                 self._edit_task()
@@ -202,7 +242,7 @@ class WhatNow(QtWidgets.QDialog, ui.what_now.Ui_Dialog):
 
         self.groups = defaultdict(lambda: [])
 
-        self.tasks = get_doable_tasks(app.tasks.values())
+        self.tasks = get_doable_tasks(app.tasks.values(), db=db)
 
         if not self.tasks:
             QtWidgets.QMessageBox.information(
