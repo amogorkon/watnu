@@ -374,16 +374,12 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin, SkillMixin
         selected = self.get_selected_tasks()
         if not selected:
             return
-
-        db.executemany(
-            """
-UPDATE tasks
-SET 'deleted' = False, 'done' = False, 'draft' = False, 'inactive' = False
-WHERE id == (?)
-""",
-            [(task.id,) for task in selected],
-        )
-        db.commit()
+        for task in selected:
+            task.set_("draft", False)
+            task.set_("inactive", False)
+            task.set_("done", False)
+            task.set_("deleted", False)
+            task.reload()
 
     def _set_as(self, property: str, set_flag):
         selected = self.get_selected_tasks()
@@ -642,11 +638,6 @@ font-size: 12pt;
         self.field_filter.completer().setModel(QStringListModel(app.history))
         self.update()
 
-    def share_via_telegram(self, task):
-        text = task.do
-        url = ""
-        webbrowser.open(f"https://t.me/share/url?url={url}&text={text}")
-
     def _notify_windows_of_task_deletion(self, task):
         for win in app.list_of_task_lists:
             win.build_task_list()
@@ -684,14 +675,23 @@ font-size: 12pt;
         if not self.task_table.rect().contains(pos):
             return
 
-        def _send_task():
-            selected = self.get_selected_tasks()
-            if not selected:
-                return
-            text = turn_tasks_into_text(selected)
-            # escape characters in the text for http
-            text = urllib.parse.quote(text)
-            webbrowser.open(f"https://t.me/share/url?url= &text={text}")
+        menu = QtWidgets.QMenu()
+        icon = QtGui.QIcon(str(config.base_path / "extra/feathericons/send.svg"))
+        menu.addAction(
+            "Neue Aufgabe", lambda: task_editor.TaskEditor(current_space=self.space.currentText()).show()
+        )
+        menu.addAction(icon, "Senden", self._send_task_via_telegram)
+        menu.addAction("Kopiere JSON", lambda: to_clipboard(tasks_to_json(self.get_selected_tasks())))
+        menu.exec(self.mapToGlobal(pos))
+
+    def _send_task_via_telegram(self):
+        selected = self.get_selected_tasks()
+        if not selected:
+            return
+        text = turn_tasks_into_text(selected)
+        # escape characters in the text for http
+        text = urllib.parse.quote(text)
+        webbrowser.open(f"https://t.me/share/url?url= &text={text}")
 
 
 def make_new_and_show_all():
