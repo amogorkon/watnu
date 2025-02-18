@@ -80,6 +80,7 @@ class Config:
     db_write_count: int = 0
     db_write_plaintext: bool = False
     db_cipher_path: Path = Path("watnu.cipher")
+    show_whatnow_ai_clipboard_info: bool = True
 
     def save(self):
         self.config_path.write_text(dumps(attrs.asdict(self), indent=4, default=str))
