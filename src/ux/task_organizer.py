@@ -150,38 +150,38 @@ class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
         orig_drag = self.tasks_table.startDrag
         self.tasks_table.startDrag = startDrag
 
-        def dropEvent(event):
-            if not self.task:
-                self.statusBar.showMessage(
-                    "Erstmal eine Aufgabe als Bezug auswählen...",
-                    5000,
-                )
-                event.ignore()
-                return
-            if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
-                for task in self._drag_info:
-                    if task == self.task:
-                        self.statusBar.showMessage(
-                            "Aufgabe kann nicht ihre eigene Voraussetzung sein!",
-                            5000,
-                        )
-                        continue
-                    if self.depends_on:
-                        self.subtasks.add(task)
-                    else:
-                        self.supertasks.add(task)
-                self.task.set_subtasks(self.subtasks) if self.depends_on else self.task.set_supertasks(
-                    self.supertasks
-                )
+        self.orig_drop = self.sub_sup_tasks_table.dropEvent
+        self.sub_sup_tasks_table.dropEvent = self.dropEvent
 
-                self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
-                event.accept()
-            else:
-                event.ignore()
-            orig_drop(event)
+    def dropEvent(self, event):
+        if not self.task:
+            self.statusBar.showMessage(
+                "Erstmal eine Aufgabe als Bezug auswählen...",
+                5000,
+            )
+            event.ignore()
+            return
+        if event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
+            for task in self._drag_info:
+                if task == self.task:
+                    self.statusBar.showMessage(
+                        "Aufgabe kann nicht ihre eigene Voraussetzung sein!",
+                        5000,
+                    )
+                    continue
+                if self.depends_on:
+                    self.subtasks.add(task)
+                else:
+                    self.supertasks.add(task)
+            self.task.set_subtasks(self.subtasks) if self.depends_on else self.task.set_supertasks(
+                self.supertasks
+            )
 
-        orig_drop = self.sub_sup_tasks_table.dropEvent
-        self.sub_sup_tasks_table.dropEvent = dropEvent
+            self.arrange_sub_sup_task_table(self.subtasks if self.depends_on else self.supertasks)
+            event.accept()
+        else:
+            event.ignore()
+        self.orig_drop(event)
 
     def db_changed_check(self):
         if Path(config.db_path).stat().st_mtime > self.last_generated:
