@@ -14,6 +14,7 @@ from src import app
 from src.classes import EVERY, ILK, Task
 from src.functions import bounded_sigmoid, sigmoid
 from src.helpers import cached_getter, pipes
+from src.ux.helpers import get_space_id
 
 # fresh tasks have a habit weight of 0.2689414213699951 - HOURS
 habit_weight = sigmoid(k=0.0002, L=1, x0=5000)
@@ -105,7 +106,7 @@ def schedule(tasks: list) -> deque[Task]:
     )
 
 
-def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
+def check_tasks(tasks: list[Task], now: datetime, db) -> Iterable[Task]:
     for task in tasks:
         if not task.done:
             yield task
@@ -114,38 +115,40 @@ def check_tasks(tasks: list[Task], now: datetime) -> Iterable[Task]:
             yield task
             continue
 
-        every_x = task.repeats.x_every
-
         then = datetime.fromtimestamp(task.last_finished)
         if task.ilk is ILK.habit:
             if now.date() > then.date():
                 task.set_("done", False)
 
         elif task.repeats is not None:
-            reset_task(task, datetime.timestamp(now), every_x)
+            reset_task(task, datetime.timestamp(now), db=db)
 
         yield task
 
 
-def reset_task(db: Connection, task: Task, now: float, every_x: int):
-    every_ilk, x_every, per_ilk, x_per = task.repeats
+def reset_task(
+    task: Task,
+    now: float,
+    db: Connection,
+):
+    every_ilk, every_x, per_ilk, x_per = task.repeats
 
     match every_ilk:
         case EVERY.minute:
             then_minute = task.last_finished // 60
             now_minute = now // 60
             if (now_minute - then_minute) % every_x == 0:
-                task.is_done = False
+                task.set_("done", False)
         case EVERY.hour:
             then_hour = task.last_finished // (60 * 60)
             now_hour = now // (60 * 60)
             if (now_hour - then_hour) % every_x == 0:
-                task.is_done = False
+                task.set_("done", False)
         case EVERY.day:
             then_day = task.last_finished // (60 * 60 * 24)
             now_day = now // (60 * 60 * 24)
             if (now_day - then_day) % every_x == 0:
-                task.is_done = False
+                task.set_("done", False)
         case EVERY.week:
             reset_task_if_time_passed(now, 7, task, every_x)
         case EVERY.year:
@@ -169,14 +172,14 @@ def reset_task(db: Connection, task: Task, now: float, every_x: int):
             )
 
             if len(list(query.fetchall())) < x_per:
-                task.is_done = False
+                task.set_("done", False)
 
 
 def reset_task_if_time_passed(now, days, task, every_x):
     now_week = now // (60 * 60 * 24 * days)
     then_week = task.last_finished // (60 * 60 * 24 * days)
     if (now_week - then_week) % every_x == 0:
-        task.is_done = False
+        task.set_("done", False)
 
 
 def skill_level(seconds):
@@ -211,12 +214,15 @@ def skill_level(seconds):
 
 
 @pipes
-def get_doable_tasks(tasks: list[Task]) -> list[Task]:
+def get_doable_tasks(
+    tasks: list[Task],
+    db,
+) -> list[Task]:
     """Get all tasks that are doable at this moment."""
     now = datetime.now()
     return (
         tasks
-        >> check_tasks(now=now)
+        >> check_tasks(now=now, db=db)
         >> filter_tasks_by_requirements
         >> filter_tasks_by_constraints(now=now)
         >> list
@@ -368,3 +374,20 @@ def calculate_sum_of_timeslots_for_next_year(constraints: np.array) -> int:
         constraints (np.array): 5 min timeslots per week
     """
     return sum(constraints) * 52
+
+
+@pipes
+def filter_tasks(widget, tasks: list[Task]) -> list[Task]:
+    """Filter tasks according to the current filter settings."""
+    return (
+        tasks
+        >> filter_tasks_by_space(
+            get_space_id(
+                widget.space.currentText(),
+                widget.space.currentIndex(),
+            )
+        )
+        >> filter_tasks_by_status(widget.status.currentIndex())
+        >> filter_tasks_by_ilk(widget.ilk.currentIndex())
+        >> list
+    )
