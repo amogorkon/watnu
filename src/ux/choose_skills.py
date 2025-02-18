@@ -4,11 +4,11 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QItemSelectionModel, Qt
 from PyQt6.QtSql import QSqlTableModel
 
-import src.ui as ui
+from src import ui
 
 
 class SkillChooser(QtWidgets.QDialog, ui.choose_skills.Ui_Dialog):
-    def __init__(self, editor: task_editor.TaskEditor, task=None):
+    def __init__(self, editor: ux.task_editor.TaskEditor, task=None):
         super().__init__()
         self.setupUi(self)
         self.task = task

@@ -147,29 +147,29 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin, SkillMixin
 
         # Task edit...
         menu = QtWidgets.QMenu()
-        menu.addAction("neu", lambda: task_editor.Editor(current_space=self.space.currentText()).show())
+        menu.addAction("neu", lambda: task_editor.TaskEditor(current_space=self.space.currentText()).show())
         menu.addAction("als Klon", self.clone_as_is)
         menu.addAction("kloniert als Subtask", self.clone_as_sub)
         menu.addAction("kloniert als Supertask", self.clone_as_sup)
         self.button6.setMenu(menu)
 
-        # space menu
+        # space/skill menu
         menu = QtWidgets.QMenu()
         menu.addAction("Space zuweisen", self._space_set)
         menu.addAction("Space hinzufügen", self._space_add)
         menu.addAction("Space löschen", self._space_delete)
         menu.addAction(
-            "bearbeiten",
+            "Space bearbeiten",
             lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
             if self.space.currentData() is None
             else space_editor.SpaceEditor(self.space.currentText()).exec(),
         )
-
+        menu.addSeparator()
         menu.addAction("Skill zuweisen", self._skill_set)
         menu.addAction("Skill hinzufügen", self._skill_add)
         menu.addAction("Skill löschen", self._skill_delete)
         menu.addAction(
-            "bearbeiten",
+            "Skill bearbeiten",
             lambda: self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
             if self.space.currentData() is None
             else skill_editor.SkillEditor(self.space.currentText()).exec(),
