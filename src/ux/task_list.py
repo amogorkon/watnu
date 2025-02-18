@@ -26,8 +26,10 @@ from src import app, config, ui
 from src.classes import Task
 from src.logic import filter_tasks_by_content
 
+from ..logic import filter_tasks
 from . import (
     choose_skills,
+    mixin,
     skill_editor,
     space_editor,
     task_editor,
@@ -36,10 +38,7 @@ from . import (
     task_running,
 )
 from .helpers import (
-    SkillMixin,
-    SpaceMixin,
     deadline_as_str,
-    filter_tasks,
     get_space_id,
     tasks_to_json,
     to_clipboard,
@@ -90,7 +89,7 @@ class Checklist(QWidget):
         layout.setSpacing(0)
 
 
-class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, SpaceMixin, SkillMixin):
+class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixin.SkillMixin):
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
         self.setupUi(self)
