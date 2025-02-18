@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from PyQt6.QtCore import QSize, QVariant
 from PyQt6.QtWidgets import QComboBox, QDialog, QInputDialog, QLineEdit, QMessageBox
 
 from src import app, config, db
 from src.classes import typed
 
-from . import choose_space, skill_editor, space_editor, task_list, what_now
+from . import choose_space, skill_editor, space_editor
 from .helpers import get_space_id
+
+if TYPE_CHECKING:
+    from . import task_list, what_now
 
 
 class SpaceMixin:
-    def __init__(self):
-        super().__init__()
-
     def build_space_list(self, first_item_text="alle Räume", first_time=False) -> None:
         if first_time:
             selected_space = config.last_selected_space or config.last_edited_space
@@ -67,7 +69,7 @@ class SpaceMixin:
         config.last_selected_space = self.space.currentText() or ""
         config.save()
 
-    def _space_delete(self):
+    def _space_delete(self: task_list.TaskList | what_now.WhatNow) -> None:
         space_name = self.space.currentText()
         if [task for task in app.tasks.values() if task.space.name == space_name]:
             QMessageBox.information(
@@ -113,7 +115,7 @@ DELETE FROM spaces where name=='{space_name}'
             5000,
         )
 
-    def _space_add(self):
+    def _space_add(self: task_list.TaskList | what_now.WhatNow) -> None:
         text, okPressed = QInputDialog.getText(
             self,
             "Neuer Space",
@@ -133,6 +135,12 @@ VALUES ('{text}')
             self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
             for win in app.list_of_task_editors + app.list_of_task_organizers:
                 win.build_space_list()
+
+    def space_edit(self):
+        if self.space.currentData() is None:
+            self.statusBar.showMessage("Dieser 'Raum' lässt sich nicht bearbeiten.", 5000)
+            return
+        space_editor.SpaceEditor(self.space.currentText()).exec()
 
 
 class SkillMixin:

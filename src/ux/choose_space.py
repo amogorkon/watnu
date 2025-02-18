@@ -1,7 +1,8 @@
 from PyQt6 import QtWidgets
 
-import src.ui as ui
-from src.ux.task_list import SpaceMixin
+from src import ui
+
+from .mixin import SpaceMixin
 
 
 class SpaceSelection(QtWidgets.QDialog, ui.choose_space.Ui_Dialog, SpaceMixin):

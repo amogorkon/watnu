@@ -535,7 +535,7 @@ def make_new_and_show_all():
     """
     Creates a new task checklist and shows all.
     """
-    win = Organizer()()
+    win = Organizer()
     for win in app.list_of_task_organizers:
         win.show()
     return win
