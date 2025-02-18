@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import QPushButton, QWizard
 from src import app, config, db, ui
 from src.classes import ACTIVITY, ILK, LEVEL, Task
 
-from . import mixin, space_editor, task_finished
+from . import mixin, task_finished
 from .helpers import get_space_priority
 
 _translate = QCoreApplication.translate

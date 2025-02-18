@@ -18,7 +18,7 @@ from src.logic import (
     filter_tasks_by_content,
 )
 
-from . import task_editor, task_list
+from . import mixin, task_editor, task_list
 from .icons import ARROW_DOWN, ARROW_UP, NOK, OK
 
 _translate = QtCore.QCoreApplication.translate
@@ -42,7 +42,7 @@ font-size: 12pt;
 """
 
 
-class Organizer(QDialog, ui.task_organizer.Ui_Dialog, ux_helpers.SpaceMixin):
+class Organizer(QDialog, ui.task_organizer.Ui_Dialog, mixin.SpaceMixin):
     def __init__(
         self,
         task: Task | None = None,

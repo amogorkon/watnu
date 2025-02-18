@@ -6,14 +6,13 @@ from PyQt6.QtWidgets import QComboBox, QDialog, QInputDialog, QLineEdit, QMessag
 from src import app, config, db
 from src.classes import typed
 
-from . import choose_space, skill_editor, space_editor
+from . import choose_space, skill_editor, space_editor, task_list, what_now
 from .helpers import get_space_id
 
 
 class SpaceMixin:
     def __init__(self):
         super().__init__()
-        from . import task_list, what_now
 
     def build_space_list(self, first_item_text="alle Räume", first_time=False) -> None:
         if first_time:
