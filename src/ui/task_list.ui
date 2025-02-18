@@ -472,7 +472,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="button9a">
+        <widget class="QPushButton" name="button9">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -483,29 +483,13 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Raum...</string>
+          <string>Raum/Fähigkeiten</string>
          </property>
          <property name="shortcut">
           <string>9</string>
          </property>
          <property name="checkable">
           <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="button9b">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Fähigkeiten...</string>
-         </property>
-         <property name="shortcut">
-          <string>Ctrl+9</string>
          </property>
         </widget>
        </item>

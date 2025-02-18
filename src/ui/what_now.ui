@@ -695,10 +695,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Was kommt als Nächstes?</string>
-       </property>
-       <property name="shortcut">
-        <string>3</string>
+        <string>KI fragen...</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
