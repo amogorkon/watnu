@@ -201,7 +201,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
 
         self.space.currentIndexChanged.connect(self._space_index_changed)
 
-    def _init_task_edit(self, task):
+    def _init_task_edit(self, task: Task):
         self.deadline = task.deadline
         self.skill_ids = self.task.skill_ids
         self.priority.setValue(task.priority)
@@ -258,7 +258,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             self.primary_activity.addItem(item.name, QVariant(item.value))
             self.secondary_activity.addItem(item.name, QVariant(item.value))
 
-        for i, item in enumerate(LEVEL):
+        for i, item in enumerate(reversed(LEVEL)):
             self.level.addItem(item.name)
             self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
 
@@ -322,7 +322,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             db.execute(
                 """
                 INSERT INTO repeats
-                (task_id, every_ilk, x_every, min_distance, x_per)
+                (task_id, every_ilk, x_every, x_per, per_ilk)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 (
@@ -399,28 +399,20 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
 
     def save_cleanup(self) -> None:
         """need to clean up first, because of foreign key constraints"""
-        db.executescript(
-            """
-            BEGIN;
-            DELETE FROM task_requires_task WHERE task_of_concern == ?;
-            DELETE FROM task_requires_task WHERE required_task == ?;
-            DELETE FROM task_uses_resource WHERE task_id = ?;
-            DELETE FROM task_trains_skill WHERE task_id = ?;
-            DELETE FROM constraints WHERE task_id = ?;
-            DELETE FROM deadlines WHERE task_id = ?;
-            DELETE FROM repeats WHERE task_id = ?;
-            COMMIT;
-            """,
-            (
-                self.task.id,
-                self.task.id,
-                self.task.id,
-                self.task.id,
-                self.task.id,
-                self.task.id,
-                self.task.id,
-            ),
-        )
+
+        statements = [
+            "DELETE FROM task_requires_task WHERE task_of_concern = ?",
+            "DELETE FROM task_requires_task WHERE required_task = ?",
+            "DELETE FROM task_uses_resource WHERE task_id = ?",
+            "DELETE FROM task_trains_skill WHERE task_id = ?",
+            "DELETE FROM constraints WHERE task_id = ?",
+            "DELETE FROM deadlines WHERE task_id = ?",
+            "DELETE FROM repeats WHERE task_id = ?",
+        ]
+
+        with db:
+            for statement in statements:
+                db.execute(statement, (self.task.id,))
 
     def workload(self) -> int:
         """Return the workload in minutes from the GUI."""
@@ -452,8 +444,9 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         }
 
         # TODO: space_id == 0 is NOT NULL!!!
-        db.execute(
-            """
+        with db:
+            db.execute(
+                """
             UPDATE tasks
             SET
                 do = :do,
@@ -471,8 +464,8 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
                 workload = :workload
             WHERE id = :task_id
             """,
-            {**data, "task_id": self.task.id},
-        )
+                {**data, "task_id": self.task.id},
+            )
 
     def accept(self) -> None:
         self.draft = False
@@ -507,6 +500,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             app.win_what.raise_()
         else:
             app.list_of_windows[-1].raise_()
+            app.list_of_windows[-1].activateWindow()  # Focus the next editor
         self.close()
         self.deleteLater()
 
@@ -571,6 +565,7 @@ WHERE id == ?
     def delete_task(self) -> None:
         self.task.delete()
         self.reject()
+        self.task_deleted.emit()
         app.win_what.lets_check_whats_next()
 
     def resource_added(self):
@@ -634,6 +629,12 @@ WHERE space_id = {space_id}
     def _time_constraints_button(self):
         task_finished.Finisher(self.task, direct=True).exec()
         self.accept()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Return and not self.focusWidget().inherits("QLineEdit"):
+            self.accept()
+        else:
+            super().keyPressEvent(event)
 
 
 from src.ux import (  # noqa: E402
