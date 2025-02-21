@@ -3,8 +3,8 @@ import webbrowser
 from collections import defaultdict
 from pathlib import Path
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QPushButton
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtWidgets import QDialog, QFileDialog, QMainWindow, QMessageBox, QPushButton
 from yaml import dump, load
 
 import src.ui as ui
@@ -38,7 +38,7 @@ class MyButton(QPushButton):
         super().__init__()
 
 
-class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
+class MainWindow(QMainWindow, ui.main_window.Ui_MainWindow):
     def quit(self, num, frame):
         self.killed = True
         app.shutdown()
@@ -120,9 +120,9 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
         self.actionImport.triggered.connect(lambda: self._action_import())
 
     def _action_export(self):
-        win = QtWidgets.QDialog()
-        options = QtWidgets.QFileDialog().options()
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+        win = QDialog()
+        options = QFileDialog().options()
+        filename, _ = QFileDialog.getSaveFileName(
             win,
             "Bitte wähle eine .todo Datei zum Exportieren",
             "",
@@ -135,9 +135,9 @@ class MainWindow(QtWidgets.QMainWindow, ui.main_window.Ui_MainWindow):
                 f.writelines(dump(dict(task) for task in app.tasks.values()))
 
     def _action_import(self):
-        win = QtWidgets.QDialog()
-        options = QtWidgets.QFileDialog().options()
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+        win = QDialog()
+        options = QFileDialog().options()
+        filename, _ = QFileDialog.getOpenFileName(
             win,
             "Bitte wähle eine .todo Datei zum Importieren",
             "",
@@ -181,16 +181,16 @@ VALUES ('{d["do"]}',
             app.win_running.raise_()
             return
 
-        match QtWidgets.QMessageBox.question(
+        match QMessageBox.question(
             self,
             "Watnu beenden?",
             "Bist du sicher, dass du Watnu beenden willst?",
         ):
-            case QtWidgets.QMessageBox.StandardButton.Yes:
+            case QMessageBox.StandardButton.Yes:
                 event.accept()
                 app.shutdown()
 
-            case QtWidgets.QMessageBox.StandardButton.No:
+            case QMessageBox.StandardButton.No:
                 event.ignore()
 
     def set_statistics_icon(self):
