@@ -38,7 +38,7 @@ class DB(sqlite3.Connection):
 db = sqlite3.connect(config.db_path, factory=DB)
 
 
-def initialize_globals(db_, app_, config_):
+def initialize_globals(db_: DB, app_: Application, config_: Config):
     global db, app, config
     db = db_
     app = app_
