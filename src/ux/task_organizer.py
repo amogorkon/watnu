@@ -42,7 +42,7 @@ font-size: 12pt;
 """
 
 
-class Organizer(QDialog, ui.task_organizer.Ui_Dialog, mixin.SpaceMixin):
+class Organizer(QDialog, ui.task_organizer.Ui_Dialog, mixin.SpaceMixin, mixin.SkillMixin):
     def __init__(
         self,
         task: Task | None = None,
