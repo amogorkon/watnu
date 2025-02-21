@@ -1,3 +1,4 @@
+import contextlib
 import urllib
 import webbrowser
 from functools import partial
@@ -196,7 +197,8 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
             if Path(config.db_path).stat().st_mtime > self.last_generated
             else None
         )
-        self.space.currentIndexChanged.connect(self.build_task_table)
+
+        self.space.currentIndexChanged.connect(self._space_index_changed)
         self.task_table.cellDoubleClicked.connect(lambda x, y: self.edit_selected(self.task_table))
 
         QShortcut(QKeySequence(Qt.Key.Key_Minus), self).activated.connect(self.close)
@@ -233,7 +235,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
         self.field_filter.textChanged.connect(lambda: QTimer.singleShot(1000, self._filter_changed))
 
     def _post_init_setup(self):
-        self.build_space_list(first_time=True)
+        self.build_space_list()
         if self.selected_tasks:
             self.space.setCurrentIndex(0)
         else:
@@ -409,7 +411,6 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
 
     def build_task_table(self):
         """Prepare for filtering the tasks, then fetch and display them."""
-
         self.last_generated = time()
 
         if self.selected_tasks:
@@ -422,6 +423,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
 
     def arrange_table(self, tasks: list[Task]):
         """Arrange the tasks in the list for display."""
+
         self.task_table.setStyleSheet(
             """
 alternate-background-color: #bfffbf;
@@ -613,7 +615,8 @@ font-size: 12pt;
             >>> task_list.reject()
         """
         super().reject()
-        app.list_of_task_lists.remove(self)
+        with contextlib.suppress(ValueError):
+            app.list_of_task_lists.remove(self)
         app.list_of_windows.remove(self)
 
         if not app.win_what.isHidden():
@@ -694,6 +697,12 @@ font-size: 12pt;
         text = urllib.parse.quote(text)
         webbrowser.open(f"https://t.me/share/url?url= &text={text}")
 
+    def _space_index_changed(self):
+        self.build_task_table()
+        if self.building_space_list:  # side-effect from mixin.SpaceMixin.build_task_list
+            return
+        config.last_selected_space = self.space.currentText()
+        config.save()
 
 def make_new_and_show_all():
     """
