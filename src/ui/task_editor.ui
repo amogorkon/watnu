@@ -414,7 +414,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>erstelle neue Aufgabe...</string>
+         <string>erstelle Aufgabe...</string>
         </property>
         <property name="shortcut">
          <string>6</string>
@@ -424,7 +424,7 @@
       <item row="4" column="1">
        <widget class="QPushButton" name="button5">
         <property name="text">
-         <string>beende Bearbeitung und starte Aufgabe</string>
+         <string>Speichern und Aufgabe starten</string>
         </property>
         <property name="shortcut">
          <string>5</string>
@@ -437,7 +437,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Aufgabe erledigt!</string>
+         <string>Erledigt!</string>
         </property>
         <property name="shortcut">
          <string>2</string>
@@ -512,25 +512,15 @@
          <number>10</number>
         </property>
         <item>
-         <widget class="QPushButton" name="button9a">
+         <widget class="QPushButton" name="button9">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <property name="text">
-           <string>Raum...</string>
+           <string>Raum/Fähigkeiten...</string>
           </property>
           <property name="shortcut">
            <string>9</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="button9b">
-          <property name="text">
-           <string>Fähigkeiten...</string>
-          </property>
-          <property name="shortcut">
-           <string>Ctrl+9</string>
           </property>
          </widget>
         </item>
