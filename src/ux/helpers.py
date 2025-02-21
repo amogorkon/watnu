@@ -61,3 +61,19 @@ def turn_tasks_into_text(tasks: list[Task]) -> str:
         f"=== Task {task.id} {task.printable_deadline} {task.printable_percentage} ===\n{task.do}"
         for task in tasks
     )
+
+
+def to_italic(text):
+    """
+    Convert text to italic."
+    """
+
+    def _gen_map(start, base_char):
+        return {chr(ord(base_char) + i): chr(start + i) for i in range(26)}
+
+    combined_map = {
+        **_gen_map(0x1D44E, "a"),  # Lowercase
+        **_gen_map(0x1D434, "A"),  # Uppercase
+    }
+
+    return "".join([combined_map.get(c, c) for c in text])

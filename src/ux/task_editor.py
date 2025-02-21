@@ -15,7 +15,7 @@ from src import app, config, db, ui
 from src.classes import ACTIVITY, ILK, LEVEL, Task
 
 from . import mixin, task_finished
-from .helpers import get_space_priority
+from .helpers import get_space_priority, to_italic
 
 _translate = QCoreApplication.translate
 
@@ -62,9 +62,12 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         self.skill_ids: list[int] = []
 
     def _show_state_depending(self):
-        statuses = [x for x in ["done", "draft", "deleted", "inactive"] if getattr(self.task, x)]
-        title_status = " - " + ", ".join(statuses) if statuses else ""
-        self.setWindowTitle(f"{self.original_window_title}{title_status}")
+        statuses = [
+            to_italic(word) for word in ["done", "draft", "deleted", "inactive"] if getattr(self.task, word)
+        ]
+        title_status = f" - {', '.join(statuses)}" if statuses else ""
+
+        self.setWindowTitle(f"{self.title}{title_status}")
 
         self.button(QWizard.WizardButton.FinishButton).setEnabled(len(self.do.toPlainText()))
 
