@@ -462,6 +462,7 @@ font-size: 12pt;
             "draft": _translate("TaskList", "Entwurf"),
             "inactive": _translate("TaskList", "Inaktiv"),
             "deleted": _translate("TaskList", "Gelöscht"),
+            "id": _translate("TaskList", "ID"),
         }
 
         currently_selected_rows = self.task_table.selectionModel()
