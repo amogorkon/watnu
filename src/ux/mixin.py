@@ -12,14 +12,12 @@ from . import choose_space, skill_editor, space_editor
 from .helpers import get_space_id
 
 if TYPE_CHECKING:
-    from . import task_list, what_now
+    from . import task_editor, task_list, what_now, task_organizer
 
 
 class SpaceMixin:
-    def build_space_list(self, first_item_text="alle Räume", first_time=False) -> None:
-        if first_time:
-            selected_space = config.last_selected_space or config.last_edited_space
-
+    def build_space_list(self, first_item_text="alle Räume") -> None:
+        self.building_space_list = True  # fix an issue with repeated TaskList._space_index_changed
         self.space: QComboBox
 
         self.space.clear()
@@ -27,24 +25,15 @@ class SpaceMixin:
         # set first item bold
         font = self.space.font()
         font.setBold(True)
-        # self.space.item(0).setFont(font)
+        self.space.model().item(0).setFont(font)
         self.space.insertSeparator(1)
 
-        query = db.execute(
-            """
-        SELECT space_id, name FROM spaces;
-        """
-        )
+        query = db.execute("SELECT space_id, name FROM spaces")
         spaces = query.fetchall()
 
         def number_of_tasks_in_space(item):
             space_id = item[0]
-            return db.execute(
-                """
-                SELECT COUNT(*) FROM tasks WHERE space_id=?;
-                """,
-                (space_id,),
-            ).fetchone()[0]
+            return db.execute("SELECT COUNT(*) FROM tasks WHERE space_id=?", (space_id,)).fetchone()[0]
 
         sorted_spaces_by_number = sorted(spaces, key=number_of_tasks_in_space, reverse=True)
 
@@ -57,8 +46,8 @@ class SpaceMixin:
         for space_id, name in sorted_spaces_by_name:
             self.space.addItem(typed(name, str), QVariant(typed(space_id, int)))
 
-        if first_time:
-            self.space.setCurrentIndex(self.space.findText(selected_space))
+        selected_space = config.last_selected_space or config.last_edited_space or "alle Räume"
+        self.space.setCurrentIndex(self.space.findText(selected_space))
 
         # set the horizontal size of the widget to the size of the longest item in the list
         self.space.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
@@ -66,8 +55,7 @@ class SpaceMixin:
         self.space.setMinimumSize(QSize(120, 0))
         self.space.adjustSize()
         self.space.update()
-        config.last_selected_space = self.space.currentText() or ""
-        config.save()
+        self.building_space_list = False
 
     def _space_delete(self: task_list.TaskList | what_now.WhatNow) -> None:
         space_name = self.space.currentText()
@@ -84,11 +72,7 @@ class SpaceMixin:
                 f"Soll der Raum '{space_name}' wirklich gelöscht werden?",
             ):
                 case QMessageBox.StandardButton.Yes:
-                    db.execute(
-                        f"""
-DELETE FROM spaces where name=='{space_name}'
-"""
-                    )
+                    db.execute("DELETE FROM spaces where name==?", (space_name,))
                     db.commit()
                     self.statusBar.showMessage(f"Raum '{space_name}' gelöscht.", 5000)
                     for win in (
@@ -124,12 +108,7 @@ DELETE FROM spaces where name=='{space_name}'
             "",
         )
         if okPressed and text != "":
-            db.execute(
-                f"""
-INSERT OR IGNORE INTO spaces (name)
-VALUES ('{text}')
-"""
-            )
+            db.execute("INSERT OR IGNORE INTO spaces (name) VALUES (?)", (text,))
             db.commit()
             space_editor.SpaceEditor(text).exec()
             self.statusBar.showMessage(f"Raum '{text}' hinzugefügt.", 5000)
@@ -153,19 +132,14 @@ class SkillMixin:
             "",
         )
         if okPressed and text != "":
-            db.execute(
-                f"""
-    INSERT OR IGNORE INTO skills (name)
-    VALUES ('{text}')
-    """
-            )
+            db.execute("INSERT OR IGNORE INTO skills (name) VALUES (?)", (text,))
             db.commit()
             skill_editor.SkillEditor(text).exec()
             self.statusBar.showMessage(f"Skill '{text}' hinzugefügt.", 5000)
             for win in app.list_of_task_editors + app.list_of_task_lists:
                 win.build_skill_list()
 
-    def _skill_delete(self):
+    def _skill_delete(self: task_list.TaskList | task_editor.TaskEditor | task_organizer.Organizer) -> None:
         skill_name = self.space.currentText()
         if [task for task in app.tasks.values() if task.skills.name == skill_name]:
             QMessageBox.information(
@@ -180,11 +154,7 @@ class SkillMixin:
                 f"Soll der Skill '{skill_name}' wirklich gelöscht werden?",
             ):
                 case QMessageBox.StandardButton.Yes:
-                    db.execute(
-                        f"""
-DELETE FROM skills where name=='{skill_name}'
-"""
-                    )
+                    db.execute("DELETE FROM skills WHERE name=?", (skill_name,))
                     db.commit()
                     self.statusBar.showMessage(f"Skill '{skill_name}' gelöscht.", 5000)
                     for win in (
