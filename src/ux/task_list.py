@@ -118,6 +118,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
             # displayed columns: tuple[Header, displayed, how to get value]
 
         self.columns = (
+            ("id", lambda t: str(t.id)),
             ("space", lambda t: str(t.space.name)),
             ("level", lambda t: str(t.level)),
             ("priority", lambda t: str(t.get_total_priority())),
