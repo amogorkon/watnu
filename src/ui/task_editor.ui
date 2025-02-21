@@ -269,6 +269,9 @@
           <property name="enabled">
            <bool>true</bool>
           </property>
+          <property name="toolTip">
+           <string>Sum of this task's priority (own + space, normalized among siblings) and the highest supertask's total priority.</string>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>

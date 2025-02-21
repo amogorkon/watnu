@@ -408,8 +408,11 @@
                </property>
                <property name="font">
                 <font>
+                 <pointsize>10</pointsize>
+                 <weight>75</weight>
                  <italic>true</italic>
-                 <underline>true</underline>
+                 <bold>true</bold>
+                 <underline>false</underline>
                  <kerning>true</kerning>
                 </font>
                </property>
@@ -724,8 +727,11 @@
                </property>
                <property name="font">
                 <font>
+                 <pointsize>10</pointsize>
+                 <weight>75</weight>
                  <italic>true</italic>
-                 <underline>true</underline>
+                 <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">
@@ -942,8 +948,11 @@
                </property>
                <property name="font">
                 <font>
+                 <pointsize>10</pointsize>
+                 <weight>75</weight>
                  <italic>true</italic>
-                 <underline>true</underline>
+                 <bold>true</bold>
+                 <underline>false</underline>
                 </font>
                </property>
                <property name="text">

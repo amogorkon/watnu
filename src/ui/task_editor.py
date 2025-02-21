@@ -498,6 +498,7 @@ class Ui_Wizard(object):
         self.label_8.setText(_translate("Wizard", "Raum"))
         self.label_9.setText(_translate("Wizard", "Priorität"))
         self.label_10.setText(_translate("Wizard", "Totale Priorität"))
+        self.total_priority.setToolTip(_translate("Wizard", "Sum of this task\'s priority (own + space, normalized among siblings) and the highest supertask\'s total priority."))
         self.label_11.setText(_translate("Wizard", "Level"))
         self.label_14.setText(_translate("Wizard", "Primäre Aktivität "))
         self.primary_activity.setItemText(0, _translate("Wizard", "---"))
