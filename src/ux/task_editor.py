@@ -7,7 +7,7 @@ from typing import Literal
 import numpy as np
 from beartype import beartype
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer, QVariant, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QHideEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QPushButton, QWizard
 
@@ -21,8 +21,10 @@ _translate = QCoreApplication.translate
 
 
 @beartype
-class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
+class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin, mixin.SkillMixin):
     """Editor for new or existing tasks."""
+
+    task_deleted = pyqtSignal()
 
     def __init__(
         self,
@@ -36,14 +38,14 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         draft: bool = False,
     ):
         super().__init__()
-        print(f"{repr(task)} {current_space=} {draft=} {cloning=} {templating=} {as_sup=}")
         self.setupUi(self)
+        app.list_of_task_editors.append(self)
+        app.list_of_windows.append(self)
 
         self._init_defaults(task, cloning, templating, as_sup, current_space, draft)
-        self.build_space_list(first_item_text="")
-        self._init_task_edit(task) if task else self._init_task_new(current_space)
         self._init_ui_elements()
         self._init_signals()
+        self._init_task_edit(task) if task else self._init_task_new(current_space, cloning, templating)
         self._post_init_setup(cloning, templating, as_sup)
 
     def _init_defaults(self, task, cloning, templating, as_sup, current_space, draft):
@@ -91,29 +93,6 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
                 self.is_routine.setChecked(True)
                 self.button8.setEnabled(True)
 
-    def _init_ui_elements(self):
-        app.list_of_task_editors.append(self)
-        app.list_of_windows.append(self)
-        self.setWindowTitle(f"Task {self.task.id}")
-        self.original_window_title = self.windowTitle()
-        self.statusBar = QtWidgets.QStatusBar()
-        self.page1.layout().addWidget(self.statusBar)
-        self.statusBar.setSizeGripEnabled(False)
-        # fira rules!
-        self.do.setFont(app.fira_font)
-        self.notes.setFont(app.fira_font)
-        self.gui_timer = QTimer()
-        self.setButtonText(
-            QWizard.WizardButton.CustomButton1,
-            "als Entwurf speichern",
-        )
-
-        self._show_state_depending()  # first time
-        self.gui_timer.timeout.connect(self._show_state_depending)
-
-        self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
-        self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
-
         if self.task.deadline == float("inf"):
             self.choose_deadline_button.hide()
         else:
@@ -144,6 +123,22 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         else:
             self.organize_supertasks.show()
 
+    def _init_ui_elements(self):
+        self.title = ""
+        self.statusBar = QtWidgets.QStatusBar()
+        self.page1.layout().addWidget(self.statusBar)
+        self.statusBar.setSizeGripEnabled(False)
+        # fira rules!
+        self.do.setFont(app.fira_font)
+        self.notes.setFont(app.fira_font)
+        self.gui_timer = QTimer()
+        self.setButtonText(
+            QWizard.WizardButton.CustomButton1,
+            "als Entwurf speichern",
+        )
+
+        self.gui_timer.timeout.connect(self._show_state_depending)
+
         if app.win_running:
             self.button5.setEnabled(False)
 
@@ -151,14 +146,33 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         menu.addAction("hinzufügen", self._space_add)
         menu.addAction("löschen", self._space_delete)
         menu.addAction("bearbeiten", self.space_edit)
-        self.button9a.setMenu(menu)
+        self.button9.setMenu(menu)
+
+        self.build_space_list(first_item_text="")
+
+        menu = QtWidgets.QMenu()
+        menu.addAction("ohne Vorlage", lambda: TaskEditor(current_space=self.space.currentText()).show())
+        menu.addAction("als Klon von dieser Aufgabe", self._clone)
+        self.button6.setMenu(menu)
+
+        for item in ACTIVITY:
+            if item == ACTIVITY.unspecified:
+                continue
+            self.primary_activity.addItem(item.name, QVariant(item.value))
+            self.secondary_activity.addItem(item.name, QVariant(item.value))
+
+        for i, item in enumerate(reversed(LEVEL)):
+            self.level.addItem(item.name)
+            self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
+
+        self.level.setCurrentIndex(2)
 
         self.setButtonText(QWizard.WizardButton.FinishButton, "Fertig")
         self.setButtonText(QWizard.WizardButton.CancelButton, "Abbrechen")
         self.button(QWizard.WizardButton.CustomButton2).setText(_translate("Wizard", "löschen"))
 
     def _init_signals(self):
-        self.button1.clicked.connect(lambda e: print(e))
+        self.button1.clicked.connect(lambda: None)
         self.button2.clicked.connect(self._time_constraints_button)
         self.button3.clicked.connect(lambda: self.organize(True))
         self.button4.clicked.connect(lambda: None)
@@ -171,9 +185,6 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         self.button(QWizard.WizardButton.HelpButton).clicked.connect(lambda: webbrowser.open(url))
         self.button(QWizard.WizardButton.CustomButton2).clicked.connect(lambda: self.delete_task())
 
-        # shortcut for num9 to click button9 (Spaces)
-        self.button9a.setShortcut("9")
-
         self.kind_of.buttonToggled.connect(
             lambda: self.button8.setEnabled(self.is_task.isChecked() or self.is_habit.isChecked())
         )
@@ -184,12 +195,11 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
         )
 
-        # Draft Button
         @self.button(QWizard.WizardButton.CustomButton1).clicked.connect
-        def _():
+        def _save_as_draft():
             self.draft = True
             self._save()
-            self.done(12)
+            self.done(12)  # sic. magic number
 
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(self.accept)
 
@@ -230,7 +240,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         self.workload_hours.setValue(self.task.workload // 60)
         self.workload_minutes.setValue(self.task.workload % 60)
 
-    def _init_task_new(self, current_space):
+    def _init_task_new(self, current_space, cloning, templating):
         self.space.setCurrentIndex(self.space.findText(current_space or config.last_edited_space))
 
         query = db.execute("""INSERT INTO tasks (do, draft) VALUES ("",True);""")
@@ -239,10 +249,21 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
         app.tasks[self.task.id] = self.task
         self.draft = True
 
+        if cloning:
+            self.statusBar.showMessage("Bearbeite Klon...", 5000)
+            self.title += " (geklont von #...)"
+
+        if templating:
+            self.statusBar.showMessage("Bearbeite Vorlage...", 5000)
+            self.title += " (#... als Vorlage)"
+
     def _post_init_setup(self, cloning, templating, as_sup):
         # clone as subtask of the given task
         if as_sup == -1:
             self.supertasks = [self.task.id]
+
+        self.organize_supertasks.setToolTip(f"von dieser Aufgabe abhängig: {len(self.task.supertasks)}")
+        self.organize_subtasks.setToolTip(f"diese Aufgabe ist abhängig von: {len(self.task.subtasks)}")
 
         # given task is a subtask of the new task
         if as_sup == 1:
@@ -254,18 +275,6 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
             self.do.setPlainText("")
             self.notes.setPlaceholderText(self.task.notes)
             self.notes.setPlainText("")
-
-        for item in ACTIVITY:
-            if item == ACTIVITY.unspecified:
-                continue
-            self.primary_activity.addItem(item.name, QVariant(item.value))
-            self.secondary_activity.addItem(item.name, QVariant(item.value))
-
-        for i, item in enumerate(reversed(LEVEL)):
-            self.level.addItem(item.name)
-            self.level.setItemData(i, item.value, Qt.ItemDataRole.UserRole)
-
-        self.level.setCurrentIndex(2)
 
         self.page1.registerField(
             "task*",
@@ -279,24 +288,9 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin):
 
         self.gui_timer.start(100)
 
-        if cloning:
-            self.statusBar.showMessage("Bearbeite Klon...", 5000)
-            self.setWindowTitle(_translate("Wizard", "Bearbeite Klon"))
-
-        if templating:
-            self.setWindowTitle(_translate("Wizard", "Bearbeite verknüpfte Aufgabe"))
-
-        def create_task():
-            win = TaskEditor(current_space=self.space.currentText())
-            app.list_of_task_editors.append(win)
-            app.list_of_windows.append(win)
-            win.show()
-
-        menu = QtWidgets.QMenu()
-        menu.addAction("ohne Vorlage", create_task)
-        menu.addAction("als Klon von dieser Aufgabe", self._clone)
-        self.button6.setMenu(menu)
-
+        self.title = f"Bearbeite Aufgabe #{self.task.id}"
+        self.setWindowTitle(self.title)
+        self._show_state_depending()  # first time
         self.activateWindow()
 
     def _save(self) -> None:
