@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import unicodedata
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
@@ -67,6 +66,7 @@ class Skill(NamedTuple):
         )
 
 
+@beartype(conf=conf)
 class Space:
     __slots__ = (
         "space_id",
@@ -74,26 +74,25 @@ class Space:
         "priority",
         "primary_activity_id",
         "secondary_activity_id",
+        "inactive",
     )
 
-    @beartype
     def __init__(self, **kwargs) -> None:
-        self.space_id = None
-        self.name = None
-        self.priority = 0
-        self.primary_activity_id = None
-        self.secondary_activity_id = None
+        self.space_id: int | None = None
+        self.name: str | None = None
+        self.priority: float = 0
+        self.primary_activity_id: int | None = None
+        self.secondary_activity_id: int | None = None
+        self.inactive: bool = False
 
         for k, v in kwargs.items():
-            object.__setattr__(self, k, v)
+            setattr(self, k, v)
 
     @classmethod
-    @beartype
     def from_id(cls, ID: int) -> Space | None:
         return retrieve_space_by_id(ID)
 
     @classmethod
-    @beartype
     def from_json(cls, json_str: str) -> Space:
         return cls(**json.loads(json_str))
 
@@ -119,7 +118,6 @@ class Space:
 
 
 @cached_getter
-@beartype
 def retrieve_space_by_id(ID: int | None, db=db) -> Space | None:
     """Retrieve a space from the database by its ID.
 
@@ -475,7 +473,7 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
         del app.tasks[self.id]
 
     @cached_property
-    def resources(self) -> list[str]:
+    def resources(self) -> list[tuple[str, int]]:
         return [
             (typed(url, str), typed(resource_id, int))
             for url, resource_id in db.execute(
@@ -740,13 +738,3 @@ SELECT name FROM levels WHERE level_id={level_id};
 """
     )
     return typed_row(query.fetchone(), 0, str)
-
-
-@beartype
-def disemvowel(text: str) -> Generator[str, None, None]:
-    for word in text.split():
-        yield disemvowel(word)
-    first, middle, last = text[0], text[1:-1], text[-1]
-
-    ascii_text = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
-    yield first + ascii_text.translate(str.maketrans("", "", "aeiouAEIOU")) + last

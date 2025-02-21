@@ -1,3 +1,4 @@
+import unicodedata
 from collections import deque
 from collections.abc import Iterable
 from datetime import datetime, timedelta
@@ -7,6 +8,7 @@ from sqlite3 import Connection
 from time import time
 
 import numpy as np
+from beartype import beartype
 from Levenshtein import ratio
 from nltk.tokenize import WordPunctTokenizer  # noqa: E402
 
@@ -391,3 +393,26 @@ def filter_tasks(widget, tasks: list[Task]) -> list[Task]:
         >> filter_tasks_by_ilk(widget.ilk.currentIndex())
         >> list
     )
+
+
+@beartype
+def disemvowel(text: str) -> str:
+    processed_words = []
+    for word in text.split():
+        if not word:
+            continue
+
+        # Handle first and last characters
+        first = word[0]
+        last = word[-1] if len(word) > 1 else ""
+        middle = word[1:-1] if len(word) > 2 else ""
+
+        # Normalize and remove vowels from the middle part
+        ascii_middle = unicodedata.normalize("NFD", middle).encode("ascii", "ignore").decode()
+        processed_middle = ascii_middle.translate(str.maketrans("", "", "aeiouAEIOU"))
+
+        # Reconstruct the word
+        processed_word = first + processed_middle + last
+        processed_words.append(processed_word)
+
+    return " ".join(processed_words)
