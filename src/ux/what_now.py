@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import random
 import webbrowser
 from collections import Counter, defaultdict
 from enum import Enum
 from itertools import count
-from math import modf, sin
+from math import cos, modf, radians, sin
 from random import choice, seed
 from time import time, time_ns
 from typing import Deque
 
 from beartype import beartype
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QAction, QColor, QKeyEvent, QKeySequence, QPainter, QPixmap, QShortcut, QShowEvent
+from PyQt6.QtGui import QAction, QKeyEvent, QKeySequence, QPixmap, QShortcut, QShowEvent
 from PyQt6.QtWidgets import QButtonGroup, QDialog, QMenu, QMessageBox
 
 from src import app, config, db, ui
@@ -35,6 +36,7 @@ STYLE_SELECTED = """
     color: black;
 """
 GREY = "color: grey;"
+TRANSPARENT_BACKGROUND = "background: transparent;"
 NO_TASK = "Keine Aufgabe"
 
 
@@ -71,7 +73,6 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         self.priority_task: Task | None = None
         self.timing_task: Task | None = None
         self.balance_task: Task | None = None
-
         self.selected: SELECT | None = None
 
         self.sec_timer = QTimer()
@@ -81,10 +82,20 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         self.gui_timer = QTimer()
         "This timer is used to update the GUI."
 
+        # Animation variables
+
+        self._current_angle = 45.0
+        self._angle_velocity = 0.0
+        self._last_update = time()
+        self._last_midpoint = 0.5
+
     def _init_ui_elements(self) -> None:
         self.taskfont = self.task_desc_priority.property("font")
         self.setWindowFlags(
-            Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.CustomizeWindowHint
+            Qt.WindowType.Dialog
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowCloseButtonHint
         )
         self.menu3 = CustomMenu(self)
         self.action1 = QAction("DeepSeek", self)
@@ -107,11 +118,13 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         self.task_selection_button_group.addButton(self.button9)
         self.task_selection_button_group.setExclusive(True)
 
+        self.task_desc_priority.setStyleSheet(TRANSPARENT_BACKGROUND)
+        self.task_desc_timing.setStyleSheet(TRANSPARENT_BACKGROUND)
+        self.task_desc_balanced.setStyleSheet(TRANSPARENT_BACKGROUND)
+
         self.button7.setVisible(False)
         self.button8.setVisible(False)
         self.button9.setVisible(False)
-
-        self.setFocus()  # Q.Key.Space doesn't work without this!
 
     def _menu3_open(self):
         self.menu3.exec(self.button3.mapToGlobal(self.button3.rect().bottomLeft()))
@@ -123,29 +136,17 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         def _select_priority(event):
             if self.priority_task:
                 _unselect_all()
-                if self.selected is SELECT.PRIORITY:
-                    self.selected = None
-                else:
-                    self.selected = SELECT.PRIORITY
-                    self.priority.setStyleSheet(STYLE_SELECTED)
+                self.selected = None if self.selected is SELECT.PRIORITY else SELECT.PRIORITY
 
         def _select_timing(event):
             if self.timing_task:
                 _unselect_all()
-                if self.selected is SELECT.TIMING:
-                    self.selected = None
-                else:
-                    self.selected = SELECT.TIMING
-                    self.timing.setStyleSheet(STYLE_SELECTED)
+                self.selected = None if self.selected is SELECT.TIMING else SELECT.TIMING
 
         def _select_balance(event):
             if self.balance_task:
                 _unselect_all()
-                if self.selected is SELECT.BALANCE:
-                    self.selected = None
-                else:
-                    self.selected = SELECT.BALANCE
-                    self.balance.setStyleSheet(STYLE_SELECTED)
+                self.selected = None if self.selected is SELECT.BALANCE else SELECT.BALANCE
 
         def _unselect_all():
             self.priority.setStyleSheet(None)
@@ -169,6 +170,7 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         self.button7.installEventFilter(self)
         self.button8.installEventFilter(self)
         self.button9.installEventFilter(self)
+        self.button0.clicked.connect(self._skip_task)
 
     def _open_ai(self, kind: str):
         text = "Welche Aufgabe soll ich als nächstes machen?\n\n" + tasks_to_json([
@@ -205,7 +207,6 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
                 self.skip_timing()
                 self.skip_balance()
                 self.skip_priority()
-        self.setFocus()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         match event.key():
@@ -215,19 +216,12 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
                 self.timing.mousePressEvent(None)
             case Qt.Key.Key_9 if self.balance_task:
                 self.balance.mousePressEvent(None)
-            case Qt.Key.Key_Space:
-                print("Space pressed", time())
-                self._skip_task()
             case Qt.Key.Key_Enter | Qt.Key.Key_Return:
                 self._edit_task()
+            case Qt.Key.Key_Minus:
+                self.close()
             case _:
                 super().keyPressEvent(event)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        if self.hasFocus():
-            painter.setPen(QColor("red"))
-            painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
 
     @cached_getter
     def lets_check_whats_next(self) -> bool:
@@ -277,7 +271,71 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
 
     def _animation_timer_timeout(self):
         T = time()
+        # Separate control parameters
+        BAND_SPEED = 0.8  # Slightly slower band movement
+        BAND_WIDTH = 0.1  # Narrower band for better angle visibility
+        ANGLE_FORCE = 300  # Increased random forces
+        ANGLE_DAMPING = 0.95  # Reduced damping for longer motion
+        MAX_VELOCITY = 300  # Higher maximum rotation speed
+
+        # Update random walk (smooth changes)
+        dt = T - self._last_update
+        self._last_update = T
+
+        # Apply constrained random forces
+        self._angle_velocity += random.uniform(-ANGLE_FORCE, ANGLE_FORCE) * dt
+        self._angle_velocity = max(-MAX_VELOCITY, min(MAX_VELOCITY, self._angle_velocity))
+        self._angle_velocity *= ANGLE_DAMPING
+        self._current_angle = (self._current_angle + self._angle_velocity * dt) % 360
+
+        # Smooth band position animation
+        target_mid = sin(T * BAND_SPEED) * (0.4 - BAND_WIDTH) + 0.5
+        self._last_midpoint += (target_mid - self._last_midpoint) * 0.2  # Faster band following
+
+        # Calculate band positions with safety checks
+        # mid1 = self._last_midpoint - BAND_WIDTH / 2
+        # mid2 = self._last_midpoint + BAND_WIDTH / 2
+
+        band_center = min(max(self._last_midpoint, BAND_WIDTH / 2), 1 - BAND_WIDTH / 2)
+        mid1 = band_center - BAND_WIDTH / 2
+        mid2 = band_center + BAND_WIDTH / 2
+
+        # Clamp mid1 and mid2 to the 0-1 range while preserving the band width.
+        # This approach avoids abrupt jumps and maintains a consistent band.
+        band_width = mid2 - mid1
+        mid1 = max(0.0, min(1.0 - band_width, mid1))  # Clamp mid1
+        mid2 = mid1 + band_width  # Recalculate mid2 based on clamped mid1
+
+        # Convert angle to gradient vector
+        angle_rad = radians(self._current_angle)
+        x1 = 0.5 - cos(angle_rad) * 0.5
+        y1 = 0.5 - sin(angle_rad) * 0.5
+        x2 = 0.5 + cos(angle_rad) * 0.5
+        y2 = 0.5 + sin(angle_rad) * 0.5
+
+        gradient = f"""
+            qlineargradient(
+                spread:pad,
+                x1:{x1}, y1:{y1},
+                x2:{x2}, y2:{y2},
+                stop:0 rgba(255, 255, 255, 255),
+                stop:{mid1} rgba(200, 200, 200, 255),
+                stop:{mid2} rgba(200, 200, 200, 255),
+                stop:1 rgba(255, 255, 255, 255)
+            )
+        """
+
+        selected_style = f"""
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            background-color: {gradient};
+            color: black;
+        """
+
         if self.timing_task:
+            if self.selected == SELECT.TIMING:
+                self.timing.setStyleSheet(selected_style)
+            else:
+                self.timing.setStyleSheet(None)
             self.frame_timing.setStyleSheet(
                 f"""
     * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
@@ -294,6 +352,10 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
             self.frame_timing.setStyleSheet(GREY)
 
         if self.priority_task:
+            if self.selected == SELECT.PRIORITY:
+                self.priority.setStyleSheet(selected_style)
+            else:
+                self.priority.setStyleSheet(None)
             self.frame_priority.setStyleSheet(
                 f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
@@ -310,6 +372,10 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.frame_priority.setStyleSheet(GREY)
 
         if self.balance_task:
+            if self.selected == SELECT.BALANCE:
+                self.balance.setStyleSheet(selected_style)
+            else:
+                self.balance.setStyleSheet(None)
             self.frame_balanced.setStyleSheet(
                 f"""
 * {{color: qlineargradient(spread:pad, x1:0 y1:0, x2:1 y2:0,
@@ -326,28 +392,26 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             self.frame_balanced.setStyleSheet(GREY)
 
     def _gui_timer_timeout(self):
-        # update the task descriptions
-        if self.timing_task:
-            self.task_desc_timing.setText(self.timing_task.do)
-            self.task_desc_timing.adjustSize()
-            self.task_space_timing.setText(self.timing_task.space.name)
-        else:
-            self.task_desc_timing.setText(NO_TASK)
-            self.task_space_timing.setText("")
-        if self.priority_task:
-            self.task_desc_priority.setText(self.priority_task.do)
-            self.task_desc_priority.adjustSize()
-            self.task_space_priority.setText(self.priority_task.space.name)
-        else:
-            self.task_desc_priority.setText(NO_TASK)
-            self.task_space_priority.setText("")
-        if self.balance_task:
-            self.task_desc_balanced.setText(self.balance_task.do)
-            self.task_desc_balanced.adjustSize()
-            self.task_space_balanced.setText(self.balance_task.space.name)
-        else:
-            self.task_desc_balanced.setText(NO_TASK)
-            self.task_space_balanced.setText("")
+        def update_label(label, new_text):
+            current_text = label.text()
+            if current_text != new_text:
+                label.setText(new_text)
+                label.adjustSize()
+
+        # Update priority
+        priority_text = self.priority_task.do if self.priority_task else NO_TASK
+        update_label(self.task_desc_priority, priority_text)
+        self.task_space_priority.setText(self.priority_task.space.name if self.priority_task else "")
+
+        # Update timing
+        timing_text = self.timing_task.do if self.timing_task else NO_TASK
+        update_label(self.task_desc_timing, timing_text)
+        self.task_space_timing.setText(self.timing_task.space.name if self.timing_task else "")
+
+        # Update balance
+        balance_text = self.balance_task.do if self.balance_task else NO_TASK
+        update_label(self.task_desc_balanced, balance_text)
+        self.task_space_balanced.setText(self.balance_task.space.name if self.balance_task else "")
 
     def reject(self) -> None:
         super().reject()
@@ -384,8 +448,14 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
             case SELECT.BALANCE:
                 win = task_editor.TaskEditor(self.balance_task)
 
+        win.task_deleted.connect(self.update_tasks)
+
         if win.exec():
             self.lets_check_whats_next()
+
+    def update_tasks(self):
+        self.lets_check_whats_next()
+        self._gui_timer_timeout()
 
     def _run_task(self):
         if not self.selected:
@@ -412,7 +482,6 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         self.task_desc_priority.setText(self.priority_task.do)
         self.task_desc_priority.adjustSize()
         self.task_space_priority.setText(self.priority_task.space.name)
-
         if old_task == self.priority_task:
             QMessageBox.information(
                 self,
@@ -451,7 +520,6 @@ Auf gehts!""",
             self.timing_task = self.timing_tasks[0]
             self.task_desc_timing.setText(self.timing_task.do)
             self.task_space_timing.setText(self.timing_task.space.name)
-
         except IndexError:
             self.set_timing_empty()
         else:
@@ -524,8 +592,6 @@ Auf gehts!""",
 def throw_coins() -> None:
     """
     Simulates a coin toss by using the least significant bit of high-resolution time as entropy source.
-
-
     The function then displays a message box with the result of the coin toss.
     """
     first = 0
@@ -552,4 +618,5 @@ def throw_coins() -> None:
     else:
         mb.setText("Du hast Zahl geworfen!")
         mb.setIconPixmap(QPixmap(str(config.base_path / "extra/feathericons/coin-tails.svg")))
+
     mb.exec()
