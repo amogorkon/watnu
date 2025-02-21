@@ -36,7 +36,7 @@ STYLE_SELECTED = """
     color: black;
 """
 GREY = "color: grey;"
-TRANSPARENT_BACKGROUND = "background: transparent;"
+TRANSPARENT_BACKGROUND_NO_BORDER = "background: transparent; border: none;"
 NO_TASK = "Keine Aufgabe"
 
 
@@ -118,9 +118,14 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
         self.task_selection_button_group.addButton(self.button9)
         self.task_selection_button_group.setExclusive(True)
 
-        self.task_desc_priority.setStyleSheet(TRANSPARENT_BACKGROUND)
-        self.task_desc_timing.setStyleSheet(TRANSPARENT_BACKGROUND)
-        self.task_desc_balanced.setStyleSheet(TRANSPARENT_BACKGROUND)
+        self.task_desc_priority.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
+        self.task_space_priority.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
+
+        self.task_desc_timing.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
+        self.task_space_timing.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
+
+        self.task_space_balanced.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
+        self.task_desc_balanced.setStyleSheet(TRANSPARENT_BACKGROUND_NO_BORDER)
 
         self.button7.setVisible(False)
         self.button8.setVisible(False)
@@ -331,6 +336,8 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
             color: black;
         """
 
+        ROUNDED_BORDER = "border-radius: 10px;"
+
         if self.timing_task:
             if self.selected == SELECT.TIMING:
                 self.timing.setStyleSheet(selected_style)
@@ -345,6 +352,7 @@ class WhatNow(QDialog, ui.what_now.Ui_Dialog):
             stop:0 {self.timing_task.primary_color},
             stop:{sin(T * 0.1) * 0.5 + 0.5} {self.timing_task.secondary_color},
             stop:1 white);
+{ROUNDED_BORDER}
     }}
     """
             )
@@ -365,6 +373,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         stop:0 {self.priority_task.primary_color},
         stop:{sin(T * 0.1) * 0.5 + 0.5} {self.priority_task.secondary_color},
         stop:1 white);
+{ROUNDED_BORDER}
 }}
 """
             )
@@ -385,6 +394,7 @@ background: qlineargradient(x1:0 y1:0, x2:1 y2:0,
         stop:0 {self.balance_task.primary_color},
         stop:{sin(T * 0.1) * 0.5 + 0.5} {self.balance_task.secondary_color},
         stop:1 white);
+{ROUNDED_BORDER}
 }}
 """
             )
