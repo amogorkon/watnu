@@ -677,7 +677,8 @@ font-size: 12pt;
 
     # right click on a table item opens a menu with options to send the task via telegram
     def _showContextMenu(self, pos):
-        if not self.task_table.rect().contains(pos):
+        viewport_pos = self.task_table.viewport().mapFromGlobal(self.mapToGlobal(pos))
+        if not self.task_table.viewport().rect().contains(viewport_pos):
             return
 
         menu = QtWidgets.QMenu()
@@ -704,6 +705,7 @@ font-size: 12pt;
             return
         config.last_selected_space = self.space.currentText()
         config.save()
+
 
 def make_new_and_show_all():
     """
