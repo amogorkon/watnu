@@ -3,7 +3,7 @@
  <class>Dialog</class>
  <widget class="QDialog" name="Dialog">
   <property name="windowModality">
-   <enum>Qt::NonModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="enabled">
    <bool>true</bool>
@@ -55,6 +55,9 @@
        </property>
        <property name="focusPolicy">
         <enum>Qt::TabFocus</enum>
+       </property>
+       <property name="toolTip">
+        <string>Num7</string>
        </property>
        <property name="title">
         <string/>
@@ -203,6 +206,9 @@
         <font>
          <italic>true</italic>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>Num8</string>
        </property>
        <property name="title">
         <string/>
@@ -458,6 +464,9 @@
        <property name="acceptDrops">
         <bool>false</bool>
        </property>
+       <property name="toolTip">
+        <string>Num9</string>
+       </property>
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
@@ -593,12 +602,42 @@
      <property name="topMargin">
       <number>10</number>
      </property>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="button5">
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Num5</string>
+       </property>
+       <property name="statusTip">
+        <string>5</string>
+       </property>
+       <property name="text">
+        <string>starte ausgewählte Aufgabe</string>
+       </property>
+       <property name="shortcut">
+        <string>5</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="button6">
        <property name="font">
         <font>
          <italic>false</italic>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>Num6</string>
+       </property>
+       <property name="statusTip">
+        <string>6</string>
        </property>
        <property name="text">
         <string>neue Aufgabe</string>
@@ -611,30 +650,18 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QPushButton" name="button5">
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>starte ausgewählte Aufgabe</string>
-       </property>
-       <property name="shortcut">
-        <string>5</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QPushButton" name="button1">
        <property name="font">
         <font>
          <italic>false</italic>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>Num1</string>
+       </property>
+       <property name="statusTip">
+        <string>1</string>
        </property>
        <property name="text">
         <string>Wirf Münze</string>
@@ -658,6 +685,12 @@
          <italic>false</italic>
         </font>
        </property>
+       <property name="toolTip">
+        <string>Num4</string>
+       </property>
+       <property name="statusTip">
+        <string>4</string>
+       </property>
        <property name="text">
         <string>bearbeite ausgewählte Aufgabe</string>
        </property>
@@ -675,6 +708,12 @@
         <font>
          <italic>false</italic>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>Num2</string>
+       </property>
+       <property name="statusTip">
+        <string>2</string>
        </property>
        <property name="text">
         <string>Schon erledigt!</string>
@@ -694,29 +733,14 @@
          <italic>false</italic>
         </font>
        </property>
+       <property name="toolTip">
+        <string>Num3</string>
+       </property>
+       <property name="statusTip">
+        <string>3</string>
+       </property>
        <property name="text">
         <string>KI fragen...</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QPushButton" name="button7">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <italic>false</italic>
-        </font>
-       </property>
-       <property name="text">
-        <string>wähle Priorität aus</string>
-       </property>
-       <property name="shortcut">
-        <string>7</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
@@ -753,6 +777,43 @@
        </property>
        <property name="shortcut">
         <string>9</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QPushButton" name="button7">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>wähle Priorität aus</string>
+       </property>
+       <property name="shortcut">
+        <string>7</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="3">
+      <widget class="QPushButton" name="button0">
+       <property name="toolTip">
+        <string>Num0</string>
+       </property>
+       <property name="text">
+        <string>Skip!</string>
+       </property>
+       <property name="shortcut">
+        <string extracomment="Skip Task (@Num_0)">0</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>

@@ -101,55 +101,74 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="task_type">
-         <property name="title">
-          <string>Art</string>
+        <widget class="QPlainTextEdit" name="notes">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>2</verstretch>
+          </sizepolicy>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <item>
-           <widget class="QRadioButton" name="is_task">
-            <property name="text">
-             <string>Aufgabe</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">kind_of</string>
-            </attribute>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="is_tradition">
-            <property name="text">
-             <string>Tradition</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">kind_of</string>
-            </attribute>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="is_routine">
-            <property name="text">
-             <string>Routine</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">kind_of</string>
-            </attribute>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="is_habit">
-            <property name="text">
-             <string>Gewohnheit</string>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">kind_of</string>
-            </attribute>
-           </widget>
-          </item>
-         </layout>
+         <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextEditable|Qt::TextEditorInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+         </property>
+         <property name="placeholderText">
+          <string>Notizen</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="task_type">
+      <property name="title">
+       <string>Art</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QRadioButton" name="is_task">
+         <property name="text">
+          <string>Aufgabe</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">kind_of</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="is_tradition">
+         <property name="text">
+          <string>Tradition</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">kind_of</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="is_routine">
+         <property name="text">
+          <string>Routine</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">kind_of</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="is_habit">
+         <property name="text">
+          <string>Gewohnheit</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">kind_of</string>
+         </attribute>
         </widget>
        </item>
       </layout>
@@ -299,6 +318,25 @@
           </property>
          </widget>
         </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Primäre Aktivität </string>
+          </property>
+          <property name="buddy">
+           <cstring>primary_activity</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QComboBox" name="primary_activity">
+          <item>
+           <property name="text">
+            <string>---</string>
+           </property>
+          </item>
+         </widget>
+        </item>
         <item row="7" column="0">
          <widget class="QLabel" name="label_12">
           <property name="text">
@@ -361,45 +399,7 @@
           </item>
          </layout>
         </item>
-        <item row="5" column="1">
-         <widget class="QComboBox" name="primary_activity">
-          <item>
-           <property name="text">
-            <string>---</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_14">
-          <property name="text">
-           <string>Primäre Aktivität </string>
-          </property>
-          <property name="buddy">
-           <cstring>primary_activity</cstring>
-          </property>
-         </widget>
-        </item>
        </layout>
-      </item>
-      <item>
-       <widget class="QPlainTextEdit" name="notes">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-          <horstretch>0</horstretch>
-          <verstretch>2</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
-        </property>
-        <property name="textInteractionFlags">
-         <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextEditable|Qt::TextEditorInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-        </property>
-        <property name="placeholderText">
-         <string>Notizen</string>
-        </property>
-       </widget>
       </item>
      </layout>
     </item>
@@ -916,6 +916,16 @@
       <property name="topMargin">
        <number>9</number>
       </property>
+      <item row="4" column="1">
+       <widget class="QPushButton" name="button5_2">
+        <property name="text">
+         <string>beende Bearbeitung und starte Aufgabe</string>
+        </property>
+        <property name="shortcut">
+         <string>5</string>
+        </property>
+       </widget>
+      </item>
       <item row="4" column="2">
        <widget class="QPushButton" name="button6_2">
         <property name="enabled">
@@ -929,26 +939,26 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QPushButton" name="button5_2">
-        <property name="text">
-         <string>beende Bearbeitung und starte Aufgabe</string>
-        </property>
-        <property name="shortcut">
-         <string>5</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QPushButton" name="button2_2">
+      <item row="2" column="0">
+       <widget class="QPushButton" name="button7_2">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Aufgabe erledigt!</string>
+         <string>Wann, Wo, Wer,...</string>
         </property>
         <property name="shortcut">
-         <string>2</string>
+         <string>7</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QPushButton" name="button1_2">
+        <property name="text">
+         <string>setze Aufgabe als...</string>
+        </property>
+        <property name="shortcut">
+         <string>1</string>
         </property>
        </widget>
       </item>
@@ -978,26 +988,16 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="button7_2">
+      <item row="6" column="1">
+       <widget class="QPushButton" name="button2_2">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Wann, Wo, Wer,...</string>
+         <string>Aufgabe erledigt!</string>
         </property>
         <property name="shortcut">
-         <string>7</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QPushButton" name="button1_2">
-        <property name="text">
-         <string>setze Aufgabe als...</string>
-        </property>
-        <property name="shortcut">
-         <string>1</string>
+         <string>2</string>
         </property>
        </widget>
       </item>
