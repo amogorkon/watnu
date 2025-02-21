@@ -14,11 +14,6 @@ from PyQt6.QtGui import QFont, QFontDatabase
 from PyQt6.QtWebEngineWidgets import QWebEngineView  # noqa: F401
 
 
-def init_():
-    global config, db
-    from src import config, db
-
-
 class Application(QtWidgets.QApplication):
     """Main Application logic."""
 
@@ -31,16 +26,9 @@ class Application(QtWidgets.QApplication):
     def setUp(
         self,
     ):
-        """Set up the application.
+        global config, db
+        from src import config, db
 
-        Args:
-            config_: The configuration.
-            db_: The database.
-
-        Returns:
-            None.
-        """
-        init_()
         self.db_last_modified = 0
 
         # Task requires app, so we would end up going in circles if we imported it at the top.
@@ -164,7 +152,7 @@ class Application(QtWidgets.QApplication):
 
     def shutdown(self):
         with contextlib.suppress(RuntimeError):  # ignore annoying last-minute exceptions
-            self.tray.setVisible(False)
+            self.tray.hide()
             self.tray.deleteLater()
 
         self.closeAllWindows()
