@@ -199,6 +199,7 @@ class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixi
         self.space.currentIndexChanged.connect(self.build_task_table)
         self.task_table.cellDoubleClicked.connect(lambda x, y: self.edit_selected(self.task_table))
 
+        QShortcut(QKeySequence(Qt.Key.Key_Minus), self).activated.connect(self.close)
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self).activated.connect(self._delete_item)
         QShortcut(QKeySequence(Qt.Key.Key_F11), self).activated.connect(
             lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
