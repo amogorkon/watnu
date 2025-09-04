@@ -59,7 +59,7 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         self.pause_time = pause_time
         self.direct = direct
         self.old_skills = old_skills or [
-            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skill_ids
+            (skill.id, int(skill_level(skill.time_spent))) for skill in task.skills
         ]
         self.task_desc.setText(task.do)
         if not direct:
@@ -106,7 +106,7 @@ class Finisher(QtWidgets.QDialog, ui.task_finished.Ui_Dialog):
         )
 
         new_skills = [
-            (skill_id, int(skill_level(Skill(skill_id).time_spent))) for skill_id in self.task.skill_ids
+            (skill_id, int(skill_level(Skill(skill_id).time_spent))) for skill_id in self.task.skills
         ]
 
         for x, y in zip(self.old_skills, new_skills):

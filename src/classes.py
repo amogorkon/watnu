@@ -109,12 +109,8 @@ class Space:
     @cached_property
     def number_of_tasks(self) -> int:
         """Get the number of tasks in the space."""
-        return db.execute(
-            """
-            SELECT COUNT(*) FROM tasks WHERE space_id=?;
-            """,
-            (self.space_id,),
-        ).fetchone()[0]
+        query = db.execute("SELECT COUNT(*) FROM tasks WHERE space_id=?", (self.space_id,))
+        return typed(query.fetchone()[0], int, default=0)
 
 
 @cached_getter
@@ -365,21 +361,16 @@ SELECT every_ilk, x_every, per_ilk, x_per  FROM repeats WHERE task_id={self.id}
 
     @cached_property
     def supertasks(self) -> set[Task]:
-        query = db.execute(
-            f"""
-SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
-        """
-        )
+        query = db.execute(f"SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}")
         return {app.tasks[typed_row(row, 0, int)] for row in query.fetchall()}
 
     @cached_property
-    def skill_ids(self) -> list[int]:
-        query = db.execute(
-            f"""
-        SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}
-        """
-        )
+    def skills(self) -> list[Skill]:
+        query = db.execute(f"SELECT skill_id FROM task_trains_skill WHERE task_id={self.id}")
         return [Skill(typed_row(skill_id, 0, int)) for skill_id in query.fetchall()]
+
+    def get_total_priority(self) -> float:
+        return total_priority(self.priority, self.space_priority, doable_supertasks=self.doable_supertasks)
 
     def set_adjust_time_spent(self, value: int) -> None:
         self.set_("adjust_time_spent", value)
@@ -394,41 +385,6 @@ SELECT task_of_concern FROM task_requires_task WHERE required_task={self.id}
     def total_time_spent(self) -> int:
         """Return the time spent on this task in seconds, including adjustment."""
         return self.adjust_time_spent + self.time_spent
-
-    def get_total_priority(self, priority: float = None, space_priority: float = None) -> float:
-        """
-        Calculates the total priority of the task, taking into account its own priority, space priority,
-        and the priority of its subtasks.
-
-        Args:
-            priority (float, optional): The priority of the task. Defaults to None.
-            space_priority (float, optional): The space priority of the task. Defaults to None.
-
-        Returns:
-            float: The total priority of the task.
-
-        Raises:
-            None
-
-        Examples:
-            >>> task = Task()
-            >>> task.get_total_priority()
-            1.0
-        """
-        own_priority = (self.priority if priority is None else priority) + (
-            self.space_priority if space_priority is None else space_priority
-        )
-
-        max_supertask = max(
-            self.doable_supertasks,
-            key=lambda t: t.get_total_priority(),
-            default=None,
-        )
-        sibling_priorities = (
-            {t.priority for t in max_supertask.subtasks} if max_supertask else {self.priority}
-        )
-        normalized = own_priority / max(sibling_priorities | {1})  # set(1) if no siblings
-        return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority
 
     @cached_property
     def is_doable(self) -> bool:
@@ -510,37 +466,21 @@ WHERE tasks.id = {self.id}
 
     @cached_property
     def primary_activity(self) -> ACTIVITY:
-        """
-        Get the primary activity for the task and default to the activity of the space if not set.
-
-        Returns:
-            ACTIVITY: ACTIVITY enum value
-        """
-        query = db.execute(
-            "SELECT primary_activity_id FROM tasks WHERE id=?",
-            (self.id,),
-        )
-        own_activity_id = typed_row(
-            query.fetchone(),
-            0,
-            int,
-            default=ACTIVITY.unspecified.value,
-        )
+        """Get the primary activity for the task and default to the activity of the space if not set."""
+        query = db.execute("SELECT primary_activity_id FROM tasks WHERE id=?", (self.id,))
+        own_activity_id = typed_row(query.fetchone(), 0, int, default=ACTIVITY.unspecified.value)
         own_activity = ACTIVITY(own_activity_id)
         space_activity = self.space.primary_activity if self.space else ACTIVITY.unspecified
-
-        return space_activity if self.space else own_activity
+        return own_activity if own_activity != ACTIVITY.unspecified else space_activity
 
     @cached_property
     def secondary_activity(self) -> ACTIVITY:
         """Get the secondary activity for the task and default to the activity of the space if not set."""
-        if own_activity := db.execute(
-            "SELECT secondary_activity_id FROM tasks WHERE id=?",
-            (self.id,),
-        ).fetchone()[0]:
-            return ACTIVITY(own_activity)
-        else:
-            return self.space.secondary_activity if self.space else ACTIVITY.unspecified
+        query = db.execute("SELECT secondary_activity_id FROM tasks WHERE id=?", (self.id,))
+        own_activity_id = typed_row(query.fetchone(), 0, int, default=ACTIVITY.unspecified.value)
+        own_activity = ACTIVITY(own_activity_id)
+        space_activity = self.space.secondary_activity if self.space else ACTIVITY.unspecified
+        return own_activity if own_activity != ACTIVITY.unspecified else space_activity
 
     @cached_property
     def primary_color(self) -> str:
@@ -738,3 +678,39 @@ SELECT name FROM levels WHERE level_id={level_id};
 """
     )
     return typed_row(query.fetchone(), 0, str)
+
+
+@beartype
+def total_priority(
+    priority: float = 0, space_priority: float = 0, doable_supertasks: set[Task] | None = None
+) -> float:
+    """
+    Calculates the total priority of the task, taking into account its own priority, space priority,
+    and the priority of its subtasks.
+
+    Args:
+        priority (float, optional): The priority of the task. Defaults to None.
+        space_priority (float, optional): The space priority of the task. Defaults to None.
+
+    Returns:
+        float: The total priority of the task.
+
+    Raises:
+        None
+
+    Examples:
+        >>> task = Task()
+        >>> task.get_total_priority()
+        1.0
+    """
+    doable_supertasks = doable_supertasks or set()
+    own_priority = priority + space_priority
+
+    max_supertask = max(
+        doable_supertasks,
+        key=lambda t: t.get_total_priority(),
+        default=None,
+    )
+    sibling_priorities = {t.priority for t in max_supertask.subtasks} if max_supertask else {priority}
+    normalized = own_priority / max(sibling_priorities | {1})  # set(1) if no siblings
+    return (normalized + max_supertask.get_total_priority()) if max_supertask else own_priority

@@ -12,7 +12,7 @@ from PyQt6.QtGui import QCloseEvent, QHideEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QPushButton, QWizard
 
 from src import app, config, db, ui
-from src.classes import ACTIVITY, ILK, LEVEL, Task
+from src.classes import ACTIVITY, ILK, LEVEL, Task, total_priority
 
 from . import mixin, task_finished
 from .helpers import get_space_priority, to_italic
@@ -108,7 +108,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin, 
         else:
             self.choose_repeats_button.show()
 
-        if not self.task.skill_ids:
+        if not self.task.skills:
             self.choose_skills_button.hide()
         else:
             self.choose_skills_button.show()
@@ -216,7 +216,7 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin, 
 
     def _init_task_edit(self, task: Task):
         self.deadline = task.deadline
-        self.skill_ids = self.task.skill_ids
+        self.skill_ids = self.task.skills
         self.priority.setValue(task.priority)
         self.total_priority.setValue(task.get_total_priority())
         for url, ID in task.resources:
@@ -228,7 +228,6 @@ class TaskEditor(QtWidgets.QWizard, ui.task_editor.Ui_Wizard, mixin.SpaceMixin, 
         self.space.setCurrentIndex(self.space.findData(self.task.space.space_id))
         self.level.setCurrentIndex(self.level.findText(self.task.level))
         self.primary_activity.setCurrentIndex(self.primary_activity.findText(self.task.primary_activity.name))
-
         self.secondary_activity.setCurrentIndex(
             self.secondary_activity.findText(self.task.secondary_activity.name)
         )
@@ -614,12 +613,6 @@ WHERE space_id = {space_id}
                 else:
                     self.secondary_activity.setCurrentIndex(0)
 
-        self.total_priority.setValue(
-            self.task.get_total_priority(
-                priority=self.priority.value(),
-                space_priority=get_space_priority(self.space.currentData()),
-            )
-        )
         config.last_edited_space = self.space.currentText() or config.last_edited_space
         config.save()
 

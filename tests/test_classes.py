@@ -12,7 +12,7 @@ def test_initialize_attributes():
     assert task.constraints == 0
     assert task.subtasks == []
     assert task.supertasks == []
-    assert task.skill_ids == []
+    assert task.skills == []
 
 
 def test_add_subtask(task):

@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
 
 from src import app, config, ui
 from src.classes import Task
+from src.helpers import pipes
 from src.logic import filter_tasks_by_content
 
 from ..logic import filter_tasks
@@ -90,6 +91,7 @@ class Checklist(QWidget):
         layout.setSpacing(0)
 
 
+@pipes
 class TaskList(QtWidgets.QDialog, ui.task_list.Ui_Dialog, mixin.SpaceMixin, mixin.SkillMixin):
     def __init__(self, selected_tasks: set | None = None):
         super().__init__()
@@ -440,15 +442,12 @@ font-size: 12pt;
         header_font.setBold(True)
         header_font.setPixelSize(10)
 
-        self.task_table.setColumnCount(
-            len(
-                list(
-                    filter(
-                        lambda c: getattr(self, f"check_{c[0]}").checkState() == QtCore.Qt.CheckState.Checked,
-                        self.columns,
-                    )
-                )
-            )
+        (
+            self.columns
+            << filter(lambda c: getattr(self, f"check_{c[0]}").checkState() == QtCore.Qt.CheckState.Checked)
+            >> list
+            >> len
+            >> self.task_table.setColumnCount
         )
 
         translation = {
@@ -477,7 +476,7 @@ font-size: 12pt;
         for column_number, column in enumerate(selected_columns):
             self._set_header(translation[column[0]], header_font, column_number)
 
-        for i, task in enumerate(tasks):
+        for i, task in enumerate(sorted(tasks, key=lambda t: t.id)):
             for column_number, (header, func) in enumerate(selected_columns):
                 content = func(task)
                 if isinstance(content, str):
