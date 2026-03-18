@@ -1,4 +1,4 @@
-nltk==3.9.1
+nltk==3.9.3
 python-Levenshtein==0.26.1
 numpy==1.22.0
 pyqtgraph
